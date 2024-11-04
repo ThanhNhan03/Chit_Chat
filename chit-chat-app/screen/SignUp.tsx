@@ -1,19 +1,37 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, Image, SafeAreaView, TouchableOpacity, StatusBar } from "react-native";
-import { colors } from '../config/constrants'; 
+import { StyleSheet, Text, View, TextInput, Image, SafeAreaView, TouchableOpacity, StatusBar, Alert } from "react-native";
+import { colors } from '../config/constrants';
+import { signUp } from 'aws-amplify/auth'; // Sửa lại import từ aws-amplify để dùng signUp từ Auth
 const backImage = require("../assets/background.png");
 
 interface SignUpProps {
-  navigation: any; 
+  navigation: any;
 }
 
 const SignUp: React.FC<SignUpProps> = ({ navigation }) => {
   const [email, setEmail] = useState<string>('');
-  const [username, setUsername] = useState<string>('');
+  const [name, setName] = useState<string>(''); // Sửa lại từ username thành name
   const [password, setPassword] = useState<string>('');
 
-  const onHandleSignup = () => {
-    console.log('Sign Up pressed');
+  const onHandleSignup = async () => {
+    try {
+      // Đăng ký người dùng với Amplify Auth
+      await signUp({
+        username: email, // Amplify sử dụng email làm username
+        password,
+        options: {
+          userAttributes: { name }, // Thêm thuộc tính name vào thông tin người dùng
+        },
+      });
+      console.log('Sign up successful');
+      Alert.alert('Success', 'Account created successfully. Please check your email for verification.');
+      
+      // Điều hướng đến trang ConfirmEmail
+      navigation.navigate('ConfirmEmail', { username: email }); 
+    } catch (error: any) {
+      console.error('Error signing up:', error);
+      Alert.alert('Error', error.message);  
+    }
   };
 
   return (
@@ -24,13 +42,13 @@ const SignUp: React.FC<SignUpProps> = ({ navigation }) => {
         <Text style={styles.title}>Sign Up</Text>
         <TextInput
           style={styles.input}
-          placeholder="Enter name"
-          autoCapitalize="none"
+          placeholder="Enter full name"
+          autoCapitalize="words"
           keyboardType="default"
           textContentType="name"
           autoFocus={true}
-          value={username}
-          onChangeText={(text) => setUsername(text)}
+          value={name}
+          onChangeText={(text) => setName(text)}
         />
         <TextInput
           style={styles.input}

@@ -3,33 +3,44 @@ import {
   StyleSheet,
   Text,
   View,
-  Button,
   TextInput,
-  Image,
-  SafeAreaView,
   TouchableOpacity,
-  StatusBar,
   Alert,
+  SafeAreaView,
+  StatusBar,
+  Image,
 } from "react-native";
+import  Auth  from '@aws-amplify/auth';
 
-import { colors } from "../config/constrants";
+
 const backImage = require("../assets/background.png");
 
 interface LoginProps {
-  navigation: any; 
+  navigation: any;
 }
 
 const Login: React.FC<LoginProps> = ({ navigation }) => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
-//   const onHandleLogin = () => {
-//     if (email !== "" && password !== "") {
-//       signInWithEmailAndPassword(auth, email, password)
-//         .then(() => console.log("Login success"))
-//         .catch((err) => Alert.alert("Login error", err.message));
-//     }
-//   };
+  const onHandleLogin = async () => {
+    try {
+      const user = await Auth.signIn({ username: email, password });  // Updated to pass an object
+      console.log("User successfully signed in!", user);
+      navigation.navigate("Home");
+    } catch (error: any) {
+      console.error("Error signing in", error);
+      if (error.code === 'UserNotFoundException') {
+        Alert.alert('Login Error', 'User does not exist.');
+      } else if (error.code === 'NotAuthorizedException') {
+        Alert.alert('Login Error', 'Incorrect username or password.');
+      } else if (error.code === 'UserNotConfirmedException') {
+        Alert.alert('Login Error', 'User has not been confirmed.');
+      } else {
+        Alert.alert("Login Error", error.message || "An unknown error has occurred.");
+      }
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -57,28 +68,11 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
           value={password}
           onChangeText={(text) => setPassword(text)}
         />
-        <TouchableOpacity style={styles.button} >
+        <TouchableOpacity style={styles.button} onPress={onHandleLogin}>
           <Text style={{ fontWeight: "bold", color: "#fff", fontSize: 18 }}>
             Log In
           </Text>
         </TouchableOpacity>
-        <View
-          style={{
-            marginTop: 30,
-            flexDirection: "row",
-            alignItems: "center",
-            alignSelf: "center",
-          }}
-        >
-          <Text style={{ color: "gray", fontWeight: "600", fontSize: 14 }}>
-            Don't have an account?{" "}
-          </Text>
-          <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
-            <Text style={{ color: colors.pink, fontWeight: "600", fontSize: 14 }}>
-              Sign Up
-            </Text>
-          </TouchableOpacity>
-        </View>
       </SafeAreaView>
       <StatusBar barStyle="light-content" />
     </View>
@@ -128,7 +122,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 30,
   },
   button: {
-    backgroundColor: colors.primary,
+    backgroundColor: "#0000ff",
     height: 58,
     borderRadius: 10,
     justifyContent: "center",
