@@ -28,6 +28,7 @@ const SignUp: React.FC<SignUpProps> = ({ navigation }) => {
       console.log('Sign up successful', isSignUpComplete, userId, nextStep );
       Alert.alert('Success', 'Account created successfully. Please check your email for verification.');
       
+      // Chuyển đến màn hình ConfirmEmail với email làm tham số
       navigation.navigate('ConfirmEmail', { username: email }); 
     } catch (error: any) {
       console.error('Error signing up:', error);

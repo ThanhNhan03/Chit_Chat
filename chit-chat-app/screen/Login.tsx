@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   StyleSheet,
   Text,
@@ -11,8 +11,8 @@ import {
   Alert,
 } from "react-native";
 import { colors } from "../config/constrants";
-import  { signIn, getCurrentUser } from 'aws-amplify/auth'
-import HomeScreen from "./Home";
+import { signIn, getCurrentUser } from 'aws-amplify/auth';
+import { AuthenticatedUserContext } from "../contexts/AuthContext";
 const backImage = require("../assets/background.png");
 
 interface LoginProps {
@@ -23,6 +23,8 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
+  const { setUser } = useContext(AuthenticatedUserContext); // Lấy setUser từ context
+
   const onHandleLogin = async () => {
     try {
       await signIn({
@@ -30,11 +32,15 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
         password,
         options: {
           authFlowType: "USER_PASSWORD_AUTH",
-        }
+        },
       });
       const user = await getCurrentUser();
       console.log("User successfully signed in!", user);
+
+      setUser(user); // Cập nhật trạng thái người dùng
       Alert.alert("Login success");
+
+      // Điều hướng đến màn hình chính
       navigation.reset({
         index: 0,
         routes: [{ name: 'HomeScreen' }],
@@ -44,7 +50,6 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
       Alert.alert("Login Error", error.message);
     }
   };
-  
 
   return (
     <View style={styles.container}>

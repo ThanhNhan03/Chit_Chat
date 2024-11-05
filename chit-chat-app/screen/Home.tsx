@@ -1,33 +1,39 @@
 import React, { useContext } from "react";
 import { View, Text, StyleSheet, Button } from "react-native";
-import { AuthenticatedUserContext } from "../App";
+import { AuthenticatedUserContext } from "../contexts/AuthContext";
 import { signOut } from 'aws-amplify/auth';
 
 type AuthContextType = {
     user: any;
+    setUser: (user: any) => void;
 };
 
 interface HomeScreenProps {
-  navigation: any;
+    navigation: any;
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-    const { user } = useContext(AuthenticatedUserContext);
+    const { user, setUser } = useContext(AuthenticatedUserContext);
+
+    console.log('Entire user object:', user);
 
     const handleSignOut = async () => {
         try {
             await signOut();
+            setUser(null); 
             navigation.navigate('Login');
         } catch (error) {
             console.log('Error signing out: ', error);
         }
     };
 
+    console.log('User attributes:', user?.signInDetails?.loginId || user?.username);
+
     return (
         <View style={styles.container}>
             <Text style={styles.welcomeText}>Welcome to the Home Screen!</Text>
             <Text style={styles.userText}>
-                Logged in as: {user?.attributes?.email || "User"}
+                Logged in as: {user?.signInDetails?.loginId || user?.username}
             </Text>
             <Button title="Logout" onPress={handleSignOut} />
         </View>
@@ -53,4 +59,3 @@ const styles = StyleSheet.create({
         color: "#333",
     },
 });
- 
