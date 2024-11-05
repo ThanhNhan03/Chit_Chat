@@ -1,0 +1,20 @@
+{
+  "staging": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-chitchat-staging-1661a-authRole",
+      "UnauthRoleArn": "arn:aws:iam::982081092744:role/amplify-chitchat-staging-1661a-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::982081092744:role/amplify-chitchat-staging-1661a-authRole",
+      "Region": "ap-southeast-1",
+      "DeploymentBucketName": "amplify-chitchat-staging-1661a-deployment",
+      "UnauthRoleName": "amplify-chitchat-staging-1661a-unauthRole",
+      "StackName": "amplify-chitchat-staging-1661a",
+      "StackId": "arn:aws:cloudformation:ap-southeast-1:982081092744:stack/amplify-chitchat-staging-1661a/c8519cf0-9ab3-11ef-8863-06113eb85613",
+      "AmplifyAppId": "d14lie7qhccsjy"
+    },
+    "categories": {
+      "auth": {
+        "chitchat": {}
+      }
+    }
+  }
+}

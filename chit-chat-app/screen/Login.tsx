@@ -3,7 +3,6 @@ import {
   StyleSheet,
   Text,
   View,
-  Button,
   TextInput,
   Image,
   SafeAreaView,
@@ -11,25 +10,41 @@ import {
   StatusBar,
   Alert,
 } from "react-native";
-
 import { colors } from "../config/constrants";
+import  { signIn, getCurrentUser } from 'aws-amplify/auth'
+import HomeScreen from "./Home";
 const backImage = require("../assets/background.png");
 
 interface LoginProps {
-  navigation: any; 
+  navigation: any;
 }
 
 const Login: React.FC<LoginProps> = ({ navigation }) => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
-//   const onHandleLogin = () => {
-//     if (email !== "" && password !== "") {
-//       signInWithEmailAndPassword(auth, email, password)
-//         .then(() => console.log("Login success"))
-//         .catch((err) => Alert.alert("Login error", err.message));
-//     }
-//   };
+  const onHandleLogin = async () => {
+    try {
+      await signIn({
+        username: email,
+        password,
+        options: {
+          authFlowType: "USER_PASSWORD_AUTH",
+        }
+      });
+      const user = await getCurrentUser();
+      console.log("User successfully signed in!", user);
+      Alert.alert("Login success");
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'HomeScreen' }],
+      });
+    } catch (error: any) {
+      console.error("Error signing in", error);
+      Alert.alert("Login Error", error.message);
+    }
+  };
+  
 
   return (
     <View style={styles.container}>
@@ -57,7 +72,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
           value={password}
           onChangeText={(text) => setPassword(text)}
         />
-        <TouchableOpacity style={styles.button} >
+        <TouchableOpacity style={styles.button} onPress={onHandleLogin}>
           <Text style={{ fontWeight: "bold", color: "#fff", fontSize: 18 }}>
             Log In
           </Text>

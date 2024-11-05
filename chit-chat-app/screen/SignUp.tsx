@@ -1,19 +1,38 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, Image, SafeAreaView, TouchableOpacity, StatusBar } from "react-native";
-import { colors } from '../config/constrants'; 
+import { StyleSheet, Text, View, TextInput, Image, SafeAreaView, TouchableOpacity, StatusBar, Alert } from "react-native";
+import { colors } from '../config/constrants';
+import { signUp } from 'aws-amplify/auth'; 
 const backImage = require("../assets/background.png");
 
 interface SignUpProps {
-  navigation: any; 
+  navigation: any;
 }
 
 const SignUp: React.FC<SignUpProps> = ({ navigation }) => {
   const [email, setEmail] = useState<string>('');
-  const [username, setUsername] = useState<string>('');
+  const [name, setName] = useState<string>(''); 
   const [password, setPassword] = useState<string>('');
 
-  const onHandleSignup = () => {
-    console.log('Sign Up pressed');
+  const onHandleSignup = async () => {
+    try {
+      const { isSignUpComplete, userId, nextStep } = await signUp({
+        username: email,
+        password,
+        options: {
+          userAttributes: {
+            name,
+            email
+          }
+        },
+      });
+      console.log('Sign up successful', isSignUpComplete, userId, nextStep );
+      Alert.alert('Success', 'Account created successfully. Please check your email for verification.');
+      
+      navigation.navigate('ConfirmEmail', { username: email }); 
+    } catch (error: any) {
+      console.error('Error signing up:', error);
+      Alert.alert('Error', error.message);  
+    }
   };
 
   return (
@@ -24,13 +43,13 @@ const SignUp: React.FC<SignUpProps> = ({ navigation }) => {
         <Text style={styles.title}>Sign Up</Text>
         <TextInput
           style={styles.input}
-          placeholder="Enter name"
-          autoCapitalize="none"
+          placeholder="Enter full name"
+          autoCapitalize="words"
           keyboardType="default"
           textContentType="name"
           autoFocus={true}
-          value={username}
-          onChangeText={(text) => setUsername(text)}
+          value={name}
+          onChangeText={(text) => setName(text)}
         />
         <TextInput
           style={styles.input}
