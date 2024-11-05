@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { confirmSignUp } from 'aws-amplify/auth';
+import { confirmSignUp, autoSignIn } from 'aws-amplify/auth';
 
 interface ConfirmEmailProps {
   route: any;
@@ -8,15 +8,19 @@ interface ConfirmEmailProps {
 }
 
 const ConfirmEmail: React.FC<ConfirmEmailProps> = ({ route, navigation }) => {
-  const { username } = route.params; // Nhận username từ route khi điều hướng từ màn hình đăng ký
-  const [code, setCode] = useState<string>(''); // Để lưu mã xác nhận người dùng nhập vào
+  const { username } = route.params; 
+  const [code, setCode] = useState<string>(''); 
 
   const onConfirm = async () => {
     try {
-      // Gọi AWS Amplify để xác nhận mã
-      await confirmSignUp({ username, confirmationCode: code });
+      const { isSignUpComplete, nextStep } = await confirmSignUp({ username, confirmationCode: code });
       Alert.alert('Success', 'Email confirmed successfully!');
-      navigation.navigate('Login'); // Sau khi xác nhận thành công, điều hướng đến màn hình Login
+      console.log("ket qua confirm:::: ",isSignUpComplete, nextStep);
+      
+
+      
+
+      navigation.navigate('Login'); 
     } catch (error: any) {
       console.error('Error confirming sign up', error);
       Alert.alert('Error', error.message || 'An error occurred');

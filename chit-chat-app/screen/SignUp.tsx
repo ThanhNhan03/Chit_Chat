@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, Image, SafeAreaView, TouchableOpacity, StatusBar, Alert } from "react-native";
 import { colors } from '../config/constrants';
-import { signUp } from 'aws-amplify/auth'; // Sửa lại import từ aws-amplify để dùng signUp từ Auth
+import { signUp } from 'aws-amplify/auth'; 
 const backImage = require("../assets/background.png");
 
 interface SignUpProps {
@@ -10,26 +10,24 @@ interface SignUpProps {
 
 const SignUp: React.FC<SignUpProps> = ({ navigation }) => {
   const [email, setEmail] = useState<string>('');
-  const [name, setName] = useState<string>(''); // Sửa lại từ username thành name
+  const [name, setName] = useState<string>(''); 
   const [password, setPassword] = useState<string>('');
 
   const onHandleSignup = async () => {
     try {
-      // Đăng ký người dùng với Amplify Auth
-      await signUp({
-        username: email, // Amplify sử dụng email làm username
+      const { isSignUpComplete, userId, nextStep } = await signUp({
+        username: email,
         password,
         options: {
           userAttributes: {
             name,
             email
-          },
+          }
         },
       });
-      console.log('Sign up successful');
+      console.log('Sign up successful', isSignUpComplete, userId, nextStep );
       Alert.alert('Success', 'Account created successfully. Please check your email for verification.');
       
-      // Điều hướng đến trang ConfirmEmail
       navigation.navigate('ConfirmEmail', { username: email }); 
     } catch (error: any) {
       console.error('Error signing up:', error);
