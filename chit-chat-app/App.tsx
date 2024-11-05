@@ -7,12 +7,12 @@ import Login from "./screen/Login";
 import SignUp from "./screen/SignUp";
 import HomeScreen from './screen/Home'; 
 
-import { Amplify} from 'aws-amplify';  
+import { Amplify } from 'aws-amplify';
+import { signIn, getCurrentUser } from 'aws-amplify/auth';
 import awsconfig from './aws-exports';
 import ConfirmEmail from "./screen/ConfirmEmail";
-import  Auth  from 'aws-amplify/auth'; // Sửa lại import từ aws-amplify để dùng Auth từ aws-amplify
 
-
+// Cấu hình Amplify
 Amplify.configure(awsconfig);
 
 interface AuthenticatedUserContextType {
@@ -25,7 +25,7 @@ export const AuthenticatedUserContext = createContext<AuthenticatedUserContextTy
   setUser: () => null,
 });
 
-
+// Provider để quản lý trạng thái người dùng
 const AuthenticatedUserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<any>(null);
 
@@ -36,10 +36,10 @@ const AuthenticatedUserProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   );
 };
 
-
+// Tạo Stack Navigator
 const Stack = createStackNavigator();
 
-
+// AuthStack chứa màn hình đăng nhập và đăng ký
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name='Login' component={Login} />
@@ -48,28 +48,28 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
-
+// MainStack chứa màn hình chính sau khi đăng nh��p
 const MainStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Home" component={HomeScreen} />
   </Stack.Navigator>
 );
 
-
+// RootNavigator điều hướng giữa AuthStack và MainStack
 const RootNavigator = () => {
   const { user, setUser } = useContext(AuthenticatedUserContext);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-  
+    // Kiểm tra trạng thái đăng nhập khi ứng dụng khởi động
     const checkUser = async () => {
       try {
-        const currentUser = await Auth.getCurrentUser(); 
+        const currentUser = await getCurrentUser();
         setUser(currentUser);
       } catch (error) {
         console.log('No user signed in');
       } finally {
-        setLoading(false); 
+        setLoading(false); // Kết thúc quá trình tải
       }
     };
     checkUser();
@@ -86,10 +86,10 @@ const RootNavigator = () => {
   return (
     <NavigationContainer>
       {user ? (
-   
+        // Nếu user tồn tại, chuyển đến MainStack (màn hình chính)
         <MainStack />
       ) : (
-       
+        // Nếu user chưa đăng nhập, hiển thị AuthStack
         <AuthStack />
       )}
     </NavigationContainer>
@@ -115,3 +115,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+

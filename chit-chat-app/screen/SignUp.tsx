@@ -20,7 +20,10 @@ const SignUp: React.FC<SignUpProps> = ({ navigation }) => {
         username: email, // Amplify sử dụng email làm username
         password,
         options: {
-          userAttributes: { name }, // Thêm thuộc tính name vào thông tin người dùng
+          userAttributes: {
+            name,
+            email
+          },
         },
       });
       console.log('Sign up successful');

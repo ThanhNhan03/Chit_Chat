@@ -4,15 +4,15 @@ import {
   Text,
   View,
   TextInput,
-  TouchableOpacity,
-  Alert,
-  SafeAreaView,
-  StatusBar,
   Image,
+  SafeAreaView,
+  TouchableOpacity,
+  StatusBar,
+  Alert,
 } from "react-native";
-import  Auth  from '@aws-amplify/auth';
-
-
+import { colors } from "../config/constrants";
+import  Auth  from 'aws-amplify/auth';
+import HomeScreen from "./Home";
 const backImage = require("../assets/background.png");
 
 interface LoginProps {
@@ -25,20 +25,12 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
 
   const onHandleLogin = async () => {
     try {
-      const user = await Auth.signIn({ username: email, password });  // Updated to pass an object
+      const user = await Auth.signIn({ username: email, password });
       console.log("User successfully signed in!", user);
       navigation.navigate("Home");
     } catch (error: any) {
       console.error("Error signing in", error);
-      if (error.code === 'UserNotFoundException') {
-        Alert.alert('Login Error', 'User does not exist.');
-      } else if (error.code === 'NotAuthorizedException') {
-        Alert.alert('Login Error', 'Incorrect username or password.');
-      } else if (error.code === 'UserNotConfirmedException') {
-        Alert.alert('Login Error', 'User has not been confirmed.');
-      } else {
-        Alert.alert("Login Error", error.message || "An unknown error has occurred.");
-      }
+      Alert.alert("Login Error", error.message);
     }
   };
 
@@ -73,6 +65,23 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
             Log In
           </Text>
         </TouchableOpacity>
+        <View
+          style={{
+            marginTop: 30,
+            flexDirection: "row",
+            alignItems: "center",
+            alignSelf: "center",
+          }}
+        >
+          <Text style={{ color: "gray", fontWeight: "600", fontSize: 14 }}>
+            Don't have an account?{" "}
+          </Text>
+          <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+            <Text style={{ color: colors.pink, fontWeight: "600", fontSize: 14 }}>
+              Sign Up
+            </Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
       <StatusBar barStyle="light-content" />
     </View>
@@ -122,7 +131,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 30,
   },
   button: {
-    backgroundColor: "#0000ff",
+    backgroundColor: colors.primary,
     height: 58,
     borderRadius: 10,
     justifyContent: "center",

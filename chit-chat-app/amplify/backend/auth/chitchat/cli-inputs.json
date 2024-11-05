@@ -3,7 +3,7 @@
   "cognitoConfig": {
     "identityPoolName": "testAuthIdentityPool",
     "allowUnauthenticatedIdentities": false,
-    "resourceNameTruncated": "chitch43dfacef",
+    "resourceNameTruncated": "chitch202b42d7",
     "userPoolName": "chitchat",
     "autoVerifiedAttributes": [
       "email"
@@ -32,9 +32,9 @@
     "userpoolClientRefreshTokenValidity": 30,
     "userpoolClientWriteAttributes": [],
     "userpoolClientReadAttributes": [],
-    "userpoolClientLambdaRole": "chitch43dfacef_userpoolclient_lambda_role",
+    "userpoolClientLambdaRole": "chitch202b42d7_userpoolclient_lambda_role",
     "userpoolClientSetAttributes": false,
-    "sharedId": "43dfacef",
+    "sharedId": "202b42d7",
     "resourceName": "chitchat",
     "authSelections": "identityPoolAndUserPool",
     "serviceName": "Cognito",
