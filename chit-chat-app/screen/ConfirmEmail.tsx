@@ -8,7 +8,7 @@ interface ConfirmEmailProps {
 }
 
 const ConfirmEmail: React.FC<ConfirmEmailProps> = ({ route, navigation }) => {
-  const { username } = route.params; 
+  const { username } = route.params; // Nhận email từ SignUp
   const [code, setCode] = useState<string>(''); 
 
   const onConfirm = async () => {
@@ -16,16 +16,14 @@ const ConfirmEmail: React.FC<ConfirmEmailProps> = ({ route, navigation }) => {
       const { isSignUpComplete, nextStep } = await confirmSignUp({ username, confirmationCode: code });
       Alert.alert('Success', 'Email confirmed successfully!');
       console.log("ket qua confirm:::: ",isSignUpComplete, nextStep);
-      
 
-      
-
-      navigation.navigate('Login'); 
+      navigation.navigate('Login'); // Chuyển đến màn hình đăng nhập sau khi xác nhận
     } catch (error: any) {
       console.error('Error confirming sign up', error);
       Alert.alert('Error', error.message || 'An error occurred');
     }
   };
+
 
   return (
     <View style={styles.container}>
