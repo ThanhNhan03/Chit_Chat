@@ -55,5 +55,6 @@
       "service": "Cognito"
     }
   },
+  "function": {},
   "storage": {}
 }
