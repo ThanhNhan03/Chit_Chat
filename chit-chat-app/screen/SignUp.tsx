@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, Image, SafeAreaView, TouchableOpacity, StatusBar, Alert } from "react-native";
 import { colors } from '../config/constrants';
 import { signUp } from 'aws-amplify/auth'; 
+import { generateClient } from 'aws-amplify/api';
+import { createUser } from '../src/graphql/mutations';
 const backImage = require("../assets/background.png");
 
 interface SignUpProps {
@@ -25,10 +27,24 @@ const SignUp: React.FC<SignUpProps> = ({ navigation }) => {
           }
         },
       });
-      console.log('Sign up successful', isSignUpComplete, userId, nextStep );
+
+      // Tạo user trong DynamoDB
+      const client = generateClient();
+      await client.graphql({
+        query: createUser,
+        variables: {
+          input: {
+            id: userId,
+            email: email,
+            name: name,
+            password: "HASHED_PASSWORD",
+          }
+        }
+      });
+
+      console.log('Sign up successful', isSignUpComplete, userId, nextStep);
       Alert.alert('Success', 'Account created successfully. Please check your email for verification.');
       
-      // Chuyển đến màn hình ConfirmEmail với email làm tham số
       navigation.navigate('ConfirmEmail', { username: email }); 
     } catch (error: any) {
       console.error('Error signing up:', error);
