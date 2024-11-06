@@ -1,0 +1,46 @@
+type FriendChat @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  chat_id: String
+  user_ids: String
+  created_at: String
+  last_message: String
+  update_at: String
+}
+
+type Messages @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  message_id: String
+  chat_type: String
+  chat_id: String
+  group_id: String
+  sender_id: String
+  content: String
+  timestamp: String
+  status: String
+  attchments: String
+}
+
+type Contact @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  contact_list: String
+}
+
+type FriendRequests @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  request_id: String
+  from_user_id: String
+  to_user_id: String
+  status: String
+  timestamp: String
+}
+
+type User @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  name: String
+  email: String!
+  password: String!
+  profile_picture: String
+  status: String
+  last_seen: String
+}
+ 
