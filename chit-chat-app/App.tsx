@@ -9,59 +9,63 @@ import { getCurrentUser } from 'aws-amplify/auth';
 import { Amplify } from 'aws-amplify';
 import config from './aws-exports';
 import { AuthenticatedUserContext } from './contexts/AuthContext';
+import Chats from './screen/Chats';
 
-Amplify.configure(config);
 
-const Stack = createNativeStackNavigator();
+// Amplify.configure(config);
+
+// const Stack = createNativeStackNavigator();
 
 const App: React.FC = () => {
-  const [user, setUser] = useState<any>(null);
+  // const [user, setUser] = useState<any>(null);
 
-  const checkUserStatus = async () => {
-    try {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-    } catch (error) {
-      setUser(null);
-    }
-  };
+  // const checkUserStatus = async () => {
+  //   try {
+  //     const currentUser = await getCurrentUser();
+  //     setUser(currentUser);
+  //   } catch (error) {
+  //     setUser(null);
+  //   }
+  // };
 
-  useEffect(() => {
-    checkUserStatus();
-  }, []);
+  // useEffect(() => {
+  //   checkUserStatus();
+  // }, []);
 
   return (
-    <AuthenticatedUserContext.Provider value={{ user, setUser }}>
-      <NavigationContainer>
-        <Stack.Navigator>
-          {user ? (
-            <Stack.Screen
-              name="HomeScreen"
-              component={HomeScreen}
-              options={{ title: 'Home', headerShown: false }}
-            />
-          ) : (
-            <>
-              <Stack.Screen
-                name="Login"
-                component={Login}
-                options={{ title: 'Log In', headerShown: false }}
-              />
-              <Stack.Screen
-                name="SignUp"
-                component={SignUp}
-                options={{ title: 'Sign Up', headerShown: false }}
-              />
-              <Stack.Screen
-                name="ConfirmEmail"
-                component={ConfirmEmail}
-                options={{ title: 'Confirm Email' }}
-              />
-            </>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
-    </AuthenticatedUserContext.Provider>
+    // <AuthenticatedUserContext.Provider value={{ user, setUser }}>
+    //   <NavigationContainer>
+    //     <Stack.Navigator>
+    //       {user ? (
+    //         <Stack.Screen
+    //           name="HomeScreen"
+    //           component={HomeScreen}
+    //           options={{ title: 'Home', headerShown: false }}
+    //         />
+    //       ) : (
+    //         <>
+    //           <Stack.Screen
+    //             name="Login"
+    //             component={Login}
+    //             options={{ title: 'Log In', headerShown: false }}
+    //           />
+    //           <Stack.Screen
+    //             name="SignUp"
+    //             component={SignUp}
+    //             options={{ title: 'Sign Up', headerShown: false }}
+    //           />
+    //           <Stack.Screen
+    //             name="ConfirmEmail"
+    //             component={ConfirmEmail}
+    //             options={{ title: 'Confirm Email' }}
+    //           />
+    //         </>
+    //       )}
+    //     </Stack.Navigator>
+    //   </NavigationContainer>
+    // </AuthenticatedUserContext.Provider>
+
+    <Chats/>
   );
 };
 
