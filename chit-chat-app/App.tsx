@@ -66,3 +66,38 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+// import React from 'react';
+// import { NavigationContainer } from '@react-navigation/native';
+// import { createStackNavigator } from '@react-navigation/stack';
+// import SelectUserScreen from './screen/SelectUserScreen';
+// import NewGroupScreen from './screen/NewGroupScreen';
+// import NewUserScreen from './screen/NewUserScreen'; // Import màn hình NewUserScreen
+
+// const Stack = createStackNavigator();
+
+// function App() {
+//   return (
+//     <NavigationContainer>
+//       <Stack.Navigator initialRouteName="SelectUser">
+//         <Stack.Screen 
+//           name="SelectUser" 
+//           component={SelectUserScreen} 
+//           options={{ title: 'Select User' }} 
+//         />
+//         <Stack.Screen 
+//           name="NewGroup" 
+//           component={NewGroupScreen} 
+//           options={{ title: 'New Group' }} 
+//         />
+//         <Stack.Screen 
+//           name="NewUser" 
+//           component={NewUserScreen} 
+//           options={{ title: 'New User' }} 
+//         />
+//       </Stack.Navigator>
+//     </NavigationContainer>
+//   );
+// }
+
+// export default App;
