@@ -8,11 +8,11 @@ type AuthContextType = {
     setUser: (user: any) => void;
 };
 
-interface HomeScreenProps {
+interface SettingTempProps {
     navigation: any;
 }
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+const SettingTemp: React.FC<SettingTempProps> = ({ navigation }) => {
     const { user, setUser } = useContext(AuthenticatedUserContext);
 
     console.log('Entire user object:', user);
@@ -31,7 +31,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.welcomeText}>Welcome to the Home Screen!</Text>
+            <Text style={styles.welcomeText}>Setting Screen</Text>
             <Text style={styles.userText}>
                 Logged in as: {user?.signInDetails?.loginId || user?.username}
             </Text>
@@ -40,7 +40,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     );
 };
 
-export default HomeScreen;
+export default SettingTemp;
 
 const styles = StyleSheet.create({
     container: {

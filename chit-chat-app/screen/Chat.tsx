@@ -1,251 +1,101 @@
-// import React, { useState, useEffect, useCallback, useMemo } from 'react';
-// import { View, StyleSheet, TouchableOpacity, Keyboard, Text, ActivityIndicator } from "react-native";
-// import { Ionicons } from '@expo/vector-icons';
-// import { GiftedChat, Bubble, Send, InputToolbar } from 'react-native-gifted-chat';
-// import { colors } from '../config/constrants';
-// import EmojiModal from 'react-native-emoji-modal';
-// import { useNavigation } from '@react-navigation/native';
-// import * as ImagePicker from 'expo-image-picker';
-// import uuid from 'react-native-uuid';
+import React, { useState, useRef } from 'react';
+import { StyleSheet, View, ScrollView, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import Header from '../components/Header';
+import MessageItem from '../components/MessageItem';
+import InputBar from '../components/InputBar';
+import * as ImagePicker from 'expo-image-picker';
+import EmojiPicker from 'rn-emoji-keyboard';
+import ImageViewer from '../components/ImageViewer';
 
-// function Chat({ route }) {
-//     const navigation = useNavigation();
-//     const [messages, setMessages] = useState([]);
-//     const [modal, setModal] = useState(false);
-//     const [uploading, setUploading] = useState(false);
+interface Message {
+    id: string;
+    text?: string;
+    image?: string;
+    timestamp: string;
+    type: 'text' | 'image';
+}
 
-//     useEffect(() => {
-//         // Giả lập dữ liệu ban đầu
-//         setMessages([
-//             {
-//                 _id: uuid.v4(),
-//                 text: 'Hello!',
-//                 createdAt: new Date(),
-//                 user: {
-//                     _id: 'user1',
-//                     name: 'John Doe',
-//                     avatar: 'https://i.pravatar.cc/300',
-//                 },
-//             },
-//         ]);
-//     }, []);
+const Chat: React.FC<any> = ({ route, navigation }) => {
+    const { name } = route.params;
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [inputText, setInputText] = useState('');
+    const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const scrollViewRef = useRef<ScrollView>(null);
 
-//     const onSend = useCallback((m = []) => {
-//         setMessages((previousMessages) => GiftedChat.append(previousMessages, m));
-//     }, []);
+    const handleSendMessage = () => {
+        if (inputText.trim()) {
+            const newMessage: Message = {
+                id: Date.now().toString(),
+                text: inputText.trim(),
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                type: 'text',
+            };
+            setMessages([...messages, newMessage]);
+            setInputText('');
+            scrollToBottom();
+        }
+    };
 
-//     const pickImage = async () => {
-//         let result = await ImagePicker.launchImageLibraryAsync({
-//             mediaTypes: ImagePicker.MediaTypeOptions.Images,
-//             allowsEditing: true,
-//             quality: 1,
-//         });
+    const handleImagePick = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 1,
+        });
 
-//         if (!result.canceled) {
-//             await uploadImageAsync(result.assets[0].uri);
-//         }
-//     };
+        if (!result.canceled) {
+            const newMessage: Message = {
+                id: Date.now().toString(),
+                image: result.assets[0].uri,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                type: 'image',
+            };
+            setMessages([...messages, newMessage]);
+            scrollToBottom();
+        }
+    };
 
-//     const uploadImageAsync = async (uri) => {
-//         setUploading(true);
-//         const randomString = uuid.v4();
-//         setTimeout(() => {
-//             const downloadUrl = uri; // Dùng trực tiếp URI của hình
-//             setUploading(false);
-//             onSend([
-//                 {
-//                     _id: randomString,
-//                     createdAt: new Date(),
-//                     text: '',
-//                     image: downloadUrl,
-//                     user: {
-//                         _id: 'user1',
-//                         name: 'John Doe',
-//                         avatar: 'https://i.pravatar.cc/300',
-//                     },
-//                 },
-//             ]);
-//         }, 2000); // Giả lập thời gian tải lên
-//     };
+    const scrollToBottom = () => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+    };
 
-//     const renderBubble = useMemo(() => (props) => (
-//         <Bubble
-//             {...props}
-//             wrapperStyle={{
-//                 right: { backgroundColor: colors.primary },
-//                 left: { backgroundColor: 'lightgrey' }
-//             }}
-//         />
-//     ), []);
+    const handleEmojiSelected = (emoji: any) => {
+        setInputText(prevText => prevText + emoji.emoji);
+    };
 
-//     const renderSend = useMemo(() => (props) => (
-//         <>
-//             <TouchableOpacity style={styles.addImageIcon} onPress={pickImage}>
-//                 <View>
-//                     <Ionicons
-//                         name='attach-outline'
-//                         size={32}
-//                         color={colors.teal} />
-//                 </View>
-//             </TouchableOpacity>
-//             <Send {...props}>
-//                 <View style={{ justifyContent: 'center', height: '100%', marginLeft: 8, marginRight: 4, marginTop: 12 }}>
-//                     <Ionicons
-//                         name='send'
-//                         size={24}
-//                         color={colors.teal} />
-//                 </View>
-//             </Send>
-//         </>
-//     ), []);
+    return (
+        <KeyboardAvoidingView style={styles.container}>
+            <Header title={name} onBackPress={() => navigation.goBack()} />
+            <ScrollView ref={scrollViewRef} style={styles.messagesContainer} onContentSizeChange={scrollToBottom}>
+                {messages.map(message => (
+                    <MessageItem key={message.id} message={message} onImagePress={setSelectedImage} />
+                ))}
+            </ScrollView>
+            <InputBar
+                inputText={inputText}
+                setInputText={setInputText}
+                onSend={handleSendMessage}
+                onImagePick={handleImagePick}
+                onEmojiToggle={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+                showSendButton={!!inputText.trim()}
+            />
+            <Modal visible={!!selectedImage} transparent={false} animationType="fade" onRequestClose={() => setSelectedImage(null)}>
+                {selectedImage && <ImageViewer uri={selectedImage} onClose={() => setSelectedImage(null)} />}
+            </Modal>
+            <EmojiPicker onEmojiSelected={handleEmojiSelected} open={isEmojiPickerOpen} onClose={() => setIsEmojiPickerOpen(false)} />
+        </KeyboardAvoidingView>
+    );
+};
 
-//     const renderInputToolbar = useMemo(() => (props) => (
-//         <InputToolbar {...props}
-//             containerStyle={styles.inputToolbar}
-//             renderActions={renderActions}
-//         />
-//     ), []);
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    messagesContainer: {
+        flex: 1,
+        padding: 16,
+    },
+});
 
-//     const renderActions = useMemo(() => () => (
-//         <TouchableOpacity style={styles.emojiIcon} onPress={handleEmojiPanel}>
-//             <View>
-//                 <Ionicons
-//                     name='happy-outline'
-//                     size={32}
-//                     color={colors.teal} />
-//             </View>
-//         </TouchableOpacity>
-//     ), [modal]);
-
-//     const handleEmojiPanel = useCallback(() => {
-//         if (modal) {
-//             setModal(false);
-//         } else {
-//             Keyboard.dismiss();
-//             setModal(true);
-//         }
-//     }, [modal]);
-
-//     const renderLoading = useMemo(() => () => (
-//         <View style={styles.loadingContainer}>
-//             <ActivityIndicator size='large' color={colors.teal} />
-//         </View>
-//     ), []);
-
-//     const renderLoadingUpload = useMemo(() => () => (
-//         <View style={styles.loadingContainerUpload}>
-//             <ActivityIndicator size='large' color={colors.teal} />
-//         </View>
-//     ), []);
-
-//     return (
-//         <>
-//             {uploading && renderLoadingUpload()}
-//             <GiftedChat
-//     messages={messages}
-//     showAvatarForEveryMessage={false}
-//     showUserAvatar={false}
-//     onSend={messages => onSend(messages)}
-//     imageStyle={{ height: 212, width: 212 }}
-//     messagesContainerStyle={{ backgroundColor: '#fff' }}
-//     textInputProps={{
-//         style: { backgroundColor: '#fff', borderRadius: 20 }, // Thay thế textInputStyle ở đây
-//     }}
-//     user={{
-//         _id: 'user1',
-//         name: 'John Doe',
-//         avatar: 'https://i.pravatar.cc/300'
-//     }}
-//     renderBubble={renderBubble}
-//     renderSend={renderSend}
-//     renderUsernameOnMessage={true}
-//     renderAvatarOnTop={true}
-//     renderInputToolbar={renderInputToolbar}
-//     minInputToolbarHeight={56}
-//     scrollToBottom={true}
-//     onPressActionButton={handleEmojiPanel}
-//     scrollToBottomStyle={styles.scrollToBottomStyle}
-//     renderLoading={renderLoading}
-// />
-//             {modal &&
-//                 <EmojiModal
-//                     onPressOutside={handleEmojiPanel}
-//                     modalStyle={styles.emojiModal}
-//                     containerStyle={styles.emojiContainerModal}
-//                     backgroundStyle={styles.emojiBackgroundModal}
-//                     columns={5}
-//                     emojiSize={66}
-//                     activeShortcutColor={colors.primary}
-//                     onEmojiSelected={(emoji) => {
-//                         onSend([{
-//                             _id: uuid.v4(),
-//                             createdAt: new Date(),
-//                             text: emoji,
-//                             user: {
-//                                 _id: 'user1',
-//                                 name: 'John Doe',
-//                                 avatar: 'https://i.pravatar.cc/300'
-//                             }
-//                         }]);
-//                     }}
-//                 />
-//             }
-//         </>
-//     );
-// }
-
-// const styles = StyleSheet.create({
-//     inputToolbar: {
-//         bottom: 6,
-//         marginLeft: 8,
-//         marginRight: 8,
-//         borderRadius: 16,
-//     },
-//     emojiIcon: {
-//         marginLeft: 4,
-//         bottom: 8,
-//         width: 32,
-//         height: 32,
-//         borderRadius: 16,
-//     },
-//     emojiModal: {},
-//     emojiContainerModal: {
-//         height: 348,
-//         width: 396,
-//     },
-//     emojiBackgroundModal: {},
-//     scrollToBottomStyle: {
-//         borderColor: colors.grey,
-//         borderWidth: 1,
-//         width: 56,
-//         height: 56,
-//         borderRadius: 28,
-//         position: 'absolute',
-//         bottom: 12,
-//         right: 12
-//     },
-//     addImageIcon: {
-//         bottom: 8,
-//         width: 32,
-//         height: 32,
-//         borderRadius: 16,
-//     },
-//     loadingContainer: {
-//         flex: 1,
-//         alignItems: 'center',
-//         justifyContent: 'center',
-//     },
-//     loadingContainerUpload: {
-//         position: "absolute",
-//         top: 0,
-//         left: 0,
-//         right: 0,
-//         bottom: 0,
-//         justifyContent: "center",
-//         alignItems: "center",
-//         backgroundColor: "rgba(0, 0, 0, 0.5)",
-//         zIndex: 999,
-//     }
-// });
-
-// export default Chat;
+export default Chat;

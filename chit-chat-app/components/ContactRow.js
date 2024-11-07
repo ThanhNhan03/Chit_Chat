@@ -1,7 +1,10 @@
 import React from "react";
-import { Text, TouchableOpacity, View, StyleSheet } from "react-native";
+import { Text, TouchableOpacity, View, StyleSheet, Dimensions } from "react-native";
 import { Ionicons } from '@expo/vector-icons'
 import { colors } from "../config/constrants";
+
+// Lấy kích thước màn hình
+const { width: screenWidth } = Dimensions.get('window');
 
 const ContactRow = ({ name, subtitle, onPress, style, onLongPress, selected, showForwardIcon = true, subtitle2 }) => {
     return (
@@ -51,11 +54,11 @@ const styles = StyleSheet.create({
     subtitle: {
         marginTop: 2,
         color: '#565656',
-        width: 240
+        width: screenWidth * 0.6
     },
     subtitle2: {
         fontSize: 12,
-        left: 96,
+        left: screenWidth * 0.2,
         color: '#565656',
     },
     textsContainer: {
@@ -63,9 +66,9 @@ const styles = StyleSheet.create({
         marginStart: 16
     },
     avatar: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: screenWidth * 0.14,
+        height: screenWidth * 0.14,
+        borderRadius: screenWidth * 0.07,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: colors.primary
@@ -75,28 +78,28 @@ const styles = StyleSheet.create({
         color: 'white'
     },
     overlay: {
-        width: 22,
-        height: 22,
+        width: screenWidth * 0.055,
+        height: screenWidth * 0.055,
         backgroundColor: colors.teal,
-        borderRadius: 11,
+        borderRadius: screenWidth * 0.0275,
         justifyContent: 'center',
         alignItems: 'center',
         borderColor: 'black',
         borderWidth: 1.5,
-        top: 18,
-        right: 278
+        top: screenWidth * 0.045,
+        right: screenWidth * 0.695
     },
     overlay2: {
-        width: 22,
-        height: 22,
+        width: screenWidth * 0.055,
+        height: screenWidth * 0.055,
         backgroundColor: colors.teal,
-        borderRadius: 11,
+        borderRadius: screenWidth * 0.0275,
         justifyContent: 'center',
         alignItems: 'center',
         borderColor: 'black',
         borderWidth: 1.5,
-        top: 18,
-        right: 298
+        top: screenWidth * 0.045,
+        right: screenWidth * 0.745
     },
 })
 

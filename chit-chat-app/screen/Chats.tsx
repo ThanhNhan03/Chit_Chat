@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from "react-native";
+import { StyleSheet, View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Dimensions } from "react-native";
 import ContactRow from "../components/ContactRow";
 import Seperator from "../components/Seperator"; 
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from "../config/constrants"; 
 
-const Chats = () => {
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+interface ChatsProps {
+    navigation: any;
+}
+
+const Chats: React.FC<ChatsProps> = ({ navigation }) => {
     const [chats, setChats] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -37,7 +43,7 @@ const Chats = () => {
                                 subtitle={`You: ${chat.message}`}
                                 subtitle2={chat.date}
                                 showForwardIcon={false}
-                                onPress={() => {}}
+                                onPress={() => navigation.navigate('Chat', { name: chat.name })}
                                 onLongPress={() => {}}
                                 style={styles.contactRow}
                                 selected={false}
@@ -54,7 +60,10 @@ const Chats = () => {
                     <Ionicons name="chatbubble" size={24} color={colors.teal} />
                     <Text style={styles.footerText}>Chats</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.footerIcon}>
+                <TouchableOpacity 
+                    style={styles.footerIcon}
+                    onPress={() => navigation.navigate('SettingTemp')}
+                >
                     <Ionicons name="settings" size={24} color={colors.teal} />
                     <Text style={styles.footerText}>Settings</Text>
                 </TouchableOpacity>
@@ -74,16 +83,16 @@ const styles = StyleSheet.create({
         backgroundColor: '#f5f5f5',
     },
     header: {
-        fontSize: 24,
+        fontSize: screenWidth * 0.06,
         fontWeight: 'bold',
         color: '#333',
-        paddingHorizontal: 16,
-        paddingVertical: 10,
+        paddingHorizontal: screenWidth * 0.04,
+        paddingVertical: screenHeight * 0.015,
     },
     separator: {
         height: 1,
         backgroundColor: '#e0e0e0',
-        marginHorizontal: 16,
+        marginHorizontal: screenWidth * 0.04,
     },
     loadingContainer: {
         flex: 1,
@@ -94,33 +103,33 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     contactRow: {
-        paddingHorizontal: 16,
-        paddingVertical: 10,
+        paddingHorizontal: screenWidth * 0.04,
+        paddingVertical: screenHeight * 0.015,
         backgroundColor: '#fff',
     },
     footer: {
         flexDirection: 'row',
         justifyContent: 'space-around',
         alignItems: 'center',
-        paddingVertical: 10,
+        paddingVertical: screenHeight * 0.015,
         backgroundColor: '#fff',
     },
     footerIcon: {
         alignItems: 'center',
     },
     footerText: {
-        fontSize: 12,
+        fontSize: screenWidth * 0.03,
         color: colors.teal,
-        marginTop: 4,
+        marginTop: screenHeight * 0.005,
     },
     fab: {
         position: 'absolute',
-        bottom: 80, // Căn trên footer
-        right: 20,
+        bottom: screenHeight * 0.1,
+        right: screenWidth * 0.05,
         backgroundColor: colors.teal,
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: screenWidth * 0.15,
+        height: screenWidth * 0.15,
+        borderRadius: screenWidth * 0.075,
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 5,
