@@ -1,62 +1,79 @@
 type GroupChat @model @auth(rules: [{allow: public}]) {
   id: ID!
   group_name: String
-  created_by: String
-  members: String
-  created_at: String
-  last_mesage: String
-  updated_at: String
+  created_by: ID! @index(name: "groupByCreator")
+  members: [UserGroupChat] @hasMany(indexName: "byGroupChat", fields: ["id"])
+  created_at: AWSDateTime
+  last_message: String
+  updated_at: AWSDateTime
   group_picture: String
   description: String
-  userID: ID! @index(name: "byUser")
 }
 
 type FriendChat @model @auth(rules: [{allow: public}]) {
   id: ID!
   chat_id: String
-  user_ids: String
-  created_at: String
+  users: [UserFriendChat] @hasMany(indexName: "byFriendChat", fields: ["id"])
+  created_at: AWSDateTime
   last_message: String
-  update_at: String
-  userID: ID! @index(name: "byUser")
+  updated_at: AWSDateTime
 }
 
 type Messages @model @auth(rules: [{allow: public}]) {
   id: ID!
-  message_id: String
-  chat_type: String
-  chat_id: String
-  group_id: String
-  sender_id: String
+  chat_type: String # "private" hoặc "group"
+  chat_id: ID! @index(name: "byChat")
+  sender_id: ID! @index(name: "bySender")
   content: String
-  timestamp: String
-  status: String
-  attchments: String
+  timestamp: AWSDateTime
+  status: String # "sent", "delivered", "seen"
+  attachments: String
 }
 
 type Contact @model @auth(rules: [{allow: public}]) {
   id: ID!
-  contact_list: String
+  user_id: ID! @index(name: "contactsByUser")
+  contact_user_id: ID! @index(name: "contactsByContactUser")
+  created_at: AWSDateTime
 }
 
 type FriendRequests @model @auth(rules: [{allow: public}]) {
   id: ID!
-  request_id: String
-  from_user_id: String
-  to_user_id: String
-  status: String
-  timestamp: String
+  from_user_id: ID! @index(name: "friendRequestBySender")
+  to_user_id: ID! @index(name: "friendRequestByReceiver")
+  status: String # PENDING, ACCEPTED, DECLINED
+  created_at: AWSDateTime
 }
 
 type User @model @auth(rules: [{allow: public}]) {
   id: ID!
   name: String
-  email: String!
+  email: String! @index(name: "usersByEmail") # Sử dụng @index cho email
   password: String!
   profile_picture: String
   status: String
-  last_seen: String
-  FriendChats: [FriendChat] @hasMany(indexName: "byUser", fields: ["id"])
-  GroupChats: [GroupChat] @hasMany(indexName: "byUser", fields: ["id"])
+  last_seen: AWSDateTime
+  FriendChats: [UserFriendChat] @hasMany(indexName: "byUser", fields: ["id"])
+  GroupChats: [UserGroupChat] @hasMany(indexName: "byUser", fields: ["id"])
+  Contacts: [Contact] @hasMany(indexName: "contactsByUser", fields: ["id"])
+  SentFriendRequests: [FriendRequests] @hasMany(indexName: "friendRequestBySender", fields: ["id"])
+  ReceivedFriendRequests: [FriendRequests] @hasMany(indexName: "friendRequestByReceiver", fields: ["id"])
 }
- 
+
+# Bảng trung gian cho quan hệ nhiều-nhiều giữa User và GroupChat
+type UserGroupChat @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  user_id: ID! @index(name: "byUser")
+  group_chat_id: ID! @index(name: "byGroupChat")
+  user: User @belongsTo(fields: ["user_id"]) # Sửa thành @belongsTo
+  groupChat: GroupChat @belongsTo(fields: ["group_chat_id"]) # Sửa thành @belongsTo
+}
+
+# Bảng trung gian cho quan hệ nhiều-nhiều giữa User và FriendChat
+type UserFriendChat @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  user_id: ID! @index(name: "byUser")
+  friend_chat_id: ID! @index(name: "byFriendChat")
+  user: User @belongsTo(fields: ["user_id"]) # Sửa thành @belongsTo
+  friendChat: FriendChat @belongsTo(fields: ["friend_chat_id"]) # Sửa thành @belongsTo
+}

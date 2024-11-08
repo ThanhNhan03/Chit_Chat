@@ -101,12 +101,12 @@ const App: React.FC = () => {
               <Stack.Screen
                 name="Login"
                 component={Login}
-                options={{ title: 'Log In', headerShown: true }}
+                options={{ title: 'Log In', headerShown: false }}
               />
               <Stack.Screen
                 name="SignUp"
                 component={SignUp}
-                options={{ title: 'Sign Up', headerShown: true }}
+                options={{ title: 'Sign Up', headerShown: false }}
               />
               <Stack.Screen
                 name="ConfirmEmail"
