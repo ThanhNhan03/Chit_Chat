@@ -13,6 +13,9 @@ import Chats from './screen/Chats';
 import { ActivityIndicator } from 'react-native';
 import SettingTemp from './screen/SettingTemp';
 import Chat from './screen/Chat';
+import SelectUserScreen from './screen/SelectUserScreen';
+import NewGroupScreen from './screen/NewGroupScreen';
+import NewUserScreen from './screen/NewUserScreen'; // Import màn hình NewUserScreen
 
 
 Amplify.configure(config);
@@ -73,18 +76,37 @@ const App: React.FC = () => {
                   gestureEnabled: true
                 }}
               />
+
+              <Stack.Screen 
+                name="SelectUser" 
+                component={SelectUserScreen} 
+                options={{ 
+                  title: 'Friend List',
+                  headerShown: true
+                }}
+                />
+              <Stack.Screen
+                name="NewGroup"
+                component={NewGroupScreen}
+                options={{ title: 'New Group', headerShown: true }}
+              />
+              <Stack.Screen
+                name="NewUser"
+                component={NewUserScreen}
+                options={{ title: 'Add Friend', headerShown: true }}
+              />
             </>
           ) : (
             <>
               <Stack.Screen
                 name="Login"
                 component={Login}
-                options={{ title: 'Log In', headerShown: false }}
+                options={{ title: 'Log In', headerShown: true }}
               />
               <Stack.Screen
                 name="SignUp"
                 component={SignUp}
-                options={{ title: 'Sign Up', headerShown: false }}
+                options={{ title: 'Sign Up', headerShown: true }}
               />
               <Stack.Screen
                 name="ConfirmEmail"
@@ -100,38 +122,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
-// import React from 'react';
-// import { NavigationContainer } from '@react-navigation/native';
-// import { createStackNavigator } from '@react-navigation/stack';
-// import SelectUserScreen from './screen/SelectUserScreen';
-// import NewGroupScreen from './screen/NewGroupScreen';
-// import NewUserScreen from './screen/NewUserScreen'; // Import màn hình NewUserScreen
-
-// const Stack = createStackNavigator();
-
-// function App() {
-//   return (
-//     <NavigationContainer>
-//       <Stack.Navigator initialRouteName="SelectUser">
-//         <Stack.Screen 
-//           name="SelectUser" 
-//           component={SelectUserScreen} 
-//           options={{ title: 'Select User' }} 
-//         />
-//         <Stack.Screen 
-//           name="NewGroup" 
-//           component={NewGroupScreen} 
-//           options={{ title: 'New Group' }} 
-//         />
-//         <Stack.Screen 
-//           name="NewUser" 
-//           component={NewUserScreen} 
-//           options={{ title: 'New User' }} 
-//         />
-//       </Stack.Navigator>
-//     </NavigationContainer>
-//   );
-// }
-
-// export default App;
