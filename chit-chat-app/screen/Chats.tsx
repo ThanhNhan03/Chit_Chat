@@ -70,7 +70,9 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
             </View>
 
             {/* Floating Action Button */}
-            <TouchableOpacity style={styles.fab}>
+            <TouchableOpacity style={styles.fab}
+                onPress={() => navigation.navigate('SelectUser')}
+            >
                 <Ionicons name="chatbubble-ellipses" size={24} color="#fff" />
             </TouchableOpacity>
         </View>

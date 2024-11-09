@@ -13,7 +13,9 @@ import Chats from './screen/Chats';
 import { ActivityIndicator } from 'react-native';
 import SettingTemp from './screen/SettingTemp';
 import Chat from './screen/Chat';
-
+import SelectUser from './screen/SelectUser';
+import NewGroup from './screen/ NewGroup';
+import NewUser from './screen/NewUser';
 
 Amplify.configure(config);
 
@@ -72,6 +74,31 @@ const App: React.FC = () => {
                   title: 'Settings',
                   gestureEnabled: true
                 }}
+              />
+              <Stack.Screen 
+                name="SelectUser" 
+                component={SelectUser}
+                options={{ 
+                  title: 'Select User',
+                  headerShown: true,
+                  gestureEnabled: true
+                }} 
+              />
+              <Stack.Screen 
+                name="NewGroup" 
+                component={NewGroup} 
+                options={{ title: 'New Group',
+                  headerShown: true,
+                  gestureEnabled: true
+                }} 
+              />
+              <Stack.Screen 
+                name="NewUser" 
+                component={NewUser} 
+                options={{ title: 'New User',
+                  headerShown: true,
+                  gestureEnabled: true
+                 }} 
               />
             </>
           ) : (
