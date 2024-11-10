@@ -1,32 +1,256 @@
-import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { generateClient } from 'aws-amplify/api';
+import { getCurrentUser } from 'aws-amplify/auth';
+import { listContacts, getUser } from '../src/graphql/queries';
+import { onCreateContact } from '../src/graphql/subscriptions';
+import { ActionSheetProvider, useActionSheet } from '@expo/react-native-action-sheet';
+import { deleteContact } from '../src/graphql/mutations';
 
-const users = [
-  { id: '1', name: 'Ali Veli', status: 'User status', online: true },
-  { id: '2', name: 'Cemil Tan ', status: 'user status', online: true },
-  { id: '3', name: 'John Doe', status: 'User status', online: false, lastSeen: '10m ago' },
-];
+
+const client = generateClient();
+
+type Friend = {
+  id: string;
+  name: string;
+  status?: string;
+  email: string;
+  online?: boolean;
+  lastSeen?: string;
+};
 
 export default function SelectUserScreen({ navigation }) {
-  return (
-    <View style={styles.container}>
+  const { showActionSheetWithOptions } = useActionSheet();
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    if (currentUserId) {
+      fetchFriends();
+      const subscription = subscribeToNewContacts();
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+  }, [currentUserId]);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const user = await getCurrentUser();
+      setCurrentUserId(user.userId);
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  };
+
+  const fetchFriends = async () => {
+    try {
+      // Fetch all contacts for current user
+      const contactsResponse = await client.graphql({
+        query: listContacts,
+        variables: {
+          filter: {
+            user_id: { eq: currentUserId }
+          }
+        }
+      });
+
+      const contacts = contactsResponse.data.listContacts.items;
+
+      // Fetch detailed information for each friend
+      const friendsData = await Promise.all(
+        contacts.map(async (contact: any) => {
+          const userResponse = await client.graphql({
+            query: getUser,
+            variables: { id: contact.contact_user_id }
+          });
+          
+          const userData = userResponse.data.getUser;
+          return {
+            id: userData.id,
+            name: userData.name,
+            email: userData.email,
+            status: userData.status || 'Hey there! I am using ChitChat',
+            online: false, // You can implement online status logic here
+            lastSeen: 'Offline' // You can implement last seen logic here
+          };
+        })
+      );
+
+      setFriends(friendsData);
+    } catch (error) {
+      console.error('Error fetching friends:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const subscribeToNewContacts = () => {
+    return client.graphql({
+      query: onCreateContact,
+      variables: {
+        filter: {
+          user_id: { eq: currentUserId }
+        }
+      }
+    }).subscribe({
+      next: async ({ data }) => {
+        if (data?.onCreateContact) {
+          // Fetch the new friend's details and add to the list
+          const userResponse = await client.graphql({
+            query: getUser,
+            variables: { id: data.onCreateContact.contact_user_id }
+          });
+          
+          const userData = userResponse.data.getUser;
+          const newFriend = {
+            id: userData.id,
+            name: userData.name,
+            email: userData.email,
+            status: userData.status || 'Hey there! I am using ChitChat',
+            online: false,
+            lastSeen: 'Offline'
+          };
+          
+          setFriends(prev => [...prev, newFriend]);
+        }
+      },
+      error: (error) => console.warn(error)
+    });
+  };
+
+  const handleLongPress = (friend: Friend) => {
+    const options = ['Delete Friend', 'Block User', 'Cancel'];
+    const destructiveButtonIndex = 0;
+    const cancelButtonIndex = 2;
+
+    showActionSheetWithOptions(
+      {
+        options,
+        cancelButtonIndex,
+        destructiveButtonIndex,
+        title: friend.name,
+        message: 'Choose an action',
+      },
+      async (selectedIndex) => {
+        switch (selectedIndex) {
+          case 0: // Delete Friend
+            Alert.alert(
+              "Delete Friend",
+              `Are you sure you want to remove ${friend.name} from your friends list?`,
+              [
+                {
+                  text: "Cancel",
+                  style: "cancel"
+                },
+                {
+                  text: "Delete",
+                  style: "destructive",
+                  onPress: async () => {
+                    try {
+                      const contactsResponse = await client.graphql({
+                        query: listContacts,
+                        variables: {
+                          filter: {
+                            and: [
+                              { user_id: { eq: currentUserId } },
+                              { contact_user_id: { eq: friend.id } }
+                            ]
+                          }
+                        }
+                      });
+
+                      const reverseContactsResponse = await client.graphql({
+                        query: listContacts,
+                        variables: {
+                          filter: {
+                            and: [
+                              { user_id: { eq: friend.id } },
+                              { contact_user_id: { eq: currentUserId } }
+                            ]
+                          }
+                        }
+                      });
+
+                      await Promise.all([
+                        client.graphql({
+                          query: deleteContact,
+                          variables: {
+                            input: {
+                              id: contactsResponse.data.listContacts.items[0].id
+                            }
+                          }
+                        }),
+                        client.graphql({
+                          query: deleteContact,
+                          variables: {
+                            input: {
+                              id: reverseContactsResponse.data.listContacts.items[0].id
+                            }
+                          }
+                        })
+                      ]);
+
+                      setFriends(prev => prev.filter(f => f.id !== friend.id));
+                      Alert.alert("Success", "Friend removed successfully");
+                    } catch (error) {
+                      console.error('Error deleting friend:', error);
+                      Alert.alert("Error", "Failed to remove friend");
+                    }
+                  }
+                }
+              ]
+            );
+            break;
+          case 1: // Block User
+            Alert.alert("Coming Soon", "Block functionality will be implemented soon");
+            break;
+        }
+      }
+    );
+  };
+
+  const renderHeader = () => (
+    <>
       <TouchableOpacity style={styles.option} onPress={() => navigation.navigate('NewGroup')}>
         <Icon name="group" size={24} color="#4CAF50" style={styles.icon} />
         <Text style={styles.optionText}>New Group</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.option} onPress={() => navigation.navigate('NewUser')}>
         <Icon name="person-add" size={24} color="#2196F3" style={styles.icon} />
-        <Text style={styles.optionText}>New User</Text>
+        <Text style={styles.optionText}>Add Friends</Text>
       </TouchableOpacity>
+      <TouchableOpacity style={styles.option} onPress={() => navigation.navigate('FriendRequests')}>
+        <Icon name="people" size={24} color="#FF9800" style={styles.icon} />
+        <Text style={styles.optionText}>Friends Request</Text>
+      </TouchableOpacity>
+    </>
+  );
+
+  return (
+    <View style={styles.container}>
       <FlatList
-        data={users}
+        data={friends}
+        ListHeaderComponent={renderHeader}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.userItem}>
+          <TouchableOpacity 
+            style={styles.userItem}
+            onPress={() => {
+              navigation.navigate('Chat', { userId: item.id, name: item.name });
+            }}
+            onLongPress={() => handleLongPress(item)}
+            delayLongPress={500}
+          >
             <View style={styles.avatarContainer}>
               <View style={styles.avatar}>
-                <Text>{item.name.charAt(0)}</Text>
+                <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
               </View>
               {item.online ? (
                 <View style={styles.onlineIndicator} />
@@ -34,12 +258,23 @@ export default function SelectUserScreen({ navigation }) {
                 <Text style={styles.offlineTime}>{item.lastSeen}</Text>
               )}
             </View>
-            <View>
-              <Text>{item.name}</Text>
-              <Text>{item.status}</Text>
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{item.name}</Text>
+              <Text style={styles.userStatus}>{item.status}</Text>
             </View>
+          </TouchableOpacity>
+        )}
+        ListEmptyComponent={() => (
+          <View style={styles.emptyContainer}>
+            <Icon name="people-outline" size={48} color="#ccc" />
+            <Text style={styles.emptyText}>No friends yet</Text>
           </View>
         )}
+        ListFooterComponent={loading ? (
+          <View style={styles.loadingFooter}>
+            <ActivityIndicator size="small" color="#2196F3" />
+          </View>
+        ) : null}
       />
     </View>
   );
@@ -99,5 +334,44 @@ const styles = StyleSheet.create({
     color: '#555',
     borderWidth: 1,
     borderColor: '#ddd',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: 18,
+    color: '#666',
+    fontWeight: '500',
+  },
+  userInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  userStatus: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
+  },
+  loadingFooter: {
+    padding: 10,
+    alignItems: 'center',
   },
 });
