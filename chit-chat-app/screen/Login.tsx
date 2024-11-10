@@ -11,7 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { colors } from "../config/constrants";
-import { signIn, getCurrentUser } from 'aws-amplify/auth';
+import { signIn, getCurrentUser } from "aws-amplify/auth";
 import { AuthenticatedUserContext } from "../contexts/AuthContext";
 const backImage = require("../assets/background.png");
 
@@ -43,7 +43,11 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
       // Điều hướng đến màn hình chính
       navigation.reset({
         index: 0,
+<<<<<<< Updated upstream
         routes: [{ name: 'Chats' }],
+=======
+        routes: [{ name: "HomeScreen" }],
+>>>>>>> Stashed changes
       });
     } catch (error: any) {
       console.error("Error signing in", error);
@@ -94,7 +98,9 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
             Don't have an account?{" "}
           </Text>
           <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
-            <Text style={{ color: colors.pink, fontWeight: "600", fontSize: 14 }}>
+            <Text
+              style={{ color: colors.pink, fontWeight: "600", fontSize: 14 }}
+            >
               Sign Up
             </Text>
           </TouchableOpacity>

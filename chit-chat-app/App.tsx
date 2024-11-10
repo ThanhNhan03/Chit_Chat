@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import React, { createContext, useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -118,6 +119,20 @@ const App: React.FC = () => {
         </Stack.Navigator>
       </NavigationContainer>
     </AuthenticatedUserContext.Provider>
+=======
+import { View } from "react-native";
+import { Account, ChatInfo } from "./screen";
+import SignUp from "./screen/SignUp";
+import ConfirmEmail from "./screen/ConfirmEmail";
+import RootNavigation from "./navigation/RootNavigation";
+import Login from "./screen/Login";
+
+const App: React.FC = () => {
+  return (
+    <View style={{ flex: 1 }}>
+      <RootNavigation />
+    </View>
+>>>>>>> Stashed changes
   );
 };
 
