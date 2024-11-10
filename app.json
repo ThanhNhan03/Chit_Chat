@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Chit_Chat",
+    "slug": "chit_chat",
+    "version": "1.0.0",
+    "sdkVersion": "51.0.0",
+    "platforms": [],
+    "android": {
+      "package": "com.anonymous.chit_chat"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Selecct and upload images.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera."
+        }
+      ]
+    ]
+  }
+}
