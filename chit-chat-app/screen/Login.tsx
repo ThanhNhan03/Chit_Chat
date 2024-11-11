@@ -43,11 +43,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
       // Điều hướng đến màn hình chính
       navigation.reset({
         index: 0,
-<<<<<<< Updated upstream
-        routes: [{ name: 'Chats' }],
-=======
-        routes: [{ name: "HomeScreen" }],
->>>>>>> Stashed changes
+        routes: [{ name: "Chats" }],
       });
     } catch (error: any) {
       console.error("Error signing in", error);

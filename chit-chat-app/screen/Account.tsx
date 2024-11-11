@@ -3,11 +3,11 @@ import React from "react";
 import {
   FlatList,
   SafeAreaView,
+  StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { accounts } from "./constants";
 
 const Account: React.FC = () => {
   const renderItem = ({ item }) => {
@@ -62,3 +62,32 @@ const Account: React.FC = () => {
 };
 
 export default Account;
+
+export const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F5F5F5",
+  },
+});
+
+export const accounts = [
+  {
+    icon: {
+      name: "closesquareo",
+    },
+    label: "Blocked Users",
+  },
+  {
+    icon: {
+      name: "logout",
+    },
+    label: "Logout",
+  },
+  {
+    icon: {
+      name: "delete",
+      color: "red",
+    },
+    label: "Delete my account",
+  },
+];
