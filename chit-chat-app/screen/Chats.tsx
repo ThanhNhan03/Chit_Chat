@@ -126,20 +126,44 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
         return client.graphql({
             query: onUpdateFriendChat
         }).subscribe({
-            next: ({ data }) => {
+            next: async ({ data }) => {
                 if (data?.onUpdateFriendChat) {
                     const updatedChat = data.onUpdateFriendChat;
-                    setChats(prevChats => {
-                        return prevChats.map(chat => {
-                            if (chat.id === updatedChat.id) {
-                                return {
-                                    ...chat,
-                                    lastMessage: updatedChat.last_message || 'No messages yet',
-                                    timestamp: new Date(updatedChat.updated_at).toLocaleDateString()
-                                };
+                    
+                    // Fetch other user's details
+                    const otherUserChat = await client.graphql({
+                        query: listUserFriendChats,
+                        variables: {
+                            filter: {
+                                and: [
+                                    { friend_chat_id: { eq: updatedChat.id } },
+                                    { user_id: { ne: currentUserId } }
+                                ]
                             }
-                            return chat;
-                        });
+                        }
+                    });
+                    
+                    const otherUserId = otherUserChat.data.listUserFriendChats.items[0]?.user_id;
+                    const otherUserResponse = await client.graphql({
+                        query: getUser,
+                        variables: { id: otherUserId }
+                    });
+                    const otherUser = otherUserResponse.data.getUser;
+
+                    setChats(prevChats => {
+                        const chatIndex = prevChats.findIndex(chat => chat.id === updatedChat.id);
+                        if (chatIndex === -1) return prevChats;
+
+                        const updatedChats = [...prevChats];
+                        updatedChats[chatIndex] = {
+                            ...updatedChats[chatIndex],
+                            lastMessage: updatedChat.last_message || 'No messages yet',
+                            timestamp: new Date(updatedChat.updated_at).toLocaleDateString()
+                        };
+
+                        return updatedChats.sort((a, b) => 
+                            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+                        );
                     });
                 }
             },
@@ -175,21 +199,29 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                     }
                     style={styles.chatList}
                 >
-                    {chats.map(chat => (
-                        <View key={chat.id}>
-                            <ContactRow
-                                name={chat.name}
-                                subtitle={chat.lastMessage}
-                                subtitle2={chat.timestamp}
-                                showForwardIcon={false}
-                                onPress={() => handleChatPress(chat)}
-                                onLongPress={() => {}}
-                                style={styles.contactRow}
-                                selected={false}
-                            />
-                            <Seperator />
+                    {chats.length === 0 ? (
+                        <View style={styles.noChatsContainer}>
+                            <Ionicons name="chatbubble-outline" size={50} color={colors.teal} />
+                            <Text style={styles.noChatsText}>No messages yet</Text>
+                            <Text style={styles.noChatsSubText}>Start a conversation by tapping the chat button below</Text>
                         </View>
-                    ))}
+                    ) : (
+                        chats.map(chat => (
+                            <View key={chat.id}>
+                                <ContactRow
+                                    name={chat.name}
+                                    subtitle={chat.lastMessage}
+                                    subtitle2={chat.timestamp}
+                                    showForwardIcon={false}
+                                    onPress={() => handleChatPress(chat)}
+                                    onLongPress={() => {}}
+                                    style={styles.contactRow}
+                                    selected={false}
+                                />
+                                <Seperator />
+                            </View>
+                        ))
+                    )}
                 </ScrollView>
             )}
 
@@ -275,6 +307,23 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 5,
+    },
+    noChatsContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingTop: screenHeight * 0.2,
+    },
+    noChatsText: {
+        fontSize: screenWidth * 0.045,
+        color: '#333',
+        marginTop: 20,
+        fontWeight: '600',
+    },
+    noChatsSubText: {
+        fontSize: screenWidth * 0.035,
+        color: '#666',
+        marginTop: 10,
     },
 });
 
