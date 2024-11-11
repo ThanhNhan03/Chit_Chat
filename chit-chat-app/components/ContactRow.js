@@ -19,22 +19,22 @@ const ContactRow = ({ name, subtitle, onPress, style, onLongPress, selected, sho
                 <Text style={styles.name}>
                     {name}
                 </Text>
-                <Text style={styles.subtitle}>
+                <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
                     {subtitle}
                 </Text>
             </View>
 
-            <View style={styles.textsContainer}>
-                <Text style={styles.subtitle2}>
+            <View style={styles.dateContainer}>
+                <Text style={styles.subtitle2} numberOfLines={1} ellipsizeMode="tail">
                     {subtitle2}
                 </Text>
             </View>
 
-            {selected &&
+            {selected && (
                 <View style={showForwardIcon ? styles.overlay : styles.overlay2}>
                     <Ionicons name="checkmark-outline" size={16} color={'white'} />
                 </View>
-            }
+            )}
             {showForwardIcon && <Ionicons name="chevron-forward-outline" size={20} />}
 
         </TouchableOpacity>
@@ -46,24 +46,28 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 16
+        paddingVertical: 16,
+        justifyContent: 'space-between',
     },
     name: {
-        fontSize: 16
+        fontSize: 16,
     },
     subtitle: {
         marginTop: 2,
         color: '#565656',
-        width: screenWidth * 0.6
+        width: screenWidth * 0.5,
     },
     subtitle2: {
         fontSize: 12,
-        left: screenWidth * 0.2,
         color: '#565656',
     },
     textsContainer: {
         flex: 1,
-        marginStart: 16
+        marginStart: 16,
+    },
+    dateContainer: {
+        width: screenWidth * 0.25,
+        alignItems: 'flex-end',
     },
     avatar: {
         width: screenWidth * 0.14,
@@ -71,11 +75,11 @@ const styles = StyleSheet.create({
         borderRadius: screenWidth * 0.07,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.primary
+        backgroundColor: colors.primary,
     },
     avatarLabel: {
         fontSize: 20,
-        color: 'white'
+        color: 'white',
     },
     overlay: {
         width: screenWidth * 0.055,
@@ -87,7 +91,7 @@ const styles = StyleSheet.create({
         borderColor: 'black',
         borderWidth: 1.5,
         top: screenWidth * 0.045,
-        right: screenWidth * 0.695
+        right: screenWidth * 0.695,
     },
     overlay2: {
         width: screenWidth * 0.055,
@@ -99,7 +103,7 @@ const styles = StyleSheet.create({
         borderColor: 'black',
         borderWidth: 1.5,
         top: screenWidth * 0.045,
-        right: screenWidth * 0.745
+        right: screenWidth * 0.745,
     },
 })
 
