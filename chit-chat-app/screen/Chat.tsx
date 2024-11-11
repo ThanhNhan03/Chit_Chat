@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, View, ScrollView, Modal, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { StyleSheet, View, FlatList, Modal, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { createMessages, updateFriendChat } from '../src/graphql/mutations';
@@ -31,7 +31,7 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
     const [inputText, setInputText] = useState('');
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
-    const scrollViewRef = useRef<ScrollView>(null);
+    const flatListRef = useRef<FlatList>(null);
 
     useEffect(() => {
         fetchCurrentUser();
@@ -250,46 +250,54 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
     };
 
     const scrollToBottom = () => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
+        if (messages.length > 0) {
+            flatListRef.current?.scrollToEnd({ animated: true });
+        }
     };
 
     const handleEmojiSelected = (emoji: any) => {
         setInputText(prevText => prevText + emoji.emoji);
     };
 
+    const renderItem = ({ item: message }) => (
+        <MessageItem 
+            message={message} 
+            onImagePress={setSelectedImage} 
+        />
+    );
+
+    const keyExtractor = (item: Message) => item.id;
+
     return (
         <KeyboardAvoidingView 
             style={styles.container}
-            behavior={Platform.OS === 'android' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
             <Header title={name} onBackPress={() => navigation.goBack()} />
-            <ScrollView 
-                ref={scrollViewRef} 
-                style={styles.messagesContainer} 
-                onContentSizeChange={scrollToBottom}
-                // refreshControl={
-                //     <RefreshControl
-                //         refreshing={isRefreshing}
-                //         onRefresh={onRefresh}
-                //     />
-                // }
-            >
-                {messages.map(message => (
-                    <MessageItem 
-                        key={message.id} 
-                        message={message} 
-                        onImagePress={setSelectedImage} 
-                    />
-                ))}
-            </ScrollView>
-            <InputBar
-                inputText={inputText}
-                setInputText={setInputText}
-                onSend={handleSendMessage}
-                onImagePick={handleImagePick}
-                onEmojiToggle={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-                showSendButton={!!inputText.trim()}
-            />
+            <View style={styles.chatContainer}>
+                <FlatList
+                    ref={flatListRef}
+                    style={styles.messagesContainer}
+                    contentContainerStyle={styles.messagesContentContainer}
+                    data={messages}
+                    renderItem={renderItem}
+                    keyExtractor={keyExtractor}
+                    onContentSizeChange={scrollToBottom}
+                    onLayout={scrollToBottom}
+                    inverted={false}
+                    onEndReached={onRefresh}
+                    onEndReachedThreshold={0.5}
+                />
+                <InputBar
+                    inputText={inputText}
+                    setInputText={setInputText}
+                    onSend={handleSendMessage}
+                    onImagePick={handleImagePick}
+                    onEmojiToggle={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+                    showSendButton={!!inputText.trim()}
+                />
+            </View>
             <Modal 
                 visible={!!selectedImage} 
                 transparent={false} 
@@ -317,9 +325,16 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
     },
+    chatContainer: {
+        flex: 1,
+        flexDirection: 'column',
+    },
     messagesContainer: {
         flex: 1,
+    },
+    messagesContentContainer: {
         padding: 16,
+        paddingBottom: 8,
     },
 });
 
