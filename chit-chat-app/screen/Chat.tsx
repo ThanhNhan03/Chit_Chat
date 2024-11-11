@@ -12,6 +12,7 @@ import InputBar from '../components/InputBar';
 import * as ImagePicker from 'expo-image-picker';
 import EmojiPicker from 'rn-emoji-keyboard';
 import ImageViewer from '../components/ImageViewer';
+import { sendNotification } from '../utils/notificationHelper';
 
 const client = generateClient();
 
@@ -150,9 +151,23 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                 }
             }
         }).subscribe({
-            next: ({ data }) => {
+            next: async ({ data }) => {
                 if (data?.onCreateMessages) {
                     const newMsg = data.onCreateMessages;
+                    
+                    if (newMsg.sender_id !== currentUserId) {
+                        await sendNotification({
+                            title: name,
+                            body: newMsg.content || '📷 Sent an image',
+                            data: {
+                                type: 'message',
+                                chatId,
+                                userId: newMsg.sender_id,
+                                name
+                            }
+                        });
+                    }
+
                     const messageObj: Message = {
                         id: newMsg.id,
                         text: newMsg.content,
