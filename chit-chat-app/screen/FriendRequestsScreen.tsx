@@ -6,6 +6,7 @@ import { getCurrentUser } from 'aws-amplify/auth';
 import { listFriendRequests, getUser } from '../src/graphql/queries';
 import { updateFriendRequests, createContact, deleteFriendRequests } from '../src/graphql/mutations';
 import { onCreateFriendRequests } from '../src/graphql/subscriptions';
+import { sendNotification } from '../utils/notificationHelper';
 
 // Dữ liệu mẫu cho lời mời kết bạn
 const client = generateClient();
@@ -91,9 +92,31 @@ export default function FriendRequestsScreen() {
         }
       }
     }).subscribe({
-      next: ({ data }) => {
+      next: async ({ data }) => {
         if (data?.onCreateFriendRequests) {
-          fetchFriendRequests(); // Refresh the list when new request comes
+          const newRequest = data.onCreateFriendRequests;
+          
+          // Lấy thông tin người gửi lời mời
+          const userResponse = await client.graphql({
+            query: getUser,
+            variables: { id: newRequest.from_user_id }
+          });
+          const sender = userResponse.data.getUser;
+
+          // Gửi thông báo
+          await sendNotification({
+            title: 'New Friend Request',
+            body: `${sender.name} sent you a friend request`,
+            data: {
+              type: 'friend_request',
+              requestId: newRequest.id,
+              senderId: newRequest.from_user_id,
+              senderName: sender.name
+            },
+            channelId: 'friend-requests'
+          });
+
+          fetchFriendRequests();
         }
       },
       error: (error) => console.warn(error)
