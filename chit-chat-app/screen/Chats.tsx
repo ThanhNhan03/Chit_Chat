@@ -8,7 +8,6 @@ import ContactRow from "../components/ContactRow";
 import Seperator from "../components/Seperator"; 
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from "../config/constrants"; 
-import Footer from "../components/Footer";
 
 const client = generateClient();
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -228,14 +227,11 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
 
             {/* Floating Action Button */}
             <TouchableOpacity 
-                style={[styles.fab, { bottom: screenHeight * 0.15 }]}
+                style={[styles.fab, { bottom: screenHeight * 0.05 }]}
                 onPress={() => navigation.navigate('SelectUser')}
             >
                 <Ionicons name="chatbubble-ellipses" size={24} color="#fff" />
             </TouchableOpacity>
-
-            {/* Add Footer */}
-            <Footer navigation={navigation} />
         </View>
     );
 };
@@ -275,7 +271,7 @@ const styles = StyleSheet.create({
     },
     fab: {
         position: 'absolute',
-        bottom: screenHeight * 0.1,
+        bottom: screenHeight * 0.05,
         right: screenWidth * 0.05,
         backgroundColor: colors.teal,
         width: screenWidth * 0.15,

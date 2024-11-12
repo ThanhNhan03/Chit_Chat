@@ -12,7 +12,7 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
     <View style={styles.container}>
       <ScrollView style={styles.scrollContainer}>
         {/* Thêm tiêu đề */}
-        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.title}>Chat-chit-app</Text>
         
         <View style={styles.section}>
           <View style={styles.userInfo}>
@@ -64,7 +64,6 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
-      <Footer navigation={navigation} />
     </View>
   );
 };

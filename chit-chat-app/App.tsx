@@ -6,6 +6,9 @@ import { Amplify } from 'aws-amplify';
 import { getCurrentUser } from 'aws-amplify/auth';
 import * as Notifications from 'expo-notifications';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from "./config/constrants";
 
 // Screens
 import Login from './screen/Login';
@@ -27,6 +30,7 @@ import Settings from './screen/Settings';
 
 Amplify.configure(config);
 const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 // Cấu hình notifications
 Notifications.setNotificationHandler({
@@ -37,6 +41,42 @@ Notifications.setNotificationHandler({
     priority: Notifications.AndroidNotificationPriority.HIGH,
   }),
 });
+
+const TabNavigator = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: any;
+          if (route.name === 'ChatsTab') {
+            iconName = 'chatbubble';
+          } else if (route.name === 'SettingsTab') {
+            iconName = 'settings';
+          }
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: colors.teal,
+        tabBarInactiveTintColor: 'gray',
+      })}
+    >
+      <Tab.Screen 
+        name="ChatsTab" 
+        component={Chats}
+        options={{ 
+          headerShown: false,
+          title: 'Chats'
+        }} 
+      />
+      <Tab.Screen 
+        name="SettingsTab" 
+        component={Settings}
+        options={{ 
+          title: 'Settings'
+        }} 
+      />
+    </Tab.Navigator>
+  );
+};
 
 const App: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -105,8 +145,8 @@ const App: React.FC = () => {
             {user ? (
               <>
                 <Stack.Screen
-                  name="Chats"
-                  component={Chats}
+                  name="MainTabs"
+                  component={TabNavigator}
                   options={{
                     headerShown: false,
                     gestureEnabled: false
