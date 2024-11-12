@@ -1,4 +1,10 @@
 {
+  "analytics": {
+    "chitchat": {
+      "providerPlugin": "awscloudformation",
+      "service": "Pinpoint"
+    }
+  },
   "api": {
     "chitchat": {
       "dependsOn": [],
