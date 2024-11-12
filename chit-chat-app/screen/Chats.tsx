@@ -75,6 +75,11 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                 });
                 const friendChat = friendChatResponse.data.getFriendChat;
                 
+                // Only process chats that have last_message
+                if (!friendChat.last_message) {
+                    return null;
+                }
+
                 // Find the other user in the chat
                 const otherUserChat = await client.graphql({
                     query: listUserFriendChats,
@@ -101,7 +106,7 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                 return {
                     id: friendChat.id,
                     name: otherUser?.name || 'Unknown User',
-                    lastMessage: friendChat.last_message || 'No messages yet',
+                    lastMessage: friendChat.last_message,
                     timestamp: new Date(friendChat.updated_at).toLocaleDateString(),
                     chatId: friendChat.id,
                     userId: otherUserId,
@@ -109,11 +114,12 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                 };
             });
 
-            const resolvedChats = await Promise.all(chatPromises);
-            const sortedChats = resolvedChats.sort((a, b) => 
-                new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-            );
-            setChats(sortedChats);
+            const resolvedChats = (await Promise.all(chatPromises))
+                .filter(chat => chat !== null) // Remove null entries
+                .sort((a, b) => 
+                    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+                );
+            setChats(resolvedChats);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching chats:', error);
