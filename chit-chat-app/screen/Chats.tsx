@@ -332,19 +332,6 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
             )}
 
             <Seperator />
-            <View style={styles.footer}>
-                <TouchableOpacity style={styles.footerIcon}>
-                    <Ionicons name="chatbubble" size={24} color={colors.teal} />
-                    <Text style={styles.footerText}>Chats</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                    style={styles.footerIcon}
-                    onPress={() => navigation.navigate('SettingTemp')}
-                >
-                    <Ionicons name="settings" size={24} color={colors.teal} />
-                    <Text style={styles.footerText}>Settings</Text>
-                </TouchableOpacity>
-            </View>
 
             {/* Floating Action Button */}
             <TouchableOpacity 
@@ -404,7 +391,7 @@ const styles = StyleSheet.create({
     },
     fab: {
         position: 'absolute',
-        bottom: screenHeight * 0.1,
+        bottom: screenHeight * 0.05,
         right: screenWidth * 0.05,
         backgroundColor: colors.teal,
         width: screenWidth * 0.15,

@@ -153,8 +153,8 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                                 }
                             });
                             navigation.reset({
-                                index: 1,
-                                routes: [{ name: 'ChatList' }],
+                                index: 0,
+                                routes: [{ name: 'Chats' }],
                             });
                         } catch (error) {
                             console.error('Error leaving group:', error);

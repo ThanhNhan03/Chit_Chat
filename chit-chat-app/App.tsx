@@ -6,6 +6,9 @@ import { Amplify } from 'aws-amplify';
 import { getCurrentUser } from 'aws-amplify/auth';
 import * as Notifications from 'expo-notifications';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from "./config/constrants";
 
 // Screens
 import Login from './screen/Login';
@@ -25,9 +28,11 @@ import config from './aws-exports';
 import { initializeNotifications, requestNotificationPermissions } from './utils/notificationHelper';
 import GroupChat from './screen/GroupChat';
 import GroupChatSettings from './screen/GroupChatSettings';
+import Settings from './screen/Settings';
 
 Amplify.configure(config);
 const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 // Cấu hình notifications
 Notifications.setNotificationHandler({
@@ -38,6 +43,56 @@ Notifications.setNotificationHandler({
     priority: Notifications.AndroidNotificationPriority.HIGH,
   }),
 });
+
+const TabNavigator = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: any;
+          if (route.name === 'ChatsTab') {
+            iconName = 'chatbubble';
+          } else if (route.name === 'SettingsTab') {
+            iconName = 'settings';
+          }
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: colors.teal,
+        tabBarInactiveTintColor: 'gray',
+        tabBarStyle: {
+          height: 60,
+          paddingBottom: 5,
+          paddingTop: 5,
+        },
+        tabBarIconStyle: {
+          width: 30,
+          height: 30,
+        },
+        tabBarLabelStyle: {
+          fontSize: 14,
+          fontWeight: 'bold',
+        }
+      })}
+    >
+      <Tab.Screen 
+        name="ChatsTab" 
+        component={Chats}
+        options={{ 
+          headerShown: false,
+          title: 'Chats'
+        }} 
+      />
+      <Tab.Screen 
+        name="SettingsTab" 
+        component={Settings}
+        options={{ 
+          headerShown: false,
+          title: 'Settings'
+        }} 
+      />
+    </Tab.Navigator>
+  );
+};
 
 const App: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -71,7 +126,6 @@ const App: React.FC = () => {
           // console.log('Received notification:', notification);
         });
 
-        // Lắng nghe khi user nhấn vào notification
         responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
           const data = response.notification.request.content.data;
 
@@ -106,8 +160,8 @@ const App: React.FC = () => {
             {user ? (
               <>
                 <Stack.Screen
-                  name="Chats"
-                  component={Chats}
+                  name="MainTabs"
+                  component={TabNavigator}
                   options={{
                     headerShown: false,
                     gestureEnabled: false
@@ -118,15 +172,6 @@ const App: React.FC = () => {
                   component={Chat}
                   options={{
                     headerShown: false,
-                    gestureEnabled: true
-                  }}
-                />
-                <Stack.Screen
-                  name="SettingTemp"
-                  component={SettingTemp}
-                  options={{
-                    headerShown: true,
-                    title: 'Settings',
                     gestureEnabled: true
                   }}
                 />

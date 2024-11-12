@@ -40,7 +40,6 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
       setUser(user); // Cập nhật trạng thái người dùng
       Alert.alert("Login success");
 
-      // Điều hướng đến màn hình chính
       navigation.reset({
         index: 0,
         routes: [{ name: 'Chats' }],
