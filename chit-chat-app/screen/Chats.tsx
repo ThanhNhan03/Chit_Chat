@@ -1,31 +1,189 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Dimensions } from "react-native";
+import { StyleSheet, View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Dimensions, Alert, RefreshControl } from "react-native";
+import { generateClient } from 'aws-amplify/api';
+import { getCurrentUser } from 'aws-amplify/auth';
+import { listUserFriendChats, getFriendChat, getUser } from '../src/graphql/queries';
+import { onUpdateFriendChat } from '../src/graphql/subscriptions';
 import ContactRow from "../components/ContactRow";
 import Seperator from "../components/Seperator"; 
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from "../config/constrants"; 
 
+const client = generateClient();
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
+interface Chat {
+    id: string;
+    name: string;
+    lastMessage: string;
+    timestamp: string;
+    chatId: string;
+    userId: string;
+    profilePicture?: string;
+}
 interface ChatsProps {
-    navigation: any;
+    navigation: any; 
 }
 
 const Chats: React.FC<ChatsProps> = ({ navigation }) => {
-    const [chats, setChats] = useState([]);
+    const [chats, setChats] = useState<Chat[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
-        setTimeout(() => {
-            setChats([
-                { id: '1', name: 'Đỗ Hoàng Gia', message: 'J97 forever', date: '8/14/24' },
-                { id: '2', name: 'Nguyễn Minh Khai', message: 'Em yêu Trịnh Trần Phương Tuấn', date: '8/14/24' },
-                { id: '3', name: 'Nhân Đoàn *(You)', message: '🤖 Đốm Con', date: '8/13/24' },
-                { id: '4', name: 'JACK', message: '5 Củ', date: '7/7/24' }
-            ]);
-            setLoading(false);
-        }, 1000);
+        fetchCurrentUser();
     }, []);
+
+    useEffect(() => {
+        if (currentUserId) {
+            fetchChats();
+            const subscription = subscribeToChatsUpdates();
+            return () => {
+                subscription.unsubscribe();
+            };
+        }
+    }, [currentUserId]);
+
+    const fetchCurrentUser = async () => {
+        try {
+            const user = await getCurrentUser();
+            setCurrentUserId(user.userId);
+        } catch (error) {
+            console.error('Error fetching current user:', error);
+        }
+    };
+
+    const fetchChats = async () => {
+        try {
+            // Fetch all friend chats for current user
+            const userChatsResponse = await client.graphql({
+                query: listUserFriendChats,
+                variables: {
+                    filter: {
+                        user_id: { eq: currentUserId }
+                    }
+                }
+            });
+
+            // Get detailed information for each chat
+            const chatPromises = userChatsResponse.data.listUserFriendChats.items.map(async (userChat) => {
+                // Get friend chat details
+                const friendChatResponse = await client.graphql({
+                    query: getFriendChat,
+                    variables: { id: userChat.friend_chat_id }
+                });
+                const friendChat = friendChatResponse.data.getFriendChat;
+                
+                // Find the other user in the chat
+                const otherUserChat = await client.graphql({
+                    query: listUserFriendChats,
+                    variables: {
+                        filter: {
+                            and: [
+                                { friend_chat_id: { eq: friendChat.id } },
+                                { user_id: { ne: currentUserId } }
+                            ]
+                        }
+                    }
+                });
+
+                // Get the other user's ID
+                const otherUserId = otherUserChat.data.listUserFriendChats.items[0]?.user_id;
+
+                // Get other user's details
+                const otherUserResponse = await client.graphql({
+                    query: getUser,
+                    variables: { id: otherUserId }
+                });
+                const otherUser = otherUserResponse.data.getUser;
+
+                return {
+                    id: friendChat.id,
+                    name: otherUser?.name || 'Unknown User',
+                    lastMessage: friendChat.last_message || 'No messages yet',
+                    timestamp: new Date(friendChat.updated_at).toLocaleDateString(),
+                    chatId: friendChat.id,
+                    userId: otherUserId,
+                    profilePicture: otherUser?.profile_picture
+                };
+            });
+
+            const resolvedChats = await Promise.all(chatPromises);
+            const sortedChats = resolvedChats.sort((a, b) => 
+                new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+            );
+            setChats(sortedChats);
+            setLoading(false);
+        } catch (error) {
+            console.error('Error fetching chats:', error);
+            Alert.alert('Error', 'Failed to load chats');
+            setLoading(false);
+        }
+    };
+
+    const subscribeToChatsUpdates = () => {
+        return client.graphql({
+            query: onUpdateFriendChat
+        }).subscribe({
+            next: async ({ data }) => {
+                if (data?.onUpdateFriendChat) {
+                    const updatedChat = data.onUpdateFriendChat;
+                    
+                    // Fetch other user's details
+                    const otherUserChat = await client.graphql({
+                        query: listUserFriendChats,
+                        variables: {
+                            filter: {
+                                and: [
+                                    { friend_chat_id: { eq: updatedChat.id } },
+                                    { user_id: { ne: currentUserId } }
+                                ]
+                            }
+                        }
+                    });
+                    
+                    const otherUserId = otherUserChat.data.listUserFriendChats.items[0]?.user_id;
+                    const otherUserResponse = await client.graphql({
+                        query: getUser,
+                        variables: { id: otherUserId }
+                    });
+                    const otherUser = otherUserResponse.data.getUser;
+
+                    setChats(prevChats => {
+                        const chatIndex = prevChats.findIndex(chat => chat.id === updatedChat.id);
+                        if (chatIndex === -1) return prevChats;
+
+                        const updatedChats = [...prevChats];
+                        updatedChats[chatIndex] = {
+                            ...updatedChats[chatIndex],
+                            lastMessage: updatedChat.last_message || 'No messages yet',
+                            timestamp: new Date(updatedChat.updated_at).toLocaleDateString()
+                        };
+
+                        return updatedChats.sort((a, b) => 
+                            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+                        );
+                    });
+                }
+            },
+            error: (error) => console.warn(error)
+        });
+    };
+
+    const handleChatPress = (chat: Chat) => {
+        navigation.navigate('Chat', {
+            name: chat.name,
+            userId: chat.userId,
+            chatId: chat.chatId
+        });
+    };
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await fetchChats();
+        setRefreshing(false);
+    };
 
     return (
         <View style={styles.container}>
@@ -35,22 +193,35 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
             {loading ? (
                 <ActivityIndicator size="large" style={styles.loadingContainer} color={colors.teal} />
             ) : (
-                <ScrollView style={styles.chatList}>
-                    {chats.map(chat => (
-                        <View key={chat.id}>
-                            <ContactRow
-                                name={chat.name}
-                                subtitle={`You: ${chat.message}`}
-                                subtitle2={chat.date}
-                                showForwardIcon={false}
-                                onPress={() => navigation.navigate('Chat', { name: chat.name })}
-                                onLongPress={() => {}}
-                                style={styles.contactRow}
-                                selected={false}
-                            />
-                            <Seperator />
+                <ScrollView 
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                    }
+                    style={styles.chatList}
+                >
+                    {chats.length === 0 ? (
+                        <View style={styles.noChatsContainer}>
+                            <Ionicons name="chatbubble-outline" size={50} color={colors.teal} />
+                            <Text style={styles.noChatsText}>No messages yet</Text>
+                            <Text style={styles.noChatsSubText}>Start a conversation by tapping the chat button below</Text>
                         </View>
-                    ))}
+                    ) : (
+                        chats.map(chat => (
+                            <View key={chat.id}>
+                                <ContactRow
+                                    name={chat.name}
+                                    subtitle={chat.lastMessage}
+                                    subtitle2={chat.timestamp}
+                                    showForwardIcon={false}
+                                    onPress={() => handleChatPress(chat)}
+                                    onLongPress={() => {}}
+                                    style={styles.contactRow}
+                                    selected={false}
+                                />
+                                <Seperator />
+                            </View>
+                        ))
+                    )}
                 </ScrollView>
             )}
 
@@ -136,6 +307,23 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 5,
+    },
+    noChatsContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingTop: screenHeight * 0.2,
+    },
+    noChatsText: {
+        fontSize: screenWidth * 0.045,
+        color: '#333',
+        marginTop: 20,
+        fontWeight: '600',
+    },
+    noChatsSubText: {
+        fontSize: screenWidth * 0.035,
+        color: '#666',
+        marginTop: 10,
     },
 });
 

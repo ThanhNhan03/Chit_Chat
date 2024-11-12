@@ -7,6 +7,8 @@ import { listContacts, getUser } from '../src/graphql/queries';
 import { onCreateContact } from '../src/graphql/subscriptions';
 import { ActionSheetProvider, useActionSheet } from '@expo/react-native-action-sheet';
 import { deleteContact } from '../src/graphql/mutations';
+import { createFriendChat, createUserFriendChat } from '../src/graphql/mutations';
+import { listUserFriendChats } from '../src/graphql/queries';
 
 
 const client = generateClient();
@@ -216,6 +218,90 @@ export default function SelectUserScreen({ navigation }) {
     );
   };
 
+  const handleUserSelect = async (friend: Friend) => {
+    try {
+      // Check if chat already exists
+      const existingChatsResponse = await client.graphql({
+        query: listUserFriendChats,
+        variables: {
+          filter: {
+            user_id: { eq: currentUserId },
+          }
+        }
+      });
+
+      const existingChats = existingChatsResponse.data.listUserFriendChats.items;
+      let friendChatId = null;
+
+      // Find if there's an existing chat with this friend
+      for (const chat of existingChats) {
+        const otherUserChat = await client.graphql({
+          query: listUserFriendChats,
+          variables: {
+            filter: {
+              and: [
+                { friend_chat_id: { eq: chat.friend_chat_id } },
+                { user_id: { eq: friend.id } }
+              ]
+            }
+          }
+        });
+
+        if (otherUserChat.data.listUserFriendChats.items.length > 0) {
+          friendChatId = chat.friend_chat_id;
+          break;
+        }
+      }
+
+      if (!friendChatId) {
+        // Create new FriendChat
+        const newFriendChat = await client.graphql({
+          query: createFriendChat,
+          variables: {
+            input: {
+              chat_id: `${currentUserId}_${friend.id}`,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+          }
+        });
+
+        friendChatId = newFriendChat.data.createFriendChat.id;
+
+        // Create UserFriendChat entries for both users
+        await Promise.all([
+          client.graphql({
+            query: createUserFriendChat,
+            variables: {
+              input: {
+                user_id: currentUserId,
+                friend_chat_id: friendChatId
+              }
+            }
+          }),
+          client.graphql({
+            query: createUserFriendChat,
+            variables: {
+              input: {
+                user_id: friend.id,
+                friend_chat_id: friendChatId
+              }
+            }
+          })
+        ]);
+      }
+
+      navigation.navigate('Chat', { 
+        userId: friend.id, 
+        name: friend.name,
+        chatId: friendChatId
+      });
+    } catch (error) {
+      console.error('Error creating/getting chat:', error);
+      Alert.alert('Error', 'Failed to start chat');
+    }
+  };
+
   const renderHeader = () => (
     <>
       <TouchableOpacity style={styles.option} onPress={() => navigation.navigate('NewGroup')}>
@@ -242,9 +328,7 @@ export default function SelectUserScreen({ navigation }) {
         renderItem={({ item }) => (
           <TouchableOpacity 
             style={styles.userItem}
-            onPress={() => {
-              navigation.navigate('Chat', { userId: item.id, name: item.name });
-            }}
+            onPress={() => handleUserSelect(item)}
             onLongPress={() => handleLongPress(item)}
             delayLongPress={500}
           >

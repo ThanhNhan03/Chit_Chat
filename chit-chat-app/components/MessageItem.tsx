@@ -1,58 +1,86 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 
-interface Message {
-    id: string;
-    text?: string;
-    image?: string;
-    timestamp: string;
-    type: 'text' | 'image';
-}
-
 interface MessageItemProps {
-    message: Message;
+    message: {
+        id: string;
+        text?: string;
+        image?: string;
+        timestamp: string;
+        type: 'text' | 'image';
+        isMe: boolean;
+    };
     onImagePress: (uri: string) => void;
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ message, onImagePress }) => (
-    <View style={styles.messageContainer}>
-        <Text style={styles.timestamp}>{message.timestamp}</Text>
-        <View style={styles.message}>
+const MessageItem: React.FC<MessageItemProps> = ({ message, onImagePress }) => {
+    const messageStyle = [
+        styles.messageContainer,
+        message.isMe ? styles.myMessage : styles.theirMessage
+    ];
+
+    const textStyle = [
+        styles.messageText,
+        message.isMe ? styles.myMessageText : styles.theirMessageText
+    ];
+
+    return (
+        <View style={messageStyle}>
             {message.type === 'text' ? (
-                <Text style={styles.messageText}>{message.text}</Text>
+                <Text style={textStyle}>{message.text}</Text>
             ) : (
-                <TouchableOpacity onPress={() => onImagePress(message.image!)} activeOpacity={0.9}>
-                    <Image source={{ uri: message.image }} style={styles.messageImage} resizeMode="cover" />
+                <TouchableOpacity onPress={() => onImagePress(message.image!)}>
+                    <Image 
+                        source={{ uri: message.image }} 
+                        style={styles.messageImage} 
+                    />
                 </TouchableOpacity>
             )}
+            <Text style={styles.timestamp}>{message.timestamp}</Text>
         </View>
-    </View>
-);
+    );
+};
 
 const styles = StyleSheet.create({
     messageContainer: {
-        alignItems: 'flex-end',
-        marginBottom: 8,
+        maxWidth: '80%',
+        marginVertical: 4,
+        padding: 10, 
+        borderRadius: 15, 
+        elevation: 2, 
     },
-    message: {
-        backgroundColor: '#008080',
-        borderRadius: 20,
-        padding: 12,
-        maxWidth: '70%',
+    myMessage: {
+        alignSelf: 'flex-end',
+        backgroundColor: '#DCF8C6',
+        marginLeft: '20%',
     },
-    timestamp: {
-        color: '#666',
-        fontSize: 12,
-        marginBottom: 4,
+    theirMessage: {
+        alignSelf: 'flex-start',
+        backgroundColor: '#FFFFFF',
+        marginRight: '20%',
+        borderColor: '#e0e0e0', 
+        borderWidth: 1, 
     },
     messageText: {
-        color: '#fff',
         fontSize: 16,
+        lineHeight: 20, 
+    },
+    myMessageText: {
+        color: '#000000',
+    },
+    theirMessageText: {
+        color: '#000000',
     },
     messageImage: {
         width: 200,
         height: 200,
-        borderRadius: 20,
+        borderRadius: 8,
+    },
+    timestamp: {
+        fontSize: 12,
+        color: '#666666',
+        alignSelf: 'flex-end',
+        marginTop: 4,
     },
 });
 
