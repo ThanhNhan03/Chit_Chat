@@ -8,6 +8,7 @@ import ContactRow from "../components/ContactRow";
 import Seperator from "../components/Seperator"; 
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from "../config/constrants"; 
+import Footer from "../components/Footer";
 
 const client = generateClient();
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -225,28 +226,16 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                 </ScrollView>
             )}
 
-            <Seperator />
-            <View style={styles.footer}>
-                <TouchableOpacity style={styles.footerIcon}>
-                    <Ionicons name="chatbubble" size={24} color={colors.teal} />
-                    <Text style={styles.footerText}>Chats</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                    style={styles.footerIcon}
-                    onPress={() => navigation.navigate('SettingTemp')}
-                >
-                    <Ionicons name="settings" size={24} color={colors.teal} />
-                    <Text style={styles.footerText}>Settings</Text>
-                </TouchableOpacity>
-            </View>
-
             {/* Floating Action Button */}
             <TouchableOpacity 
-                style={styles.fab}
+                style={[styles.fab, { bottom: screenHeight * 0.15 }]}
                 onPress={() => navigation.navigate('SelectUser')}
             >
                 <Ionicons name="chatbubble-ellipses" size={24} color="#fff" />
             </TouchableOpacity>
+
+            {/* Add Footer */}
+            <Footer navigation={navigation} />
         </View>
     );
 };
@@ -255,6 +244,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f5f5f5',
+    },
+    scrollContainer: {
+        flex: 1,
     },
     header: {
         fontSize: screenWidth * 0.06,
@@ -280,21 +272,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: screenWidth * 0.04,
         paddingVertical: screenHeight * 0.015,
         backgroundColor: '#fff',
-    },
-    footer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        paddingVertical: screenHeight * 0.015,
-        backgroundColor: '#fff',
-    },
-    footerIcon: {
-        alignItems: 'center',
-    },
-    footerText: {
-        fontSize: screenWidth * 0.03,
-        color: colors.teal,
-        marginTop: screenHeight * 0.005,
     },
     fab: {
         position: 'absolute',

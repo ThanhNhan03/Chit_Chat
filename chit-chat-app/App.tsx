@@ -23,6 +23,7 @@ import FriendRequestsScreen from './screen/FriendRequestsScreen';
 import { AuthenticatedUserContext } from './contexts/AuthContext';
 import config from './aws-exports';
 import { initializeNotifications, requestNotificationPermissions } from './utils/notificationHelper';
+import Settings from './screen/Settings';
 
 Amplify.configure(config);
 const Stack = createNativeStackNavigator();
@@ -120,8 +121,8 @@ const App: React.FC = () => {
                   }}
                 />
                 <Stack.Screen
-                  name="SettingTemp"
-                  component={SettingTemp}
+                  name="Settings"
+                  component={Settings}
                   options={{
                     headerShown: true,
                     title: 'Settings',
