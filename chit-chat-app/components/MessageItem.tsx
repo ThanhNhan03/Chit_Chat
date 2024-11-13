@@ -9,40 +9,53 @@ interface MessageItemProps {
         timestamp: string;
         type: 'text' | 'image';
         isMe: boolean;
+        senderName?: string;
     };
     onImagePress: (uri: string) => void;
     showSender?: boolean;
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ message, onImagePress }) => {
-    const messageStyle = [
-        styles.messageContainer,
-        message.isMe ? styles.myMessage : styles.theirMessage
-    ];
-
-    const textStyle = [
-        styles.messageText,
-        message.isMe ? styles.myMessageText : styles.theirMessageText
-    ];
-
+const MessageItem: React.FC<MessageItemProps> = ({ message, onImagePress, showSender }) => {
     return (
-        <View style={messageStyle}>
-            {message.type === 'text' ? (
-                <Text style={textStyle}>{message.text}</Text>
-            ) : (
-                <TouchableOpacity onPress={() => onImagePress(message.image!)}>
-                    <Image 
-                        source={{ uri: message.image }} 
-                        style={styles.messageImage} 
-                    />
-                </TouchableOpacity>
+        <View>
+            {showSender && !message.isMe && message.senderName && (
+                <Text style={styles.senderName}>{message.senderName}</Text>
             )}
-            <Text style={styles.timestamp}>{message.timestamp}</Text>
+            
+            <View style={[
+                styles.messageContainer,
+                message.isMe ? styles.myMessage : styles.theirMessage
+            ]}>
+                {message.type === 'text' ? (
+                    <Text style={[
+                        styles.messageText,
+                        message.isMe ? styles.myMessageText : styles.theirMessageText
+                    ]}>
+                        {message.text}
+                    </Text>
+                ) : (
+                    <TouchableOpacity onPress={() => onImagePress(message.image!)}>
+                        <Image 
+                            source={{ uri: message.image }} 
+                            style={styles.messageImage} 
+                            resizeMode="cover"
+                        />
+                    </TouchableOpacity>
+                )}
+                <Text style={styles.timestamp}>{message.timestamp}</Text>
+            </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
+    senderName: {
+        fontSize: 12,
+        color: '#666',
+        marginBottom: 2,
+        marginLeft: 12,
+        fontWeight: '500'
+    },
     messageContainer: {
         maxWidth: '80%',
         marginVertical: 4,

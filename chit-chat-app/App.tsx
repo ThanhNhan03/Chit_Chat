@@ -155,7 +155,7 @@ const App: React.FC = () => {
                 <Stack.Screen
                   name="GroupChat"
                   component={GroupChat}
-                  options={{ title: 'Group Chat', headerShown: true }}
+                  options={{ title: 'Group Chat', headerShown: false }}
                 />
               </>
             ) : (
