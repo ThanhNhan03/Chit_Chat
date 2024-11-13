@@ -11,6 +11,7 @@ interface MessageItemProps {
         isMe: boolean;
     };
     onImagePress: (uri: string) => void;
+    showSender?: boolean;
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({ message, onImagePress }) => {

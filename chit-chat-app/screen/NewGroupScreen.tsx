@@ -1,18 +1,50 @@
-import React, { useState } from 'react';
+import { getCurrentUser } from '@aws-amplify/auth';
+import { generateClient } from 'aws-amplify/api';
+import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { getUser, listContacts } from '../src/graphql/queries';
+import { createGroupChat, createUserGroupChat } from '../src/graphql/mutations';
 
-const groupUsers = [
-  { id: '1', name: 'Ali Veli', avatar: '', status: 'User status' },
-  { id: '2', name: 'Đình Nhã Yến', avatar: '', status: 'User status' },
-  { id: '3', name: 'John Doe', avatar: '', status: 'User status' },
-  { id: '4', name: 'Phan Thị Hồng Trinh', avatar: '', status: 'User status' },
-  { id: '5', name: 'Nguyễn Tuấn Kiệt', avatar: '', status: 'User status' },
-];
+const client = generateClient();
 
-export default function NewGroupScreen() {
+export default function NewGroupScreen({ navigation }) {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [groupName, setGroupName] = useState('');
   const [searchText, setSearchText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [contacts, setContacts] = useState([]);
+
+  useEffect(() => {
+    fetchContacts();
+  }, []);
+
+  const fetchContacts = async () => {
+    try {
+      const user = await getCurrentUser();
+      const contactsData = await client.graphql({
+        query: listContacts,
+        variables: {
+          filter: {
+            user_id: { eq: user.userId }
+          }
+        }
+      });
+
+      const contactPromises = contactsData.data.listContacts.items.map(async (contact) => {
+        const userData = await client.graphql({
+          query: getUser,
+          variables: { id: contact.contact_user_id }
+        });
+        return userData.data.getUser;
+      });
+
+      const contactUsers = await Promise.all(contactPromises);
+      setContacts(contactUsers);
+    } catch (error) {
+      console.error('Error fetching contacts:', error);
+      Alert.alert('Error', 'Failed to load contacts');
+    }
+  };
 
   const handleSelectUser = (id: string) => {
     if (selectedUsers.includes(id)) {
@@ -22,7 +54,7 @@ export default function NewGroupScreen() {
     }
   };
 
-  const handleCreateGroup = () => {
+  const handleCreateGroup = async () => {
     if (groupName.trim() === '') {
       Alert.alert('Thông báo', 'Vui lòng nhập tên nhóm.');
       return;
@@ -33,12 +65,61 @@ export default function NewGroupScreen() {
       return;
     }
 
-    Alert.alert('Thành công', `Nhóm "${groupName}" đã được tạo với ${selectedUsers.length} thành viên!`);
-    setGroupName('');
-    setSelectedUsers([]);
+    setLoading(true);
+    try {
+      const currentUser = await getCurrentUser();
+      
+      // Create new group chat
+      const newGroupChat = {
+        group_name: groupName.trim(),
+        created_by: currentUser.userId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_message: 'Group created'
+      };
+
+      const groupResponse = await client.graphql({
+        query: createGroupChat,
+        variables: { input: newGroupChat }
+      });
+
+      const groupId = groupResponse.data.createGroupChat.id;
+
+      // Add current user to group
+      await client.graphql({
+        query: createUserGroupChat,
+        variables: {
+          input: {
+            user_id: currentUser.userId,
+            group_chat_id: groupId
+          }
+        }
+      });
+
+      // Add selected users to group
+      await Promise.all(selectedUsers.map(userId =>
+        client.graphql({
+          query: createUserGroupChat,
+          variables: {
+            input: {
+              user_id: userId,
+              group_chat_id: groupId
+            }
+          }
+        })
+      ));
+
+      Alert.alert('Thành công', `Nhóm "${groupName}" đã được tạo!`);
+      navigation.goBack();
+    } catch (error) {
+      console.error('Error creating group:', error);
+      Alert.alert('Error', 'Failed to create group');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filteredUsers = groupUsers.filter(user =>
+  const filteredUsers = contacts.filter(user =>
     user.name.toLowerCase().includes(searchText.toLowerCase())
   );
 
@@ -59,7 +140,7 @@ export default function NewGroupScreen() {
         onChangeText={setSearchText}
       />
       <FlatList
-        data={selectedUsers.map(id => groupUsers.find(user => user.id === id))}
+        data={selectedUsers.map(id => contacts.find(user => user.id === id))}
         horizontal
         keyExtractor={item => item?.id || ''}
         contentContainerStyle={styles.selectedUsersList}

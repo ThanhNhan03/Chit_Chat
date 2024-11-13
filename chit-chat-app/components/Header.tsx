@@ -5,9 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 interface HeaderProps {
     title: string;
     onBackPress: () => void;
+    rightComponent?: React.ReactNode;
 }
 
-const Header: React.FC<HeaderProps> = ({ title, onBackPress }) => (
+const Header: React.FC<HeaderProps> = ({ title, onBackPress, rightComponent }) => (
     <View style={styles.header}>
         <TouchableOpacity onPress={onBackPress}>
             <Ionicons name="arrow-back" size={24} color="#000" />
