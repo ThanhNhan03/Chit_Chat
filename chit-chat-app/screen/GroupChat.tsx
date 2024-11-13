@@ -8,7 +8,8 @@ import {
     Platform, 
     Alert,
     TouchableOpacity,
-    Text
+    Text,
+    Image
 } from 'react-native';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
@@ -23,7 +24,9 @@ import EmojiPicker from 'rn-emoji-keyboard';
 import ImageViewer from '../components/ImageViewer';
 import { Ionicons } from '@expo/vector-icons';
 import { sendNotification } from '../utils/notificationHelper';
-import { ModelSortDirection } from '../src/API';
+// import { ModelSortDirection } from '../src/API';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import MessageTimestamp from '../components/MessageTimestamp';
 
 const client = generateClient();
 
@@ -35,6 +38,7 @@ interface Message {
     type: 'text' | 'image';
     isMe: boolean;
     senderName?: string;
+    senderId: string;
 }
 
 interface GroupMember {
@@ -42,6 +46,18 @@ interface GroupMember {
     name: string;
     profile_picture?: string;
 }
+
+interface GroupedMessages {
+    timestamp?: string;
+    senderName?: string;
+    senderId: string;
+    senderAvatar?: string;
+    messages: Message[];
+}
+
+
+
+
 
 const GroupChat: React.FC<any> = ({ route, navigation }) => {
     const { name, chatId } = route.params;
@@ -51,8 +67,9 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
-    const [showMembersList, setShowMembersList] = useState(false);
+    // const [showMembersList, setShowMembersList] = useState(false);
     const flatListRef = useRef<FlatList>(null);
+    const [lastCacheUpdate, setLastCacheUpdate] = useState<number>(0);
 
     useEffect(() => {
         fetchCurrentUser();
@@ -108,8 +125,29 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
         }
     };
 
+    const cacheMessages = async (messages: Message[]) => {
+        try {
+            await AsyncStorage.setItem(
+                `chat_messages_${chatId}`,
+                JSON.stringify({
+                    messages,
+                    timestamp: Date.now()
+                })
+            );
+        } catch (error) {
+            console.error('Error caching messages:', error);
+        }
+    };
+
     const fetchMessages = async () => {
         try {
+            const cachedData = await AsyncStorage.getItem(`chat_messages_${chatId}`);
+            if (cachedData) {
+                const { messages: cachedMessages, timestamp } = JSON.parse(cachedData);
+                setMessages(cachedMessages);
+                setLastCacheUpdate(timestamp);
+            }
+
             const messagesResponse = await client.graphql({
                 query: messagesByChat_id,
                 variables: {
@@ -126,7 +164,6 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
 
                 const fetchedMessages = await Promise.all(
                     sortedMessages.map(async (msg) => {
-                        // Get sender name
                         const senderResponse = await client.graphql({
                             query: getUser,
                             variables: { id: msg.sender_id }
@@ -137,18 +174,18 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                             id: msg.id,
                             text: msg.content || undefined,
                             image: msg.attachments || undefined,
-                            timestamp: new Date(msg.timestamp).toLocaleTimeString([], { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                            }),
+                            timestamp: msg.timestamp,
                             type: msg.attachments ? 'image' as const : 'text' as const,
                             isMe: msg.sender_id === currentUserId,
-                            senderName: msg.sender_id === currentUserId ? undefined : senderName
+                            senderName: msg.sender_id === currentUserId ? undefined : senderName,
+                            senderId: msg.sender_id
                         };
                     })
                 );
 
-                setMessages(fetchedMessages.reverse());
+                const newMessages = fetchedMessages.reverse();
+                setMessages(newMessages);
+                await cacheMessages(newMessages);
                 scrollToBottom();
             }
         } catch (error) {
@@ -170,7 +207,6 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                 if (data?.onCreateMessages) {
                     const newMsg = data.onCreateMessages;
                     
-                    // Get sender name for new message
                     const senderResponse = await client.graphql({
                         query: getUser,
                         variables: { id: newMsg.sender_id }
@@ -187,12 +223,18 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                         }),
                         type: newMsg.attachments ? 'image' : 'text',
                         isMe: newMsg.sender_id === currentUserId,
-                        senderName: newMsg.sender_id === currentUserId ? undefined : senderName
+                        senderName: newMsg.sender_id === currentUserId ? undefined : senderName,
+                        senderId: newMsg.sender_id
                     };
-                    setMessages(prev => [...prev, messageObj]);
+
+                    setMessages(prev => {
+                        const newMessages = [...prev, messageObj];
+                        // Cập nhật cache khi có tin nhắn mới
+                        cacheMessages(newMessages);
+                        return newMessages;
+                    });
                     scrollToBottom();
 
-                    // Send notifications to other group members
                     if (newMsg.sender_id !== currentUserId) {
                         await sendNotification({
                             title: `${name} (${senderName})`,
@@ -297,46 +339,91 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
         setInputText(prevText => prevText + emoji.emoji);
     };
 
-    const renderItem = ({ item: message }) => (
-        <MessageItem 
-            message={message} 
-            onImagePress={setSelectedImage}
-            showSender={true}
-        />
+    const groupMessages = (msgs: Message[]): GroupedMessages[] => {
+        const groups: GroupedMessages[] = [];
+        let currentGroup: GroupedMessages | null = null;
+
+        msgs.forEach((msg, index) => {
+            const sender = groupMembers.find(member => member.id === msg.senderId);
+            
+            const currentMsgTime = new Date(msg.timestamp).getTime();
+            const prevMsgTime = index > 0 ? new Date(msgs[index - 1].timestamp).getTime() : 0;
+            
+            const shouldShowTimestamp = index === 0 || 
+                Math.abs(currentMsgTime - prevMsgTime) > 900000; // 15 phút
+
+            if (shouldShowTimestamp || 
+                !currentGroup || 
+                msg.isMe !== (currentGroup.senderId === currentUserId)) {
+                
+                const date = new Date(msg.timestamp);
+                const formattedTimestamp = date instanceof Date && !isNaN(date.getTime()) 
+                    ? date.toLocaleString('vi-VN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    })
+                    : '';
+                
+                currentGroup = {
+                    timestamp: shouldShowTimestamp ? formattedTimestamp : undefined,
+                    senderName: msg.senderName,
+                    senderId: msg.isMe ? currentUserId! : msg.senderId,
+                    senderAvatar: sender?.profile_picture || undefined,
+                    messages: []
+                };
+                groups.push(currentGroup);
+            }
+            
+            currentGroup.messages.push(msg);
+        });
+
+        return groups;
+    };
+
+    const renderItem = ({ item: group }: { item: GroupedMessages }) => (
+        <View style={styles.messageGroup}>
+            {group.timestamp && (
+                <MessageTimestamp timestamp={group.timestamp} />
+            )}
+            {!group.messages[0].isMe && (
+                <View style={styles.senderInfo}>
+                    {group.senderAvatar ? (
+                        <Image 
+                            source={{ uri: group.senderAvatar }} 
+                            style={styles.avatar} 
+                        />
+                    ) : (
+                        <View style={styles.avatarPlaceholder}>
+                            <Text style={styles.avatarText}>
+                                {group.senderName?.[0]?.toUpperCase()}
+                            </Text>
+                        </View>
+                    )}
+                    <Text style={styles.senderName}>{group.senderName}</Text>
+                </View>
+            )}
+            <View style={[
+                styles.messagesWrapper,
+                !group.messages[0].isMe && styles.messagesWithAvatar
+            ]}>
+                {group.messages.map((message, index) => (
+                    <MessageItem 
+                        key={message.id}
+                        message={message}
+                        onImagePress={setSelectedImage}
+                        showSender={false}
+                        isFirstInGroup={index === 0}
+                        isLastInGroup={index === group.messages.length - 1}
+                    />
+                ))}
+            </View>
+        </View>
     );
 
-    const renderMembersList = () => (
-        <Modal
-            visible={showMembersList}
-            transparent={true}
-            animationType="slide"
-            onRequestClose={() => setShowMembersList(false)}
-        >
-            <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
-                    <Text style={styles.modalTitle}>Group Members ({groupMembers.length})</Text>
-                    <FlatList
-                        data={groupMembers}
-                        keyExtractor={(item) => item.id}
-                        renderItem={({ item }) => (
-                            <View style={styles.memberItem}>
-                                <View style={styles.memberAvatar}>
-                                    <Text>{item.name.charAt(0)}</Text>
-                                </View>
-                                <Text style={styles.memberName}>{item.name}</Text>
-                            </View>
-                        )}
-                    />
-                    <TouchableOpacity 
-                        style={styles.closeButton}
-                        onPress={() => setShowMembersList(false)}
-                    >
-                        <Text style={styles.closeButtonText}>Close</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </Modal>
-    );
+   
 
     return (
         <KeyboardAvoidingView 
@@ -348,8 +435,13 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                 title={name} 
                 onBackPress={() => navigation.goBack()}
                 rightComponent={
-                    <TouchableOpacity onPress={() => setShowMembersList(true)}>
-                        <Ionicons name="people" size={24} color="#000" />
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('GroupChatSettings', {
+                            chatId: chatId,
+                            initialGroupName: name
+                        })}
+                    >
+                        <Ionicons name="ellipsis-vertical" size={24} color="black" />
                     </TouchableOpacity>
                 }
             />
@@ -358,9 +450,9 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                     ref={flatListRef}
                     style={styles.messagesContainer}
                     contentContainerStyle={styles.messagesContentContainer}
-                    data={messages}
+                    data={groupMessages(messages)}
                     renderItem={renderItem}
-                    keyExtractor={(item) => item.id}
+                    keyExtractor={(item, index) => `group-${index}`}
                     onContentSizeChange={scrollToBottom}
                     onLayout={scrollToBottom}
                 />
@@ -391,7 +483,6 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                 open={isEmojiPickerOpen} 
                 onClose={() => setIsEmojiPickerOpen(false)} 
             />
-            {renderMembersList()}
         </KeyboardAvoidingView>
     );
 };
@@ -460,6 +551,46 @@ const styles = StyleSheet.create({
     closeButtonText: {
         color: '#fff',
         fontSize: 16,
+    },
+    messageGroup: {
+        marginBottom: 16,
+    },
+    senderInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+        marginLeft: 12,
+    },
+    avatar: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        marginRight: 8,
+    },
+    avatarPlaceholder: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: '#e0e0e0',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 8,
+    },
+    avatarText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: '#666',
+    },
+    senderName: {
+        fontSize: 12,
+        color: '#666',
+        fontWeight: '500',
+    },
+    messagesWrapper: {
+        flexDirection: 'column',
+    },
+    messagesWithAvatar: {
+        marginLeft: 36,
     },
 });
 

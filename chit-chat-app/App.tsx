@@ -24,6 +24,7 @@ import { AuthenticatedUserContext } from './contexts/AuthContext';
 import config from './aws-exports';
 import { initializeNotifications, requestNotificationPermissions } from './utils/notificationHelper';
 import GroupChat from './screen/GroupChat';
+import GroupChatSettings from './screen/GroupChatSettings';
 
 Amplify.configure(config);
 const Stack = createNativeStackNavigator();
@@ -156,6 +157,11 @@ const App: React.FC = () => {
                   name="GroupChat"
                   component={GroupChat}
                   options={{ title: 'Group Chat', headerShown: false }}
+                />
+                <Stack.Screen
+                  name="GroupChatSettings"
+                  component={GroupChatSettings}
+                  options={{ title: 'Group Settings', headerShown: false }}
                 />
               </>
             ) : (

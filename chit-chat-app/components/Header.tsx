@@ -16,9 +16,11 @@ const Header: React.FC<HeaderProps> = ({ title, onBackPress, rightComponent }) =
         <View style={styles.headerTitle}>
             <Text style={styles.headerName}>{title}</Text>
         </View>
-        <TouchableOpacity>
-            <Ionicons name="ellipsis-vertical" size={24} color="#000" />
-        </TouchableOpacity>
+        {rightComponent && (
+            <View style={styles.rightComponent}>
+                {rightComponent}
+            </View>
+        )}
     </View>
 );
 
@@ -38,6 +40,9 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
     },
+    rightComponent: {
+        marginLeft: 16,
+    }
 });
 
 export default Header;

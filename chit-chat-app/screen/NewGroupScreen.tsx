@@ -50,18 +50,22 @@ export default function NewGroupScreen({ navigation }) {
     if (selectedUsers.includes(id)) {
       setSelectedUsers(selectedUsers.filter(userId => userId !== id));
     } else {
+      if (selectedUsers.length >= 10) {
+        Alert.alert('Limit Reached', 'You can only add up to 10 members in a group.');
+        return;
+      }
       setSelectedUsers([...selectedUsers, id]);
     }
   };
 
   const handleCreateGroup = async () => {
     if (groupName.trim() === '') {
-      Alert.alert('Thông báo', 'Vui lòng nhập tên nhóm.');
+      Alert.alert('Required', 'Please enter a group name.');
       return;
     }
 
     if (selectedUsers.length === 0) {
-      Alert.alert('Thông báo', 'Vui lòng chọn ít nhất một người dùng để tạo nhóm.');
+      Alert.alert('Required', 'Please select at least one user to create a group.');
       return;
     }
 
@@ -109,7 +113,7 @@ export default function NewGroupScreen({ navigation }) {
         })
       ));
 
-      Alert.alert('Thành công', `Nhóm "${groupName}" đã được tạo!`);
+      Alert.alert('Success', `Group "${groupName}" has been created!`);
       navigation.goBack();
     } catch (error) {
       console.error('Error creating group:', error);
@@ -127,18 +131,23 @@ export default function NewGroupScreen({ navigation }) {
     <View style={styles.container}>
       <TextInput
         style={styles.input}
-        placeholder="Tên nhóm (không bắt buộc)"
-        placeholderTextColor="#aaa"
+        placeholder="Group Name"
+        placeholderTextColor="#666"
         value={groupName}
         onChangeText={setGroupName}
       />
       <TextInput
         style={styles.searchInput}
-        placeholder="Tìm kiếm"
-        placeholderTextColor="#aaa"
+        placeholder="Search users..."
+        placeholderTextColor="#666"
         value={searchText}
         onChangeText={setSearchText}
       />
+      {selectedUsers.length > 0 && (
+        <Text style={styles.selectedCount}>
+          Selected: {selectedUsers.length}/10 members
+        </Text>
+      )}
       <FlatList
         data={selectedUsers.map(id => contacts.find(user => user.id === id))}
         horizontal
@@ -178,91 +187,157 @@ export default function NewGroupScreen({ navigation }) {
           </TouchableOpacity>
         )}
       />
-      <TouchableOpacity style={styles.button} onPress={handleCreateGroup}>
-        <Text style={styles.buttonText}>Tạo</Text>
+      <TouchableOpacity 
+        style={[styles.button, loading && styles.buttonDisabled]} 
+        onPress={handleCreateGroup}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? 'Creating...' : 'Create Group'}
+        </Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 10, backgroundColor: '#f9f9f9' },
+  container: { 
+    flex: 1, 
+    padding: 16, 
+    backgroundColor: '#ffffff' 
+  },
   input: {
-    backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    marginVertical: 5,
+    backgroundColor: '#f5f5f5',
+    padding: 15,
+    borderRadius: 12,
+    fontSize: 16,
+    marginVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   searchInput: {
-    backgroundColor: '#eaeaea',
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 10,
+    backgroundColor: '#f5f5f5',
+    padding: 15,
+    borderRadius: 12,
+    fontSize: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  selectedCount: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+    fontWeight: '500',
   },
   selectedUsersList: {
-    paddingVertical: 5, // Giảm khoảng cách thừa
+    paddingVertical: 8,
   },
   selectedUserItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#d1e7ff',
-    borderRadius: 25, // Hình tròn nhỏ hơn
-    padding: 5,
-    marginHorizontal: 5, // Giảm khoảng cách giữa các phần tử
-    width: 50, 
-    height: 50,
+    backgroundColor: '#e3f2fd',
+    borderRadius: 30,
+    padding: 6,
+    marginHorizontal: 4,
+    width: 60,
+    height: 60,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   selectedAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#bbb',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#2196F3',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  selectedUserText: { color: '#000', fontWeight: 'bold', fontSize: 14 },
-  removeButton: { color: '#ff0000', fontWeight: 'bold', fontSize: 12 },
+  selectedUserText: { 
+    color: '#fff', 
+    fontWeight: 'bold', 
+    fontSize: 16 
+  },
+  removeButton: { 
+    color: '#f44336', 
+    fontWeight: 'bold', 
+    fontSize: 14,
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#fff',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
   userItem: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    padding: 10, 
-    borderBottomWidth: 1, 
-    borderColor: '#ddd',
+    padding: 12,
+    backgroundColor: '#fff',
+    marginBottom: 8,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#ddd',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#2196F3',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: 12,
   },
   selectedIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#2196F3',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#4CAF50',
     marginLeft: 'auto',
-    marginRight: 10,
+    marginRight: 8,
   },
   circleIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#2196F3',
+    borderColor: '#4CAF50',
     marginLeft: 'auto',
-    marginRight: 10,
+    marginRight: 8,
   },
   button: {
     backgroundColor: '#4CAF50',
-    padding: 15,
-    borderRadius: 5,
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  buttonDisabled: {
+    backgroundColor: '#a5d6a7',
+  },
+  buttonText: { 
+    color: '#fff', 
+    fontWeight: 'bold', 
+    fontSize: 16 
+  },
 });
