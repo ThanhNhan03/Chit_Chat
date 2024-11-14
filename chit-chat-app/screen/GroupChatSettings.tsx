@@ -154,7 +154,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                             });
                             navigation.reset({
                                 index: 0,
-                                routes: [{ name: 'Chats' }],
+                                routes: [{ name: 'MainTabs' }],
                             });
                         } catch (error) {
                             console.error('Error leaving group:', error);
@@ -182,8 +182,8 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                                 variables: { input: { id: chatId } }
                             });
                             navigation.reset({
-                                index: 1,
-                                routes: [{ name: 'ChatList' }],
+                                index: 0,
+                                routes: [{ name: 'MainTabs' }],
                             });
                         } catch (error) {
                             console.error('Error deleting group:', error);

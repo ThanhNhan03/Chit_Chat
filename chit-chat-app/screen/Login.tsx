@@ -37,12 +37,12 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
       const user = await getCurrentUser();
       console.log("User successfully signed in!", user);
 
-      setUser(user); // Cập nhật trạng thái người dùng
-      Alert.alert("Login success");
+      setUser(user); 
+      // Alert.alert("Login success");
 
       navigation.reset({
         index: 0,
-        routes: [{ name: 'Chats' }],
+        routes: [{ name: 'MainTabs' }],
       });
     } catch (error: any) {
       console.error("Error signing in", error);
