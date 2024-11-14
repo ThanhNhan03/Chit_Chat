@@ -168,6 +168,10 @@ export const createMessages = /* GraphQL */ `mutation CreateMessages(
     timestamp
     status
     attachments
+    reactions {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -190,6 +194,10 @@ export const updateMessages = /* GraphQL */ `mutation UpdateMessages(
     timestamp
     status
     attachments
+    reactions {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -212,6 +220,10 @@ export const deleteMessages = /* GraphQL */ `mutation DeleteMessages(
     timestamp
     status
     attachments
+    reactions {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -220,6 +232,63 @@ export const deleteMessages = /* GraphQL */ `mutation DeleteMessages(
 ` as GeneratedMutation<
   APITypes.DeleteMessagesMutationVariables,
   APITypes.DeleteMessagesMutation
+>;
+export const createReactions = /* GraphQL */ `mutation CreateReactions(
+  $input: CreateReactionsInput!
+  $condition: ModelReactionsConditionInput
+) {
+  createReactions(input: $input, condition: $condition) {
+    id
+    message_id
+    user_id
+    icon
+    created_at
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.CreateReactionsMutationVariables,
+  APITypes.CreateReactionsMutation
+>;
+export const updateReactions = /* GraphQL */ `mutation UpdateReactions(
+  $input: UpdateReactionsInput!
+  $condition: ModelReactionsConditionInput
+) {
+  updateReactions(input: $input, condition: $condition) {
+    id
+    message_id
+    user_id
+    icon
+    created_at
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UpdateReactionsMutationVariables,
+  APITypes.UpdateReactionsMutation
+>;
+export const deleteReactions = /* GraphQL */ `mutation DeleteReactions(
+  $input: DeleteReactionsInput!
+  $condition: ModelReactionsConditionInput
+) {
+  deleteReactions(input: $input, condition: $condition) {
+    id
+    message_id
+    user_id
+    icon
+    created_at
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.DeleteReactionsMutationVariables,
+  APITypes.DeleteReactionsMutation
 >;
 export const createContact = /* GraphQL */ `mutation CreateContact(
   $input: CreateContactInput!
@@ -364,6 +433,10 @@ export const createUser = /* GraphQL */ `mutation CreateUser(
       nextToken
       __typename
     }
+    Reactions {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -405,6 +478,10 @@ export const updateUser = /* GraphQL */ `mutation UpdateUser(
       nextToken
       __typename
     }
+    Reactions {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -443,6 +520,10 @@ export const deleteUser = /* GraphQL */ `mutation DeleteUser(
       __typename
     }
     ReceivedFriendRequests {
+      nextToken
+      __typename
+    }
+    Reactions {
       nextToken
       __typename
     }

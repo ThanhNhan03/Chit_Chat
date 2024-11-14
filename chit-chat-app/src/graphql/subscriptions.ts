@@ -153,6 +153,10 @@ export const onCreateMessages = /* GraphQL */ `subscription OnCreateMessages($fi
     timestamp
     status
     attachments
+    reactions {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -172,6 +176,10 @@ export const onUpdateMessages = /* GraphQL */ `subscription OnUpdateMessages($fi
     timestamp
     status
     attachments
+    reactions {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -191,6 +199,10 @@ export const onDeleteMessages = /* GraphQL */ `subscription OnDeleteMessages($fi
     timestamp
     status
     attachments
+    reactions {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -199,6 +211,54 @@ export const onDeleteMessages = /* GraphQL */ `subscription OnDeleteMessages($fi
 ` as GeneratedSubscription<
   APITypes.OnDeleteMessagesSubscriptionVariables,
   APITypes.OnDeleteMessagesSubscription
+>;
+export const onCreateReactions = /* GraphQL */ `subscription OnCreateReactions($filter: ModelSubscriptionReactionsFilterInput) {
+  onCreateReactions(filter: $filter) {
+    id
+    message_id
+    user_id
+    icon
+    created_at
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnCreateReactionsSubscriptionVariables,
+  APITypes.OnCreateReactionsSubscription
+>;
+export const onUpdateReactions = /* GraphQL */ `subscription OnUpdateReactions($filter: ModelSubscriptionReactionsFilterInput) {
+  onUpdateReactions(filter: $filter) {
+    id
+    message_id
+    user_id
+    icon
+    created_at
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnUpdateReactionsSubscriptionVariables,
+  APITypes.OnUpdateReactionsSubscription
+>;
+export const onDeleteReactions = /* GraphQL */ `subscription OnDeleteReactions($filter: ModelSubscriptionReactionsFilterInput) {
+  onDeleteReactions(filter: $filter) {
+    id
+    message_id
+    user_id
+    icon
+    created_at
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnDeleteReactionsSubscriptionVariables,
+  APITypes.OnDeleteReactionsSubscription
 >;
 export const onCreateContact = /* GraphQL */ `subscription OnCreateContact($filter: ModelSubscriptionContactFilterInput) {
   onCreateContact(filter: $filter) {
@@ -328,6 +388,10 @@ export const onCreateUser = /* GraphQL */ `subscription OnCreateUser($filter: Mo
       nextToken
       __typename
     }
+    Reactions {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -366,6 +430,10 @@ export const onUpdateUser = /* GraphQL */ `subscription OnUpdateUser($filter: Mo
       nextToken
       __typename
     }
+    Reactions {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -401,6 +469,10 @@ export const onDeleteUser = /* GraphQL */ `subscription OnDeleteUser($filter: Mo
       __typename
     }
     ReceivedFriendRequests {
+      nextToken
+      __typename
+    }
+    Reactions {
       nextToken
       __typename
     }

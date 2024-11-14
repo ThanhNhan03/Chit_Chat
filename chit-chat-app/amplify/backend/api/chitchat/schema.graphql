@@ -28,6 +28,15 @@ type Messages @model @auth(rules: [{allow: public}]) {
   timestamp: AWSDateTime
   status: String # "sent", "delivered", "seen"
   attachments: String
+  reactions: [Reactions] @hasMany(indexName: "reactionsByMessage", fields: ["id"])
+}
+
+type Reactions @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  message_id: ID! @index(name: "reactionsByMessage")
+  user_id: ID! @index(name: "reactionsByUser")
+  icon: String
+  created_at: AWSDateTime
 }
 
 type Contact @model @auth(rules: [{allow: public}]) {
@@ -58,6 +67,7 @@ type User @model @auth(rules: [{allow: public}]) {
   Contacts: [Contact] @hasMany(indexName: "contactsByUser", fields: ["id"])
   SentFriendRequests: [FriendRequests] @hasMany(indexName: "friendRequestBySender", fields: ["id"])
   ReceivedFriendRequests: [FriendRequests] @hasMany(indexName: "friendRequestByReceiver", fields: ["id"])
+  Reactions: [Reactions] @hasMany(indexName: "reactionsByUser", fields: ["id"])
 }
 
 # Bảng trung gian cho quan hệ nhiều-nhiều giữa User và GroupChat
@@ -77,3 +87,4 @@ type UserFriendChat @model @auth(rules: [{allow: public}]) {
   user: User @belongsTo(fields: ["user_id"]) # Sửa thành @belongsTo
   friendChat: FriendChat @belongsTo(fields: ["friend_chat_id"]) # Sửa thành @belongsTo
 }
+
