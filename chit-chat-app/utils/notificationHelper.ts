@@ -1,7 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-// Cấu hình notifications
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
         shouldShowAlert: true,
@@ -59,7 +58,7 @@ export const sendNotification = async ({
                     title,
                     body,
                     data,
-                    sound: 'notification-sound.wav', 
+                    // sound: 'notification-sound.wav', 
                     badge: 1,
                 },
                 trigger: null,
@@ -70,7 +69,7 @@ export const sendNotification = async ({
                     title,
                     body,
                     data,
-                    sound: 'notification-sound.wav', 
+                    // sound: 'notification-sound.wav', 
                     badge: 1,
                     priority: 'high',
                     vibrate: [0, 250, 250, 250],

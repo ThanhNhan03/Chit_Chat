@@ -4,7 +4,7 @@
     "slug": "chit-chat-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/notification-icon.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
@@ -28,16 +28,14 @@
       "color": "#ffffff",
       "iosDisplayInForeground": true,
       "androidMode": "default",
-      "androidCollapsedTitle": "New Message",
-      "sounds": ["./assets/notification-sound.wav"]
+      "androidCollapsedTitle": "New Message"
     },
     "plugins": [
       [
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#ffffff",
-          "sounds": ["./assets/notification-sound.wav"]
+          "color": "#ffffff"
         }
       ]
     ]
