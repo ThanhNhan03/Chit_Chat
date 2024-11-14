@@ -2,15 +2,66 @@ import React, { useState, useEffect } from "react";
 import { StyleSheet, View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Dimensions, Alert, RefreshControl } from "react-native";
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
-import { listUserFriendChats, getFriendChat, getUser } from '../src/graphql/queries';
-import { onUpdateFriendChat } from '../src/graphql/subscriptions';
+import { listUserFriendChats, getFriendChat, getUser, listUserGroupChats, getGroupChat } from '../src/graphql/queries';
+import { onUpdateFriendChat, onUpdateGroupChat } from '../src/graphql/subscriptions';
 import ContactRow from "../components/ContactRow";
 import Seperator from "../components/Seperator"; 
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from "../config/constrants"; 
+import { 
+    ListUserFriendChatsQuery,
+    ListUserGroupChatsQuery,
+    GetGroupChatQuery,
+    GetFriendChatQuery,
+    GetUserQuery,
+    ModelUserGroupChatConnection
+} from '../src/API';
 
 const client = generateClient();
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+interface UserFriendChat {
+    id: string;
+    user_id: string;
+    friend_chat_id: string;
+}
+
+interface UserGroupChat {
+    id: string;
+    user_id: string;
+    group_chat_id: string;
+}
+
+interface FriendChatData {
+    id: string;
+    last_message?: string;
+    updated_at: string;
+}
+
+interface GroupChatData {
+    id: string;
+    group_name: string;
+    last_message?: string;
+    updated_at: string;
+    group_picture?: string;
+    members?: ModelUserGroupChatConnection;
+}
+
+interface UserData {
+    id: string;
+    name: string;
+    profile_picture?: string;
+}
+
+interface UserFriendChatsConnection {
+    items: UserFriendChat[];
+    nextToken?: string;
+}
+
+interface UserGroupChatsConnection {
+    items: UserGroupChat[];
+    nextToken?: string;
+}
 
 interface Chat {
     id: string;
@@ -18,8 +69,10 @@ interface Chat {
     lastMessage: string;
     timestamp: string;
     chatId: string;
-    userId: string;
+    userId?: string;
     profilePicture?: string;
+    type: 'private' | 'group';
+    members?: number;
 }
 interface ChatsProps {
     navigation: any; 
@@ -56,7 +109,7 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
 
     const fetchChats = async () => {
         try {
-            // Fetch all friend chats for current user
+            // Fetch friend chats
             const userChatsResponse = await client.graphql({
                 query: listUserFriendChats,
                 variables: {
@@ -66,21 +119,19 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                 }
             });
 
-            // Get detailed information for each chat
-            const chatPromises = userChatsResponse.data.listUserFriendChats.items.map(async (userChat) => {
-                // Get friend chat details
+            const userFriendChats = (userChatsResponse.data.listUserFriendChats as UserFriendChatsConnection).items;
+
+            const chatPromises = userFriendChats.map(async (userChat) => {
                 const friendChatResponse = await client.graphql({
                     query: getFriendChat,
                     variables: { id: userChat.friend_chat_id }
                 });
-                const friendChat = friendChatResponse.data.getFriendChat;
+                const friendChat = friendChatResponse.data.getFriendChat as FriendChatData;
                 
-                // Only process chats that have last_message
                 if (!friendChat.last_message) {
                     return null;
                 }
 
-                // Find the other user in the chat
                 const otherUserChat = await client.graphql({
                     query: listUserFriendChats,
                     variables: {
@@ -93,15 +144,13 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                     }
                 });
 
-                // Get the other user's ID
-                const otherUserId = otherUserChat.data.listUserFriendChats.items[0]?.user_id;
+                const otherUserId = (otherUserChat.data.listUserFriendChats as UserFriendChatsConnection).items[0]?.user_id;
 
-                // Get other user's details
                 const otherUserResponse = await client.graphql({
                     query: getUser,
                     variables: { id: otherUserId }
                 });
-                const otherUser = otherUserResponse.data.getUser;
+                const otherUser = otherUserResponse.data.getUser as UserData;
 
                 return {
                     id: friendChat.id,
@@ -110,16 +159,59 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                     timestamp: new Date(friendChat.updated_at).toLocaleDateString(),
                     chatId: friendChat.id,
                     userId: otherUserId,
-                    profilePicture: otherUser?.profile_picture
+                    profilePicture: otherUser?.profile_picture,
+                    type: 'private' as const
                 };
             });
 
             const resolvedChats = (await Promise.all(chatPromises))
-                .filter(chat => chat !== null) // Remove null entries
+                .filter(chat => chat !== null)
                 .sort((a, b) => 
-                    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+                    new Date(b!.timestamp).getTime() - new Date(a!.timestamp).getTime()
                 );
-            setChats(resolvedChats);
+
+            // Fetch group chats
+            const userGroupChatsResponse = await client.graphql({
+                query: listUserGroupChats,
+                variables: {
+                    filter: {
+                        user_id: { eq: currentUserId }
+                    }
+                }
+            });
+
+            const userGroupChats = (userGroupChatsResponse.data.listUserGroupChats as UserGroupChatsConnection).items;
+
+            const groupChatPromises = userGroupChats.map(async (userGroupChat) => {
+                const groupChatResponse = await client.graphql({
+                    query: getGroupChat,
+                    variables: { id: userGroupChat.group_chat_id }
+                });
+                
+                const groupChat = groupChatResponse.data.getGroupChat as GetGroupChatQuery['getGroupChat'];
+
+                if (!groupChat) return null;
+
+                return {
+                    id: groupChat.id,
+                    name: groupChat.group_name || 'Unnamed Group',
+                    lastMessage: groupChat.last_message || 'No messages yet',
+                    timestamp: new Date(groupChat.updated_at || groupChat.updatedAt).toLocaleDateString(),
+                    chatId: groupChat.id,
+                    profilePicture: groupChat.group_picture,
+                    type: 'group' as const,
+                    members: groupChat.members?.__typename?.length || 0
+                };
+            });
+
+            const groupChats = (await Promise.all(groupChatPromises)).filter(chat => chat !== null);
+
+            // Combine and sort all chats
+            const allChats = [...resolvedChats, ...groupChats].sort((a, b) =>
+                new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+            );
+
+            setChats(allChats);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching chats:', error);
@@ -178,11 +270,19 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
     };
 
     const handleChatPress = (chat: Chat) => {
-        navigation.navigate('Chat', {
-            name: chat.name,
-            userId: chat.userId,
-            chatId: chat.chatId
-        });
+        if (chat.type === 'group') {
+            navigation.navigate('GroupChat', {
+                name: chat.name,
+                chatId: chat.chatId,
+                members: chat.members
+            });
+        } else {
+            navigation.navigate('Chat', {
+                name: chat.name,
+                userId: chat.userId,
+                chatId: chat.chatId
+            });
+        }
     };
 
     const onRefresh = async () => {

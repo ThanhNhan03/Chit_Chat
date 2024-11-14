@@ -13,6 +13,7 @@ import * as ImagePicker from 'expo-image-picker';
 import EmojiPicker from 'rn-emoji-keyboard';
 import ImageViewer from '../components/ImageViewer';
 import { sendNotification } from '../utils/notificationHelper';
+import MessageTimestamp from '../components/MessageTimestamp';
 
 const client = generateClient();
 
@@ -25,6 +26,49 @@ interface Message {
     isMe: boolean;
 }
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+interface GroupedMessages {
+    timestamp?: string;
+    messages: Message[];
+}
+
+const groupMessages = (msgs: Message[]): GroupedMessages[] => {
+    const groups: GroupedMessages[] = [];
+    let currentGroup: GroupedMessages | null = null;
+
+    msgs.forEach((msg, index) => {
+        const currentMsgTime = new Date(msg.timestamp).getTime();
+        const prevMsgTime = index > 0 ? new Date(msgs[index - 1].timestamp).getTime() : 0;
+        
+        const shouldShowTimestamp = index === 0 || 
+            Math.abs(currentMsgTime - prevMsgTime) > 900000; 
+
+        if (shouldShowTimestamp || !currentGroup || msg.isMe !== currentGroup.messages[0].isMe) {
+            const date = new Date(msg.timestamp);
+            const formattedTimestamp = date instanceof Date && !isNaN(date.getTime()) 
+                ? date.toLocaleString('vi-VN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                })
+                : '';
+
+            currentGroup = {
+                timestamp: shouldShowTimestamp ? formattedTimestamp : undefined,
+                messages: []
+            };
+            groups.push(currentGroup);
+        }
+        
+        currentGroup.messages.push(msg);
+    });
+
+    return groups;
+};
+
 const Chat: React.FC<any> = ({ route, navigation }) => {
     const { name, userId, chatId } = route.params;
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -32,6 +76,7 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
     const [inputText, setInputText] = useState('');
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [lastCacheUpdate, setLastCacheUpdate] = useState<number>(0);
     const flatListRef = useRef<FlatList>(null);
 
     useEffect(() => {
@@ -48,6 +93,20 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
         }
     }, [currentUserId, chatId]);
 
+    const cacheMessages = async (messages: Message[]) => {
+        try {
+            await AsyncStorage.setItem(
+                `private_chat_messages_${chatId}`,
+                JSON.stringify({
+                    messages,
+                    timestamp: Date.now()
+                })
+            );
+        } catch (error) {
+            console.error('Error caching messages:', error);
+        }
+    };
+
     const fetchCurrentUser = async () => {
         try {
             const user = await getCurrentUser();
@@ -59,6 +118,13 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
 
     const fetchMessages = async () => {
         try {
+            const cachedData = await AsyncStorage.getItem(`private_chat_messages_${chatId}`);
+            if (cachedData) {
+                const { messages: cachedMessages, timestamp } = JSON.parse(cachedData);
+                setMessages(cachedMessages);
+                setLastCacheUpdate(timestamp);
+            }
+
             const messagesResponse = await client.graphql({
                 query: listMessages,
                 variables: {
@@ -79,15 +145,13 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                         id: msg.id,
                         text: msg.content || undefined,
                         image: msg.attachments || undefined,
-                        timestamp: new Date(msg.timestamp).toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                        }),
+                        timestamp: msg.timestamp,
                         type: msg.attachments ? 'image' as const : 'text' as const,
                         isMe: msg.sender_id === currentUserId
                     }));
 
                 setMessages(fetchedMessages);
+                await cacheMessages(fetchedMessages);
                 scrollToBottom();
             }
         } catch (error) {
@@ -127,7 +191,11 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                         isMe: msg.sender_id === currentUserId
                     }));
 
-                setMessages(prev => [...olderMessages, ...prev]);
+                setMessages(prev => {
+                    const newMessages = [...olderMessages, ...prev];
+                    cacheMessages(newMessages);
+                    return newMessages;
+                });
             }
         } catch (error) {
             console.error('Error loading more messages:', error);
@@ -176,10 +244,15 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                             hour: '2-digit',
                             minute: '2-digit'
                         }),
-                        type: newMsg.attachments ? 'image' as const : 'text' as const,
+                        type: newMsg.attachments ? 'image' : 'text',
                         isMe: newMsg.sender_id === currentUserId
                     };
-                    setMessages(prev => [...prev, messageObj]);
+
+                    setMessages(prev => {
+                        const newMessages = [...prev, messageObj];
+                        cacheMessages(newMessages);
+                        return newMessages;
+                    });
                     scrollToBottom();
                 }
             },
@@ -274,14 +347,26 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
         setInputText(prevText => prevText + emoji.emoji);
     };
 
-    const renderItem = ({ item: message }) => (
-        <MessageItem 
-            message={message} 
-            onImagePress={setSelectedImage} 
-        />
+    const renderItem = ({ item: group }: { item: GroupedMessages }) => (
+        <View style={styles.messageGroup}>
+            {group.timestamp && (
+                <MessageTimestamp timestamp={group.timestamp} />
+            )}
+            <View style={styles.messagesWrapper}>
+                {group.messages.map((message, index) => (
+                    <MessageItem 
+                        key={message.id}
+                        message={message}
+                        onImagePress={setSelectedImage}
+                        isFirstInGroup={index === 0}
+                        isLastInGroup={index === group.messages.length - 1}
+                    />
+                ))}
+            </View>
+        </View>
     );
 
-    const keyExtractor = (item: Message) => item.id;
+    const keyExtractor = (item: GroupedMessages, index: number) => `group-${index}`;
 
     return (
         <KeyboardAvoidingView 
@@ -295,7 +380,7 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                     ref={flatListRef}
                     style={styles.messagesContainer}
                     contentContainerStyle={styles.messagesContentContainer}
-                    data={messages}
+                    data={groupMessages(messages)}
                     renderItem={renderItem}
                     keyExtractor={keyExtractor}
                     onContentSizeChange={scrollToBottom}
@@ -350,6 +435,12 @@ const styles = StyleSheet.create({
     messagesContentContainer: {
         padding: 16,
         paddingBottom: 8,
+    },
+    messageGroup: {
+        marginBottom: 8,
+    },
+    messagesWrapper: {
+        flexDirection: 'column',
     },
 });
 
