@@ -223,29 +223,28 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                 if (data?.onCreateMessages) {
                     const newMsg = data.onCreateMessages;
                     
-                    if (newMsg.sender_id !== currentUserId) {
-                        await sendNotification({
-                            title: name,
-                            body: newMsg.content || '📷 Sent an image',
-                            data: {
-                                type: 'message',
-                                chatId,
-                                userId: newMsg.sender_id,
-                                name
-                            }
-                        });
+                    if (newMsg.sender_id === currentUserId) {
+                        return;
                     }
+
+                    await sendNotification({
+                        title: name,
+                        body: newMsg.content || '📷 Sent an image',
+                        data: {
+                            type: 'message',
+                            chatId,
+                            userId: newMsg.sender_id,
+                            name
+                        }
+                    });
 
                     const messageObj: Message = {
                         id: newMsg.id,
                         text: newMsg.content,
                         image: newMsg.attachments,
-                        timestamp: new Date(newMsg.timestamp).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        }),
+                        timestamp: newMsg.timestamp,
                         type: newMsg.attachments ? 'image' : 'text',
-                        isMe: newMsg.sender_id === currentUserId
+                        isMe: false
                     };
 
                     setMessages(prev => {
@@ -279,26 +278,43 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
 
     const handleSendMessage = async () => {
         if (inputText.trim()) {
+            const messageText = inputText.trim();
+            setInputText('');
+
+            const timestamp = new Date().toISOString();
+            const optimisticMessage: Message = {
+                id: `temp-${Date.now()}`,
+                text: messageText,
+                timestamp: timestamp,
+                type: 'text',
+                isMe: true
+            };
+
+            setMessages(prev => [...prev, optimisticMessage]);
+            scrollToBottom();
+
             try {
                 const newMessage = {
                     chat_type: 'private',
                     chat_id: chatId,
                     sender_id: currentUserId,
-                    content: inputText.trim(),
-                    timestamp: new Date().toISOString(),
+                    content: messageText,
+                    timestamp: timestamp,
                     status: 'sent'
                 };
 
-                await client.graphql({
-                    query: createMessages,
-                    variables: { input: newMessage }
-                });
-
-                await updateLastMessage(inputText.trim());
-                setInputText('');
+                await Promise.all([
+                    client.graphql({
+                        query: createMessages,
+                        variables: { input: newMessage }
+                    }),
+                    updateLastMessage(messageText)
+                ]);
             } catch (error) {
                 console.error('Error sending message:', error);
+                setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
                 Alert.alert('Error', 'Failed to send message');
+                setInputText(messageText);
             }
         }
     };
@@ -310,28 +326,41 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
         });
 
         if (!result.canceled) {
+            const imageUrl = result.assets[0].uri;
+            const timestamp = new Date().toISOString();
+
+            const optimisticMessage: Message = {
+                id: `temp-${Date.now()}`,
+                image: imageUrl,
+                timestamp: timestamp,
+                type: 'image',
+                isMe: true
+            };
+
+            setMessages(prev => [...prev, optimisticMessage]);
+            scrollToBottom();
+
             try {
-                // TODO: Upload image to S3 first
-                const imageUrl = result.assets[0].uri; // Should be S3 URL in production
-                
                 const newMessage = {
                     chat_type: 'private',
                     chat_id: chatId,
                     sender_id: currentUserId,
                     content: '',
-                    timestamp: new Date().toISOString(),
+                    timestamp: timestamp,
                     status: 'sent',
                     attachments: imageUrl
                 };
 
-                await client.graphql({
-                    query: createMessages,
-                    variables: { input: newMessage }
-                });
-
-                await updateLastMessage('📷 Image');
+                await Promise.all([
+                    client.graphql({
+                        query: createMessages,
+                        variables: { input: newMessage }
+                    }),
+                    updateLastMessage('📷 Image')
+                ]);
             } catch (error) {
                 console.error('Error sending image:', error);
+                setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
                 Alert.alert('Error', 'Failed to send image');
             }
         }

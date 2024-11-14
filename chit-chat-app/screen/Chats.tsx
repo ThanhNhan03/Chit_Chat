@@ -78,6 +78,11 @@ interface ChatsProps {
     navigation: any; 
 }
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const CHATS_CACHE_KEY = 'CACHED_CHATS';
+const CACHE_EXPIRY_TIME = 1000 * 60 * 60; // 1 hour in milliseconds
+
 const Chats: React.FC<ChatsProps> = ({ navigation }) => {
     const [chats, setChats] = useState<Chat[]>([]);
     const [loading, setLoading] = useState(true);
@@ -86,6 +91,7 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
 
     useEffect(() => {
         fetchCurrentUser();
+        loadCachedChats();
     }, []);
 
     useEffect(() => {
@@ -97,6 +103,35 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
             };
         }
     }, [currentUserId]);
+
+    const loadCachedChats = async () => {
+        try {
+            const cachedData = await AsyncStorage.getItem(CHATS_CACHE_KEY);
+            if (cachedData) {
+                const { chats: cachedChats, timestamp } = JSON.parse(cachedData);
+                const isExpired = Date.now() - timestamp > CACHE_EXPIRY_TIME;
+                
+                if (!isExpired) {
+                    setChats(cachedChats);
+                    setLoading(false);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading cached chats:', error);
+        }
+    };
+
+    const cacheChats = async (chatsToCache: Chat[]) => {
+        try {
+            const cacheData = {
+                chats: chatsToCache,
+                timestamp: Date.now()
+            };
+            await AsyncStorage.setItem(CHATS_CACHE_KEY, JSON.stringify(cacheData));
+        } catch (error) {
+            console.error('Error caching chats:', error);
+        }
+    };
 
     const fetchCurrentUser = async () => {
         try {
@@ -213,6 +248,9 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
 
             setChats(allChats);
             setLoading(false);
+            
+            // Cache the fetched chats
+            await cacheChats(allChats);
         } catch (error) {
             console.error('Error fetching chats:', error);
             Alert.alert('Error', 'Failed to load chats');
@@ -259,9 +297,13 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                             timestamp: new Date(updatedChat.updated_at).toLocaleDateString()
                         };
 
-                        return updatedChats.sort((a, b) => 
+                        const sortedChats = updatedChats.sort((a, b) => 
                             new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
                         );
+
+                        // Cache the updated chats
+                        cacheChats(sortedChats);
+                        return sortedChats;
                     });
                 }
             },

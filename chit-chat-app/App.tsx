@@ -50,9 +50,9 @@ const TabNavigator = () => {
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: any;
-          if (route.name === 'ChatsTab') {
+          if (route.name === 'Chats') {
             iconName = 'chatbubble';
-          } else if (route.name === 'SettingsTab') {
+          } else if (route.name === 'Settings') {
             iconName = 'settings';
           }
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -75,7 +75,7 @@ const TabNavigator = () => {
       })}
     >
       <Tab.Screen 
-        name="ChatsTab" 
+        name="Chats" 
         component={Chats}
         options={{ 
           headerShown: false,
@@ -83,7 +83,7 @@ const TabNavigator = () => {
         }} 
       />
       <Tab.Screen 
-        name="SettingsTab" 
+        name="Settings" 
         component={Settings}
         options={{ 
           headerShown: false,

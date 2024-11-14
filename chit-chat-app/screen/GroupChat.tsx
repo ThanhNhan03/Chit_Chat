@@ -60,7 +60,7 @@ interface GroupedMessages {
 
 
 const GroupChat: React.FC<any> = ({ route, navigation }) => {
-    const { name, chatId } = route.params;
+    const { name, chatId, shouldScrollToBottom } = route.params;
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputText, setInputText] = useState('');
@@ -78,7 +78,13 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
 
     useEffect(() => {
         if (currentUserId && chatId) {
-            fetchMessages();
+            const loadMessages = async () => {
+                await fetchMessages();
+                if (shouldScrollToBottom) {
+                    scrollToBottomWithDelay();
+                }
+            };
+            loadMessages();
             const subscription = subscribeToNewMessages();
             return () => {
                 subscription.unsubscribe();
@@ -139,6 +145,14 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
         }
     };
 
+    const scrollToBottomWithDelay = () => {
+        setTimeout(() => {
+            if (flatListRef.current && messages.length > 0) {
+                flatListRef.current.scrollToEnd({ animated: false });
+            }
+        }, 100);
+    };
+
     const fetchMessages = async () => {
         try {
             const cachedData = await AsyncStorage.getItem(`chat_messages_${chatId}`);
@@ -186,7 +200,7 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                 const newMessages = fetchedMessages.reverse();
                 setMessages(newMessages);
                 await cacheMessages(newMessages);
-                scrollToBottom();
+                scrollToBottomWithDelay();
             }
         } catch (error) {
             console.error('Error fetching messages:', error);
@@ -207,6 +221,10 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                 if (data?.onCreateMessages) {
                     const newMsg = data.onCreateMessages;
                     
+                    if (newMsg.sender_id === currentUserId) {
+                        return;
+                    }
+
                     const senderResponse = await client.graphql({
                         query: getUser,
                         variables: { id: newMsg.sender_id }
@@ -217,35 +235,29 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                         id: newMsg.id,
                         text: newMsg.content,
                         image: newMsg.attachments,
-                        timestamp: new Date(newMsg.timestamp).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        }),
+                        timestamp: newMsg.timestamp,
                         type: newMsg.attachments ? 'image' : 'text',
-                        isMe: newMsg.sender_id === currentUserId,
-                        senderName: newMsg.sender_id === currentUserId ? undefined : senderName,
+                        isMe: false,
+                        senderName,
                         senderId: newMsg.sender_id
                     };
 
                     setMessages(prev => {
                         const newMessages = [...prev, messageObj];
-                        // Cập nhật cache khi có tin nhắn mới
                         cacheMessages(newMessages);
                         return newMessages;
                     });
                     scrollToBottom();
 
-                    if (newMsg.sender_id !== currentUserId) {
-                        await sendNotification({
-                            title: `${name} (${senderName})`,
-                            body: newMsg.content || '📷 Sent an image',
-                            data: {
-                                type: 'group_message',
-                                chatId,
-                                groupName: name
-                            }
-                        });
-                    }
+                    await sendNotification({
+                        title: `${name} (${senderName})`,
+                        body: newMsg.content || '📷 Sent an image',
+                        data: {
+                            type: 'group_message',
+                            chatId,
+                            groupName: name
+                        }
+                    });
                 }
             },
             error: (error) => console.warn(error)
@@ -271,26 +283,44 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
 
     const handleSendMessage = async () => {
         if (inputText.trim()) {
+            const messageText = inputText.trim();
+            setInputText('');
+
+            const timestamp = new Date().toISOString();
+            const optimisticMessage: Message = {
+                id: `temp-${Date.now()}`,
+                text: messageText,
+                timestamp: timestamp,
+                type: 'text',
+                isMe: true,
+                senderId: currentUserId!
+            };
+
+            setMessages(prev => [...prev, optimisticMessage]);
+            scrollToBottom();
+
             try {
                 const newMessage = {
                     chat_type: 'group',
                     chat_id: chatId,
                     sender_id: currentUserId,
-                    content: inputText.trim(),
-                    timestamp: new Date().toISOString(),
+                    content: messageText,
+                    timestamp: timestamp,
                     status: 'sent'
                 };
 
-                await client.graphql({
-                    query: createMessages,
-                    variables: { input: newMessage }
-                });
-
-                await updateLastMessage(inputText.trim());
-                setInputText('');
+                await Promise.all([
+                    client.graphql({
+                        query: createMessages,
+                        variables: { input: newMessage }
+                    }),
+                    updateLastMessage(messageText)
+                ]);
             } catch (error) {
                 console.error('Error sending message:', error);
+                setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
                 Alert.alert('Error', 'Failed to send message');
+                setInputText(messageText);
             }
         }
     };
@@ -357,15 +387,13 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                 msg.isMe !== (currentGroup.senderId === currentUserId)) {
                 
                 const date = new Date(msg.timestamp);
-                const formattedTimestamp = date instanceof Date && !isNaN(date.getTime()) 
-                    ? date.toLocaleString('vi-VN', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                    })
-                    : '';
+                const formattedTimestamp = date.toLocaleString('vi-VN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
                 
                 currentGroup = {
                     timestamp: shouldShowTimestamp ? formattedTimestamp : undefined,
@@ -449,12 +477,16 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                 <FlatList
                     ref={flatListRef}
                     style={styles.messagesContainer}
-                    contentContainerStyle={styles.messagesContentContainer}
+                    contentContainerStyle={[
+                        styles.messagesContentContainer,
+                        { flexGrow: 1, justifyContent: 'flex-end' }
+                    ]}
                     data={groupMessages(messages)}
                     renderItem={renderItem}
                     keyExtractor={(item, index) => `group-${index}`}
                     onContentSizeChange={scrollToBottom}
-                    onLayout={scrollToBottom}
+                    onLayout={scrollToBottomWithDelay}
+                    inverted={false}
                 />
                 <InputBar
                     inputText={inputText}
