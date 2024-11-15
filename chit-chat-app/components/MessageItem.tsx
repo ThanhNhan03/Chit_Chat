@@ -65,6 +65,15 @@ const MessageItem: React.FC<MessageItemProps> = ({
     const [reactions, setReactions] = useState<any[]>([]);
     const [showReactionMenu, setShowReactionMenu] = useState(false);
     const [selectedReaction, setSelectedReaction] = useState<Reaction | null>(null);
+    const [currentUser, setCurrentUser] = useState<any>(null);
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            const user = await getCurrentUser();
+            setCurrentUser(user);
+        };
+        fetchUser();
+    }, []);
 
     useEffect(() => {
         fetchReactions();
@@ -135,21 +144,42 @@ const MessageItem: React.FC<MessageItemProps> = ({
         try {
             const currentUser = await getCurrentUser();
             
-            // Check if user already reacted with this icon
+            // Tìm reaction hiện tại của user (nếu có)
             const existingReaction = reactions.find(
-                r => r.user_id === currentUser.userId && r.icon === icon
+                r => r.user_id === currentUser.userId
             );
 
             if (existingReaction) {
-                // Remove reaction
-                await client.graphql({
-                    query: deleteReactions,
-                    variables: {
-                        input: { id: existingReaction.id }
-                    }
-                });
+                if (existingReaction.icon === icon) {
+                    // Nếu click vào cùng icon, xóa reaction
+                    await client.graphql({
+                        query: deleteReactions,
+                        variables: {
+                            input: { id: existingReaction.id }
+                        }
+                    });
+                } else {
+                    // Nếu click icon khác, xóa reaction cũ và tạo mới
+                    await client.graphql({
+                        query: deleteReactions,
+                        variables: {
+                            input: { id: existingReaction.id }
+                        }
+                    });
+                    await client.graphql({
+                        query: createReactions,
+                        variables: {
+                            input: {
+                                message_id: message.id,
+                                user_id: currentUser.userId,
+                                icon: icon,
+                                created_at: new Date().toISOString()
+                            }
+                        }
+                    });
+                }
             } else {
-                // Add reaction
+                // Nếu chưa có reaction nào, tạo mới
                 await client.graphql({
                     query: createReactions,
                     variables: {
@@ -163,7 +193,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
                 });
             }
 
-            // Refresh reactions
+            // Refresh reactions và đóng menu
             fetchReactions();
             setShowReactionMenu(false);
         } catch (error) {
@@ -175,6 +205,10 @@ const MessageItem: React.FC<MessageItemProps> = ({
         setSelectedReaction(reaction);
         // Tự động ẩn tooltip sau 2 giây
         setTimeout(() => setSelectedReaction(null), 2000);
+    };
+
+    const isReactionSelected = (icon: string) => {
+        return reactions.some(r => r.icon === icon && r.user_id === currentUser?.userId);
     };
 
     return (
@@ -240,11 +274,14 @@ const MessageItem: React.FC<MessageItemProps> = ({
                     styles.reactionMenuContainer,
                     message.isMe ? styles.reactionMenuRight : styles.reactionMenuLeft
                 ]}>
-                    {['👍', '❤️', '😂', '😮', '😢', '😡','😆'].map((icon) => (
+                    {['👍', '❤️', '😂', '😮', '😢', '😡'].map((icon) => (
                         <TouchableOpacity
                             key={icon}
                             onPress={() => handleReaction(icon)}
-                            style={styles.reactionButton}
+                            style={[
+                                styles.reactionButton,
+                                isReactionSelected(icon) && styles.selectedReactionButton
+                            ]}
                         >
                             <Text style={styles.reactionIcon}>{icon}</Text>
                         </TouchableOpacity>
@@ -347,6 +384,18 @@ const styles = StyleSheet.create({
         bottom: '100%',
         marginBottom: 10,
         zIndex: 1000,
+        flexDirection: 'row',
+        backgroundColor: 'white',
+        padding: 8,
+        borderRadius: 20,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     reactionMenuRight: {
         right: 0,
@@ -372,25 +421,16 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 12,
     },
-    reactionMenu: {
-        position: 'absolute',
-        flexDirection: 'row',
-        backgroundColor: 'white',
-        padding: 8,
-        borderRadius: 20,
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        bottom: '100%',
-        marginBottom: 8,
-    },
     reactionButton: {
         padding: 8,
+        marginHorizontal: 2,
     },
     reactionIcon: {
         fontSize: 20,
+    },
+    selectedReactionButton: {
+        backgroundColor: '#E8F5E9',
+        borderRadius: 20,
     },
 });
 
