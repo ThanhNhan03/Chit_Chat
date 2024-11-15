@@ -149,7 +149,7 @@ const App: React.FC = () => {
   };
 
   if (isLoading) {
-    return <ActivityIndicator size="large" />;
+    return <ActivityIndicator/>;
   }
 
   return (

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Dimensions, Alert, RefreshControl } from "react-native";
+import { StyleSheet, View, Text, FlatList, ActivityIndicator, TouchableOpacity, Dimensions, Alert, RefreshControl, Animated } from "react-native";
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
-import { listUserFriendChats, getFriendChat, getUser, listUserGroupChats, getGroupChat } from '../src/graphql/queries';
+import { listUserFriendChats, getFriendChat, getUser, listUserGroupChats, getGroupChat, listMessages } from '../src/graphql/queries';
 import { onUpdateFriendChat, onUpdateGroupChat } from '../src/graphql/subscriptions';
 import ContactRow from "../components/ContactRow";
 import Seperator from "../components/Seperator"; 
@@ -73,6 +73,7 @@ interface Chat {
     profilePicture?: string;
     type: 'private' | 'group';
     members?: number;
+    isNew?: boolean;
 }
 interface ChatsProps {
     navigation: any; 
@@ -80,8 +81,26 @@ interface ChatsProps {
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const CHATS_CACHE_KEY = 'CACHED_CHATS';
-const CACHE_EXPIRY_TIME = 1000 * 60 * 60; // 1 hour in milliseconds
+const CACHE_EXPIRY_TIME = 1000 * 60 * 60; 
+
+const getChatsCacheKey = (userId: string) => `CACHED_CHATS_${userId}`;
+
+const sortChatsByLatestMessage = (chats: Chat[]) => {
+    return [...chats].sort((a, b) => {
+        const timeA = new Date(a.timestamp).getTime();
+        const timeB = new Date(b.timestamp).getTime();
+        return timeB - timeA;
+    });
+};
+
+const formatMessageTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('en-US', { 
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    }).toUpperCase(); 
+};
 
 const Chats: React.FC<ChatsProps> = ({ navigation }) => {
     const [chats, setChats] = useState<Chat[]>([]);
@@ -91,22 +110,27 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
 
     useEffect(() => {
         fetchCurrentUser();
-        loadCachedChats();
     }, []);
 
     useEffect(() => {
         if (currentUserId) {
+            loadCachedChats();
             fetchChats();
-            const subscription = subscribeToChatsUpdates();
+            const subscriptions = [
+                subscribeToPrivateChatsUpdates(),
+                subscribeToGroupChatsUpdates()
+            ];
             return () => {
-                subscription.unsubscribe();
+                subscriptions.forEach(sub => sub.unsubscribe());
             };
         }
     }, [currentUserId]);
 
     const loadCachedChats = async () => {
         try {
-            const cachedData = await AsyncStorage.getItem(CHATS_CACHE_KEY);
+            if (!currentUserId) return;
+            
+            const cachedData = await AsyncStorage.getItem(getChatsCacheKey(currentUserId));
             if (cachedData) {
                 const { chats: cachedChats, timestamp } = JSON.parse(cachedData);
                 const isExpired = Date.now() - timestamp > CACHE_EXPIRY_TIME;
@@ -123,11 +147,13 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
 
     const cacheChats = async (chatsToCache: Chat[]) => {
         try {
+            if (!currentUserId) return;
+            
             const cacheData = {
                 chats: chatsToCache,
                 timestamp: Date.now()
             };
-            await AsyncStorage.setItem(CHATS_CACHE_KEY, JSON.stringify(cacheData));
+            await AsyncStorage.setItem(getChatsCacheKey(currentUserId), JSON.stringify(cacheData));
         } catch (error) {
             console.error('Error caching chats:', error);
         }
@@ -144,6 +170,8 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
 
     const fetchChats = async () => {
         try {
+            const allChats: Chat[] = [];
+
             // Fetch friend chats
             const userChatsResponse = await client.graphql({
                 query: listUserFriendChats,
@@ -156,7 +184,8 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
 
             const userFriendChats = (userChatsResponse.data.listUserFriendChats as UserFriendChatsConnection).items;
 
-            const chatPromises = userFriendChats.map(async (userChat) => {
+            // Process friend chats
+            const friendChatsPromises = userFriendChats.map(async (userChat) => {
                 const friendChatResponse = await client.graphql({
                     query: getFriendChat,
                     variables: { id: userChat.friend_chat_id }
@@ -179,8 +208,7 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                     }
                 });
 
-                const otherUserId = (otherUserChat.data.listUserFriendChats as UserFriendChatsConnection).items[0]?.user_id;
-
+                const otherUserId = otherUserChat.data.listUserFriendChats.items[0]?.user_id;
                 const otherUserResponse = await client.graphql({
                     query: getUser,
                     variables: { id: otherUserId }
@@ -190,8 +218,8 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                 return {
                     id: friendChat.id,
                     name: otherUser?.name || 'Unknown User',
-                    lastMessage: friendChat.last_message,
-                    timestamp: new Date(friendChat.updated_at).toLocaleDateString(),
+                    lastMessage: friendChat.last_message || '',
+                    timestamp: friendChat.updated_at,
                     chatId: friendChat.id,
                     userId: otherUserId,
                     profilePicture: otherUser?.profile_picture,
@@ -199,11 +227,8 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                 };
             });
 
-            const resolvedChats = (await Promise.all(chatPromises))
-                .filter(chat => chat !== null)
-                .sort((a, b) => 
-                    new Date(b!.timestamp).getTime() - new Date(a!.timestamp).getTime()
-                );
+            const friendChats = (await Promise.all(friendChatsPromises)).filter(Boolean);
+            allChats.push(...friendChats);
 
             // Fetch group chats
             const userGroupChatsResponse = await client.graphql({
@@ -231,34 +256,29 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                     id: groupChat.id,
                     name: groupChat.group_name || 'Unnamed Group',
                     lastMessage: groupChat.last_message || 'No messages yet',
-                    timestamp: new Date(groupChat.updated_at || groupChat.updatedAt).toLocaleDateString(),
+                    timestamp: groupChat.updated_at || groupChat.updatedAt,
                     chatId: groupChat.id,
                     profilePicture: groupChat.group_picture,
                     type: 'group' as const,
-                    members: groupChat.members?.__typename?.length || 0
+                    members: groupChat.members?.__typename?.length || 0,
+                    isNew: false
                 };
             });
 
             const groupChats = (await Promise.all(groupChatPromises)).filter(chat => chat !== null);
+            allChats.push(...groupChats);
 
-            // Combine and sort all chats
-            const allChats = [...resolvedChats, ...groupChats].sort((a, b) =>
-                new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-            );
-
-            setChats(allChats);
+            const sortedChats = sortChatsByLatestMessage(allChats);
+            setChats(sortedChats);
+            cacheChats(sortedChats);
             setLoading(false);
-            
-            // Cache the fetched chats
-            await cacheChats(allChats);
         } catch (error) {
             console.error('Error fetching chats:', error);
-            Alert.alert('Error', 'Failed to load chats');
             setLoading(false);
         }
     };
 
-    const subscribeToChatsUpdates = () => {
+    const subscribeToPrivateChatsUpdates = () => {
         return client.graphql({
             query: onUpdateFriendChat
         }).subscribe({
@@ -266,45 +286,152 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                 if (data?.onUpdateFriendChat) {
                     const updatedChat = data.onUpdateFriendChat;
                     
-                    // Fetch other user's details
-                    const otherUserChat = await client.graphql({
-                        query: listUserFriendChats,
-                        variables: {
-                            filter: {
-                                and: [
-                                    { friend_chat_id: { eq: updatedChat.id } },
-                                    { user_id: { ne: currentUserId } }
-                                ]
+                    try {
+                        // Lấy tin nhắn cuối cùng để kiểm tra sender
+                        const lastMessage = await client.graphql({
+                            query: listMessages,
+                            variables: {
+                                filter: {
+                                    and: [
+                                        { chat_id: { eq: updatedChat.id } },
+                                        { chat_type: { eq: "private" } }
+                                    ]
+                                }
                             }
-                        }
-                    });
-                    
-                    const otherUserId = otherUserChat.data.listUserFriendChats.items[0]?.user_id;
-                    const otherUserResponse = await client.graphql({
-                        query: getUser,
-                        variables: { id: otherUserId }
-                    });
-                    const otherUser = otherUserResponse.data.getUser;
+                        });
 
-                    setChats(prevChats => {
-                        const chatIndex = prevChats.findIndex(chat => chat.id === updatedChat.id);
-                        if (chatIndex === -1) return prevChats;
-
-                        const updatedChats = [...prevChats];
-                        updatedChats[chatIndex] = {
-                            ...updatedChats[chatIndex],
-                            lastMessage: updatedChat.last_message || 'No messages yet',
-                            timestamp: new Date(updatedChat.updated_at).toLocaleDateString()
-                        };
-
-                        const sortedChats = updatedChats.sort((a, b) => 
+                        // Lấy tin nhắn cuối cùng từ danh sách đã sắp xếp
+                        const messages = lastMessage.data.listMessages.items;
+                        const lastMessageItem = messages.sort((a, b) => 
                             new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-                        );
+                        )[0];
 
-                        // Cache the updated chats
-                        cacheChats(sortedChats);
-                        return sortedChats;
-                    });
+                        const lastMessageSenderId = lastMessageItem?.sender_id;
+
+                        const otherUserChat = await client.graphql({
+                            query: listUserFriendChats,
+                            variables: {
+                                filter: {
+                                    and: [
+                                        { friend_chat_id: { eq: updatedChat.id } },
+                                        { user_id: { ne: currentUserId } }
+                                    ]
+                                }
+                            }
+                        });
+                        
+                        const otherUserId = otherUserChat.data.listUserFriendChats.items[0]?.user_id;
+                        const otherUserResponse = await client.graphql({
+                            query: getUser,
+                            variables: { id: otherUserId }
+                        });
+                        const otherUser = otherUserResponse.data.getUser;
+
+                        setChats(prevChats => {
+                            const chatIndex = prevChats.findIndex(chat => chat.id === updatedChat.id);
+                            const newChat = {
+                                id: updatedChat.id,
+                                name: otherUser?.name || 'Unknown User',
+                                lastMessage: updatedChat.last_message || 'No messages yet',
+                                timestamp: updatedChat.updated_at,
+                                chatId: updatedChat.id,
+                                userId: otherUserId,
+                                profilePicture: otherUser?.profile_picture,
+                                type: 'private' as const,
+                                // Chỉ đánh dấu là tin nhắn mới nếu người gửi KHÔNG phải là người dùng hiện tại
+                                isNew: lastMessageSenderId && lastMessageSenderId !== currentUserId
+                            };
+
+                            let updatedChats;
+                            if (chatIndex === -1) {
+                                updatedChats = [newChat, ...prevChats];
+                            } else {
+                                updatedChats = prevChats.filter(chat => chat.id !== updatedChat.id);
+                                updatedChats.unshift(newChat);
+                            }
+
+                            const sortedChats = sortChatsByLatestMessage(updatedChats);
+                            cacheChats(sortedChats);
+                            return sortedChats;
+                        });
+
+                    } catch (error) {
+                        console.error('Error updating private chat:', error);
+                    }
+                }
+            },
+            error: (error) => console.warn(error)
+        });
+    };
+
+    const subscribeToGroupChatsUpdates = () => {
+        return client.graphql({
+            query: onUpdateGroupChat
+        }).subscribe({
+            next: async ({ data }) => {
+                if (data?.onUpdateGroupChat) {
+                    const updatedGroupChat = data.onUpdateGroupChat;
+                    
+                    try {
+                        // Lấy số lượng thành viên
+                        const membersResponse = await client.graphql({
+                            query: listUserGroupChats,
+                            variables: {
+                                filter: {
+                                    group_chat_id: { eq: updatedGroupChat.id }
+                                }
+                            }
+                        });
+
+                        const lastMessage = await client.graphql({
+                            query: listMessages,
+                            variables: {
+                                filter: {
+                                    and: [
+                                        { chat_id: { eq: updatedGroupChat.id } },
+                                        { chat_type: { eq: "group" } }
+                                    ]
+                                }
+                            }
+                        });
+
+                        const messages = lastMessage.data.listMessages.items;
+                        const lastMessageItem = messages.sort((a, b) => 
+                            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+                        )[0];
+
+                        const lastMessageSenderId = lastMessageItem?.sender_id;
+
+                        setChats(prevChats => {
+                            const chatIndex = prevChats.findIndex(chat => chat.id === updatedGroupChat.id);
+                            const newChat = {
+                                id: updatedGroupChat.id,
+                                name: updatedGroupChat.group_name || 'Unnamed Group',
+                                lastMessage: updatedGroupChat.last_message || 'No messages yet',
+                                timestamp: updatedGroupChat.updated_at,
+                                chatId: updatedGroupChat.id,
+                                profilePicture: updatedGroupChat.group_picture,
+                                type: 'group' as const,
+                                members: membersResponse.data.listUserGroupChats.items.length,
+                                isNew: lastMessageSenderId && lastMessageSenderId !== currentUserId
+                            };
+
+                            let updatedChats;
+                            if (chatIndex === -1) {
+                                updatedChats = [newChat, ...prevChats];
+                            } else {
+                                updatedChats = prevChats.filter(chat => chat.id !== updatedGroupChat.id);
+                                updatedChats.unshift(newChat);
+                            }
+
+                            const sortedChats = sortChatsByLatestMessage(updatedChats);
+                            cacheChats(sortedChats);
+                            return sortedChats;
+                        });
+
+                    } catch (error) {
+                        console.error('Error updating group chat:', error);
+                    }
                 }
             },
             error: (error) => console.warn(error)
@@ -312,6 +439,12 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
     };
 
     const handleChatPress = (chat: Chat) => {
+        setChats(prevChats => 
+            prevChats.map(c => 
+                c.id === chat.id ? { ...c, isNew: false } : c
+            )
+        );
+
         if (chat.type === 'group') {
             navigation.navigate('GroupChat', {
                 name: chat.name,
@@ -333,6 +466,31 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
         setRefreshing(false);
     };
 
+    const renderItem = ({ item: chat }) => (
+        <View>
+            <ContactRow
+                name={chat.name}
+                subtitle={chat.lastMessage}
+                subtitle2={formatMessageTime(chat.timestamp)}
+                showForwardIcon={false}
+                onPress={() => handleChatPress(chat)}
+                onLongPress={() => {}}
+                style={styles.contactRow}
+                selected={false}
+                isNew={chat.isNew}
+            />
+            <Seperator />
+        </View>
+    );
+
+    const ListEmptyComponent = () => (
+        <View style={styles.noChatsContainer}>
+            <Ionicons name="chatbubble-outline" size={50} color={colors.teal} />
+            <Text style={styles.noChatsText}>No messages yet</Text>
+            <Text style={styles.noChatsSubText}>Start a conversation by tapping the chat button below</Text>
+        </View>
+    );
+
     return (
         <View style={styles.container}>
             <Text style={styles.header}>Chats</Text>
@@ -341,41 +499,21 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
             {loading ? (
                 <ActivityIndicator size="large" style={styles.loadingContainer} color={colors.teal} />
             ) : (
-                <ScrollView 
+                <FlatList
+                    data={chats}
+                    renderItem={renderItem}
+                    keyExtractor={item => item.id}
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                     }
                     style={styles.chatList}
-                >
-                    {chats.length === 0 ? (
-                        <View style={styles.noChatsContainer}>
-                            <Ionicons name="chatbubble-outline" size={50} color={colors.teal} />
-                            <Text style={styles.noChatsText}>No messages yet</Text>
-                            <Text style={styles.noChatsSubText}>Start a conversation by tapping the chat button below</Text>
-                        </View>
-                    ) : (
-                        chats.map(chat => (
-                            <View key={chat.id}>
-                                <ContactRow
-                                    name={chat.name}
-                                    subtitle={chat.lastMessage}
-                                    subtitle2={chat.timestamp}
-                                    showForwardIcon={false}
-                                    onPress={() => handleChatPress(chat)}
-                                    onLongPress={() => {}}
-                                    style={styles.contactRow}
-                                    selected={false}
-                                />
-                                <Seperator />
-                            </View>
-                        ))
-                    )}
-                </ScrollView>
+                    ListEmptyComponent={ListEmptyComponent}
+                    showsVerticalScrollIndicator={false}
+                />
             )}
 
             <Seperator />
 
-            {/* Floating Action Button */}
             <TouchableOpacity 
                 style={styles.fab}
                 onPress={() => navigation.navigate('SelectUser')}
@@ -459,6 +597,9 @@ const styles = StyleSheet.create({
         fontSize: screenWidth * 0.035,
         color: '#666',
         marginTop: 10,
+    },
+    newMessageRow: {
+        backgroundColor: '#E7F3FF', 
     },
 });
 

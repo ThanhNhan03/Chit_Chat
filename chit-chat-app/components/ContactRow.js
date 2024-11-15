@@ -6,7 +6,7 @@ import { colors } from "../config/constrants";
 // Lấy kích thước màn hình
 const { width: screenWidth } = Dimensions.get('window');
 
-const ContactRow = ({ name, subtitle, onPress, style, onLongPress, selected, showForwardIcon = true, subtitle2 }) => {
+const ContactRow = ({ name, subtitle, onPress, style, onLongPress, selected, showForwardIcon = true, subtitle2, isNew }) => {
     return (
         <TouchableOpacity style={[styles.row, style]} onPress={onPress} onLongPress={onLongPress}>
             <View style={styles.avatar}>
@@ -19,13 +19,27 @@ const ContactRow = ({ name, subtitle, onPress, style, onLongPress, selected, sho
                 <Text style={styles.name}>
                     {name}
                 </Text>
-                <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
+                <Text 
+                    style={[
+                        styles.subtitle,
+                        isNew && styles.newMessageText
+                    ]} 
+                    numberOfLines={1} 
+                    ellipsizeMode="tail"
+                >
                     {subtitle}
                 </Text>
             </View>
 
             <View style={styles.dateContainer}>
-                <Text style={styles.subtitle2} numberOfLines={1} ellipsizeMode="tail">
+                <Text 
+                    style={[
+                        styles.subtitle2,
+                        isNew && styles.newMessageTime
+                    ]} 
+                    numberOfLines={1} 
+                    ellipsizeMode="tail"
+                >
                     {subtitle2}
                 </Text>
             </View>
@@ -56,6 +70,7 @@ const styles = StyleSheet.create({
         marginTop: 2,
         color: '#565656',
         width: screenWidth * 0.5,
+        fontSize: 14,
     },
     subtitle2: {
         fontSize: 12,
@@ -104,6 +119,14 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
         top: screenWidth * 0.045,
         right: screenWidth * 0.745,
+    },
+    newMessageText: {
+        color: '#000000',
+        fontWeight: '600',
+    },
+    newMessageTime: {
+        color: colors.teal,
+        fontWeight: '600',
     },
 })
 
