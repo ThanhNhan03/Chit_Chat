@@ -35,7 +35,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
         },
       });
       const user = await getCurrentUser();
-      console.log("User successfully signed in!", user);
+      // console.log("User successfully signed in!", user);
 
       setUser(user); 
       // Alert.alert("Login success");

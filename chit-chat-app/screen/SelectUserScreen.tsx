@@ -336,11 +336,11 @@ export default function SelectUserScreen({ navigation }) {
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
               </View>
-              {item.online ? (
+              {/* {item.online ? (
                 <View style={styles.onlineIndicator} />
               ) : (
                 <Text style={styles.offlineTime}>{item.lastSeen}</Text>
-              )}
+              )} */}
             </View>
             <View style={styles.userInfo}>
               <Text style={styles.userName}>{item.name}</Text>

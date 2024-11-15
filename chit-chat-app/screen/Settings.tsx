@@ -8,6 +8,8 @@ import { signOut, fetchUserAttributes } from 'aws-amplify/auth';
 import { generateClient, GraphQLResult } from 'aws-amplify/api';
 import { GetUserQuery } from '../src/API';
 import { getUser } from '../src/graphql/queries';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const { width: screenWidth } = Dimensions.get('window');
 const client = generateClient();
@@ -15,6 +17,7 @@ const client = generateClient();
 interface SettingsProps {
   navigation: any;
 }
+
 
 const Settings: React.FC<SettingsProps> = ({ navigation }) => {
   const { user, setUser } = useContext(AuthenticatedUserContext);
@@ -47,10 +50,13 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      setUser(null); 
-      navigation.navigate('Login');
+      setUser(null);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
     } catch (error) {
-      console.log('Error signing out: ', error);
+      console.error('Error signing out:', error);
     }
   };
 

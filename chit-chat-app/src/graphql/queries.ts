@@ -187,15 +187,17 @@ export const listMessages = /* GraphQL */ `query ListMessages(
   APITypes.ListMessagesQueryVariables,
   APITypes.ListMessagesQuery
 >;
-export const messagesByChat_id = /* GraphQL */ `query MessagesByChat_id(
+export const messagesByChat_idAndTimestamp = /* GraphQL */ `query MessagesByChat_idAndTimestamp(
   $chat_id: ID!
+  $timestamp: ModelStringKeyConditionInput
   $sortDirection: ModelSortDirection
   $filter: ModelMessagesFilterInput
   $limit: Int
   $nextToken: String
 ) {
-  messagesByChat_id(
+  messagesByChat_idAndTimestamp(
     chat_id: $chat_id
+    timestamp: $timestamp
     sortDirection: $sortDirection
     filter: $filter
     limit: $limit
@@ -219,8 +221,8 @@ export const messagesByChat_id = /* GraphQL */ `query MessagesByChat_id(
   }
 }
 ` as GeneratedQuery<
-  APITypes.MessagesByChat_idQueryVariables,
-  APITypes.MessagesByChat_idQuery
+  APITypes.MessagesByChat_idAndTimestampQueryVariables,
+  APITypes.MessagesByChat_idAndTimestampQuery
 >;
 export const messagesBySender_id = /* GraphQL */ `query MessagesBySender_id(
   $sender_id: ID!

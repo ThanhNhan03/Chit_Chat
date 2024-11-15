@@ -569,6 +569,16 @@ export type ModelMessagesConnection = {
   nextToken?: string | null,
 };
 
+export type ModelStringKeyConditionInput = {
+  eq?: string | null,
+  le?: string | null,
+  lt?: string | null,
+  ge?: string | null,
+  gt?: string | null,
+  between?: Array< string | null > | null,
+  beginsWith?: string | null,
+};
+
 export type ModelReactionsFilterInput = {
   id?: ModelIDInput | null,
   message_id?: ModelIDInput | null,
@@ -1707,16 +1717,17 @@ export type ListMessagesQuery = {
   } | null,
 };
 
-export type MessagesByChat_idQueryVariables = {
+export type MessagesByChat_idAndTimestampQueryVariables = {
   chat_id: string,
+  timestamp?: ModelStringKeyConditionInput | null,
   sortDirection?: ModelSortDirection | null,
   filter?: ModelMessagesFilterInput | null,
   limit?: number | null,
   nextToken?: string | null,
 };
 
-export type MessagesByChat_idQuery = {
-  messagesByChat_id?:  {
+export type MessagesByChat_idAndTimestampQuery = {
+  messagesByChat_idAndTimestamp?:  {
     __typename: "ModelMessagesConnection",
     items:  Array< {
       __typename: "Messages",

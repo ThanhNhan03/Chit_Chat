@@ -34,7 +34,6 @@ Amplify.configure(config);
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Cấu hình notifications
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -149,7 +148,7 @@ const App: React.FC = () => {
   };
 
   if (isLoading) {
-    return <ActivityIndicator size="large" />;
+    return <ActivityIndicator/>;
   }
 
   return (

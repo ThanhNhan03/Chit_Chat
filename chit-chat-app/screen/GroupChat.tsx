@@ -9,12 +9,13 @@ import {
     Alert,
     TouchableOpacity,
     Text,
-    Image
+    Image,
+    ActivityIndicator
 } from 'react-native';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { createMessages, updateGroupChat } from '../src/graphql/mutations';
-import { messagesByChat_id, getGroupChat, listUserGroupChats, getUser } from '../src/graphql/queries';
+import { messagesByChat_idAndTimestamp, getGroupChat, listUserGroupChats, getUser } from '../src/graphql/queries';
 import { onCreateMessages } from '../src/graphql/subscriptions';
 import Header from '../components/Header';
 import MessageItem from '../components/MessageItem';
@@ -27,8 +28,10 @@ import { sendNotification } from '../utils/notificationHelper';
 // import { ModelSortDirection } from '../src/API';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MessageTimestamp from '../components/MessageTimestamp';
+import { ModelSortDirection } from '../src/API';
 
 const client = generateClient();
+const CACHE_EXPIRY_TIME = 1000 * 60 * 60;
 
 interface Message {
     id: string;
@@ -37,8 +40,8 @@ interface Message {
     timestamp: string;
     type: 'text' | 'image';
     isMe: boolean;
-    senderName?: string;
     senderId: string;
+    senderName?: string;
 }
 
 interface GroupMember {
@@ -55,9 +58,7 @@ interface GroupedMessages {
     messages: Message[];
 }
 
-
-
-
+const getGroupChatCacheKey = (chatId: string, userId: string) => `group_chat_messages_${chatId}_${userId}`;
 
 const GroupChat: React.FC<any> = ({ route, navigation }) => {
     const { name, chatId, shouldScrollToBottom } = route.params;
@@ -68,8 +69,18 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
     // const [showMembersList, setShowMembersList] = useState(false);
+    const [loading, setLoading] = useState(true);
     const flatListRef = useRef<FlatList>(null);
     const [lastCacheUpdate, setLastCacheUpdate] = useState<number>(0);
+    const [isFirstLoad, setIsFirstLoad] = useState(true);
+    const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+    const scrollViewRef = useRef<FlatList>(null);
+    const scrollOffset = useRef(0);
+    const contentHeight = useRef(0);
+    const scrollViewHeight = useRef(0);
+    const [nextToken, setNextToken] = useState<string | null>(null);
+    const isInitialLoad = useRef(true);
+    const [isLoadingMembers, setIsLoadingMembers] = useState(true);
 
     useEffect(() => {
         fetchCurrentUser();
@@ -77,11 +88,14 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
     }, []);
 
     useEffect(() => {
-        if (currentUserId && chatId) {
+        if (currentUserId && chatId && !isLoadingMembers) {
             const loadMessages = async () => {
                 await fetchMessages();
-                if (shouldScrollToBottom) {
-                    scrollToBottomWithDelay();
+                if (isFirstLoad) {
+                    setTimeout(() => {
+                        scrollViewRef.current?.scrollToEnd({ animated: false });
+                        setIsFirstLoad(false);
+                    }, 100);
                 }
             };
             loadMessages();
@@ -90,7 +104,7 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                 subscription.unsubscribe();
             };
         }
-    }, [currentUserId, chatId]);
+    }, [currentUserId, chatId, isLoadingMembers]);
 
     const fetchCurrentUser = async () => {
         try {
@@ -103,6 +117,7 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
 
     const fetchGroupMembers = async () => {
         try {
+            setIsLoadingMembers(true);
             const groupMembersResponse = await client.graphql({
                 query: listUserGroupChats,
                 variables: {
@@ -126,15 +141,29 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
 
             const members = await Promise.all(memberPromises);
             setGroupMembers(members);
+            setIsLoadingMembers(false);
         } catch (error) {
             console.error('Error fetching group members:', error);
+            setIsLoadingMembers(false);
+        }
+    };
+
+    const clearGroupChatCache = async () => {
+        try {
+            if (currentUserId && chatId) {
+                await AsyncStorage.removeItem(getGroupChatCacheKey(chatId, currentUserId));
+            }
+        } catch (error) {
+            console.error('Error clearing group chat cache:', error);
         }
     };
 
     const cacheMessages = async (messages: Message[]) => {
         try {
+            if (!currentUserId) return;
+            
             await AsyncStorage.setItem(
-                `chat_messages_${chatId}`,
+                getGroupChatCacheKey(chatId, currentUserId),
                 JSON.stringify({
                     messages,
                     timestamp: Date.now()
@@ -155,61 +184,51 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
 
     const fetchMessages = async () => {
         try {
-            const cachedData = await AsyncStorage.getItem(`chat_messages_${chatId}`);
-            if (cachedData) {
-                const { messages: cachedMessages, timestamp } = JSON.parse(cachedData);
-                setMessages(cachedMessages);
-                setLastCacheUpdate(timestamp);
-            }
+            if (!currentUserId) return;
 
             const messagesResponse = await client.graphql({
-                query: messagesByChat_id,
+                query: messagesByChat_idAndTimestamp,
                 variables: {
                     chat_id: chatId,
+                    sortDirection: ModelSortDirection.DESC,
+                    limit: 20,
                     filter: {
                         chat_type: { eq: 'group' }
                     }
                 }
             });
 
-            if (messagesResponse.data.messagesByChat_id?.items) {
-                const sortedMessages = messagesResponse.data.messagesByChat_id.items
-                    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            if (messagesResponse.data.messagesByChat_idAndTimestamp?.items) {
+                const fetchedMessages = messagesResponse.data.messagesByChat_idAndTimestamp.items
+                    .map(msg => ({
+                        id: msg.id,
+                        text: msg.content || undefined,
+                        image: msg.attachments || undefined,
+                        timestamp: msg.timestamp,
+                        type: msg.attachments ? 'image' as const : 'text' as const,
+                        isMe: msg.sender_id === currentUserId,
+                        senderId: msg.sender_id,
+                        senderName: groupMembers.find(member => member.id === msg.sender_id)?.name
+                    }))
+                    .reverse();
 
-                const fetchedMessages = await Promise.all(
-                    sortedMessages.map(async (msg) => {
-                        const senderResponse = await client.graphql({
-                            query: getUser,
-                            variables: { id: msg.sender_id }
-                        });
-                        const senderName = senderResponse.data.getUser.name;
+                setMessages(fetchedMessages);
+                setNextToken(messagesResponse.data.messagesByChat_idAndTimestamp.nextToken);
 
-                        return {
-                            id: msg.id,
-                            text: msg.content || undefined,
-                            image: msg.attachments || undefined,
-                            timestamp: msg.timestamp,
-                            type: msg.attachments ? 'image' as const : 'text' as const,
-                            isMe: msg.sender_id === currentUserId,
-                            senderName: msg.sender_id === currentUserId ? undefined : senderName,
-                            senderId: msg.sender_id
-                        };
-                    })
-                );
-
-                const newMessages = fetchedMessages.reverse();
-                setMessages(newMessages);
-                await cacheMessages(newMessages);
-                scrollToBottomWithDelay();
+                if (isInitialLoad.current) {
+                    requestAnimationFrame(() => {
+                        scrollViewRef.current?.scrollToEnd({ animated: false });
+                        isInitialLoad.current = false;
+                    });
+                }
             }
         } catch (error) {
             console.error('Error fetching messages:', error);
-            Alert.alert('Error', 'Failed to load messages');
         }
     };
 
     const subscribeToNewMessages = () => {
-        return client.graphql({
+        const subscription = client.graphql({
             query: onCreateMessages,
             variables: {
                 filter: {
@@ -217,51 +236,34 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                 }
             }
         }).subscribe({
-            next: async ({ data }) => {
-                if (data?.onCreateMessages) {
-                    const newMsg = data.onCreateMessages;
-                    
-                    if (newMsg.sender_id === currentUserId) {
-                        return;
-                    }
-
-                    const senderResponse = await client.graphql({
-                        query: getUser,
-                        variables: { id: newMsg.sender_id }
-                    });
-                    const senderName = senderResponse.data.getUser.name;
-
-                    const messageObj: Message = {
-                        id: newMsg.id,
-                        text: newMsg.content,
-                        image: newMsg.attachments,
-                        timestamp: newMsg.timestamp,
-                        type: newMsg.attachments ? 'image' : 'text',
+            next: async({ data }) => {
+                const newMessage = data.onCreateMessages;
+                if (newMessage.sender_id !== currentUserId) {
+                    const sender = groupMembers.find(member => member.id === newMessage.sender_id);
+                    const messageToAdd: Message = {
+                        id: newMessage.id,
+                        text: newMessage.content || undefined,
+                        image: newMessage.attachments || undefined,
+                        timestamp: newMessage.timestamp,
+                        type: newMessage.attachments ? 'image' : 'text',
                         isMe: false,
-                        senderName,
-                        senderId: newMsg.sender_id
+                        senderId: newMessage.sender_id,
+                        senderName: sender?.name
                     };
 
-                    setMessages(prev => {
-                        const newMessages = [...prev, messageObj];
-                        cacheMessages(newMessages);
-                        return newMessages;
-                    });
-                    scrollToBottom();
-
-                    await sendNotification({
-                        title: `${name} (${senderName})`,
-                        body: newMsg.content || '📷 Sent an image',
-                        data: {
-                            type: 'group_message',
-                            chatId,
-                            groupName: name
-                        }
-                    });
+                    setMessages(prev => [...prev, messageToAdd]);
+                    
+                    if (shouldAutoScroll) {
+                        requestAnimationFrame(() => {
+                            scrollViewRef.current?.scrollToEnd({ animated: true });
+                        });
+                    }
                 }
             },
-            error: (error) => console.warn(error)
+            error: (error) => console.error('Subscription error:', error)
         });
+
+        return subscription;
     };
 
     const updateLastMessage = async (content: string) => {
@@ -282,46 +284,52 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
     };
 
     const handleSendMessage = async () => {
-        if (inputText.trim()) {
-            const messageText = inputText.trim();
-            setInputText('');
+        if (!inputText.trim()) return;
+        
+        const messageText = inputText.trim();
+        setInputText('');
 
-            const timestamp = new Date().toISOString();
-            const optimisticMessage: Message = {
-                id: `temp-${Date.now()}`,
-                text: messageText,
+        const timestamp = new Date().toISOString();
+        const tempId = `temp-${Date.now()}`;
+        
+        const optimisticMessage: Message = {
+            id: tempId,
+            text: messageText,
+            timestamp: timestamp,
+            type: 'text',
+            isMe: true,
+            senderId: currentUserId!,
+            senderName: groupMembers.find(member => member.id === currentUserId)?.name
+        };
+
+        setMessages(prev => [...prev, optimisticMessage]);
+        
+        requestAnimationFrame(() => {
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+        });
+
+        try {
+            const newMessage = {
+                chat_type: 'group',
+                chat_id: chatId,
+                sender_id: currentUserId,
+                content: messageText,
                 timestamp: timestamp,
-                type: 'text',
-                isMe: true,
-                senderId: currentUserId!
+                status: 'sent'
             };
 
-            setMessages(prev => [...prev, optimisticMessage]);
-            scrollToBottom();
-
-            try {
-                const newMessage = {
-                    chat_type: 'group',
-                    chat_id: chatId,
-                    sender_id: currentUserId,
-                    content: messageText,
-                    timestamp: timestamp,
-                    status: 'sent'
-                };
-
-                await Promise.all([
-                    client.graphql({
-                        query: createMessages,
-                        variables: { input: newMessage }
-                    }),
-                    updateLastMessage(messageText)
-                ]);
-            } catch (error) {
-                console.error('Error sending message:', error);
-                setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
-                Alert.alert('Error', 'Failed to send message');
-                setInputText(messageText);
-            }
+            await Promise.all([
+                client.graphql({
+                    query: createMessages,
+                    variables: { input: newMessage }
+                }),
+                updateLastMessage(messageText)
+            ]);
+        } catch (error) {
+            console.error('Error sending message:', error);
+            setMessages(prev => prev.filter(msg => msg.id !== tempId));
+            Alert.alert('Error', 'Failed to send message');
+            setInputText(messageText);
         }
     };
 
@@ -442,7 +450,6 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                         key={message.id}
                         message={message}
                         onImagePress={setSelectedImage}
-                        showSender={false}
                         isFirstInGroup={index === 0}
                         isLastInGroup={index === group.messages.length - 1}
                     />
@@ -451,7 +458,65 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
         </View>
     );
 
-   
+    const loadMoreMessages = async () => {
+        if (loading || !messages.length) return;
+        
+        try {
+            const oldestMessage = messages[0];
+            const messagesResponse = await client.graphql({
+                query: messagesByChat_idAndTimestamp,
+                variables: {
+                    chat_id: chatId,
+                    sortDirection: ModelSortDirection.DESC,
+                    limit: 20,
+                    filter: {
+                        and: [
+                            { chat_type: { eq: 'group' } },
+                            { timestamp: { lt: oldestMessage.timestamp } }
+                        ]
+                    }
+                }
+            });
+
+            if (messagesResponse.data.messagesByChat_idAndTimestamp?.items) {
+                const olderMessages = messagesResponse.data.messagesByChat_idAndTimestamp.items
+                    .map(msg => ({
+                        id: msg.id,
+                        text: msg.content || undefined,
+                        image: msg.attachments || undefined,
+                        timestamp: msg.timestamp,
+                        type: msg.attachments ? 'image' as const : 'text' as const,
+                        isMe: msg.sender_id === currentUserId,
+                        senderId: msg.sender_id,
+                        senderName: groupMembers.find(member => member.id === msg.sender_id)?.name
+                    }));
+
+                setMessages(prev => [...olderMessages.reverse(), ...prev]);
+            }
+        } catch (error) {
+            console.error('Error loading more messages:', error);
+        }
+    };
+
+    const isCloseToBottom = () => {
+        const threshold = 100;
+        const isClose = (scrollViewHeight.current + scrollOffset.current + threshold) >= contentHeight.current;
+        return isClose;
+    };
+
+    const handleScroll = (event: any) => {
+        const offsetY = event.nativeEvent.contentOffset.y;
+        scrollOffset.current = offsetY;
+        setShouldAutoScroll(isCloseToBottom());
+    };
+
+    const handleLayout = (event: any) => {
+        scrollViewHeight.current = event.nativeEvent.layout.height;
+    };
+
+    const handleContentSizeChange = (width: number, height: number) => {
+        contentHeight.current = height;
+    };
 
     return (
         <KeyboardAvoidingView 
@@ -475,18 +540,34 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
             />
             <View style={styles.chatContainer}>
                 <FlatList
-                    ref={flatListRef}
+                    ref={scrollViewRef}
                     style={styles.messagesContainer}
                     contentContainerStyle={[
                         styles.messagesContentContainer,
-                        { flexGrow: 1, justifyContent: 'flex-end' }
+                        messages.length === 0 && styles.emptyContainer
                     ]}
                     data={groupMessages(messages)}
                     renderItem={renderItem}
                     keyExtractor={(item, index) => `group-${index}`}
-                    onContentSizeChange={scrollToBottom}
-                    onLayout={scrollToBottomWithDelay}
-                    inverted={false}
+                    onScroll={handleScroll}
+                    onLayout={handleLayout}
+                    onContentSizeChange={(w, h) => {
+                        handleContentSizeChange(w, h);
+                        if (isInitialLoad.current) {
+                            scrollViewRef.current?.scrollToEnd({ animated: false });
+                            isInitialLoad.current = false;
+                        }
+                    }}
+                    onEndReached={nextToken ? loadMoreMessages : undefined}
+                    onEndReachedThreshold={0.5}
+                    initialNumToRender={20}
+                    maxToRenderPerBatch={10}
+                    windowSize={21}
+                    removeClippedSubviews={false}
+                    maintainVisibleContentPosition={{
+                        minIndexForVisible: 0,
+                        autoscrollToTopThreshold: 10
+                    }}
                 />
                 <InputBar
                     inputText={inputText}
@@ -534,6 +615,7 @@ const styles = StyleSheet.create({
     messagesContentContainer: {
         padding: 16,
         paddingBottom: 8,
+        flexGrow: 1,
     },
     modalContainer: {
         flex: 1,
@@ -623,6 +705,16 @@ const styles = StyleSheet.create({
     },
     messagesWithAvatar: {
         marginLeft: 36,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 20
+    },
+    emptyText: {
+        color: '#666',
+        fontSize: 16
     },
 });
 
