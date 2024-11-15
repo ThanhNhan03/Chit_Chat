@@ -4,16 +4,27 @@ import { colors } from '../config/constrants';
 import { signUp } from 'aws-amplify/auth'; 
 import { generateClient } from 'aws-amplify/api';
 import { createUser } from '../src/graphql/mutations';
-const backImage = require("../assets/background.png");
+import { Ionicons } from '@expo/vector-icons';
+// const backImage = require("../assets/background.png");
 
 interface SignUpProps {
   navigation: any;
 }
 
+const customColors = {
+  primary: '#8c7ae6',
+  secondary: '#a29bfe',
+  text: '#2d3436',
+  lightText: '#636e72',
+  background: '#ffffff',
+  inputBackground: '#f5f5f5',
+};
+
 const SignUp: React.FC<SignUpProps> = ({ navigation }) => {
   const [email, setEmail] = useState<string>('');
   const [name, setName] = useState<string>(''); 
   const [password, setPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const onHandleSignup = async () => {
     try {
@@ -54,50 +65,65 @@ const SignUp: React.FC<SignUpProps> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Image source={backImage} style={styles.backImage} />
-      <View style={styles.whiteSheet} />
       <SafeAreaView style={styles.form}>
-        <Text style={styles.title}>Sign Up</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter full name"
-          autoCapitalize="words"
-          keyboardType="default"
-          textContentType="name"
-          autoFocus={true}
-          value={name}
-          onChangeText={(text) => setName(text)}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter email"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          textContentType="emailAddress"
-          value={email}
-          onChangeText={(text) => setEmail(text)}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter password"
-          autoCapitalize="none"
-          autoCorrect={false}
-          secureTextEntry={true}
-          textContentType="password"
-          value={password}
-          onChangeText={(text) => setPassword(text)}
-        />
+        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.subtitle}>Sign up to get started</Text>
+        
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            autoCapitalize="words"
+            keyboardType="default"
+            textContentType="name"
+            autoFocus={true}
+            value={name}
+            onChangeText={(text) => setName(text)}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            textContentType="emailAddress"
+            value={email}
+            onChangeText={(text) => setEmail(text)}
+          />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Password"
+              autoCapitalize="none"
+              autoCorrect={false}
+              secureTextEntry={!showPassword}
+              textContentType="password"
+              value={password}
+              onChangeText={(text) => setPassword(text)}
+            />
+            <TouchableOpacity 
+              style={styles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Ionicons 
+                name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                size={24} 
+                color={customColors.lightText}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <TouchableOpacity style={styles.button} onPress={onHandleSignup}>
-          <Text style={{ fontWeight: 'bold', color: '#fff', fontSize: 18 }}>Sign Up</Text>
+          <Text style={styles.buttonText}>Create Account</Text>
         </TouchableOpacity>
-        <View style={{ marginTop: 30, flexDirection: 'row', alignItems: 'center', alignSelf: 'center' }}>
-          <Text style={{ color: 'gray', fontWeight: '600', fontSize: 14 }}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={{ color: colors.pink, fontWeight: '600', fontSize: 14 }}>Log In</Text>
+
+        <View style={styles.footerContainer}>
+          <Text style={styles.footerText}>Already have an account? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+            <Text style={styles.linkText}>Sign In</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-      <StatusBar barStyle="light-content" />
     </View>
   );
 };
@@ -107,49 +133,93 @@ export default SignUp;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: 'black',
-    alignSelf: "center",
-    paddingTop: 48,
-  },
-  input: {
-    backgroundColor: "#F6F7FB",
-    height: 58,
-    marginBottom: 20,
-    fontSize: 16,
-    borderRadius: 10,
-    padding: 12,
-  },
-  backImage: {
-    width: "100%",
-    height: 340,
-    position: "absolute",
-    top: 0,
-    resizeMode: 'cover',
-  },
-  whiteSheet: {
-    width: '100%',
-    height: '75%',
-    position: "absolute",
-    bottom: 0,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 60,
+    backgroundColor: customColors.background,
   },
   form: {
     flex: 1,
+    paddingHorizontal: 24,
     justifyContent: 'center',
-    marginHorizontal: 30,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: customColors.primary,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: customColors.lightText,
+    marginBottom: 32,
+  },
+  inputContainer: {
+    marginBottom: 24,
+  },
+  input: {
+    backgroundColor: customColors.inputBackground,
+    height: 52,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: customColors.text,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: customColors.secondary,
   },
   button: {
-    backgroundColor: colors.primary,
-    height: 58,
-    borderRadius: 10,
+    backgroundColor: customColors.primary,
+    height: 52,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 40,
+    shadowColor: customColors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonText: {
+    color: customColors.background,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  footerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 32,
+  },
+  footerText: {
+    fontSize: 14,
+    color: customColors.lightText,
+  },
+  linkText: {
+    fontSize: 14,
+    color: customColors.primary,
+    fontWeight: '600',
+  },
+  passwordContainer: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordInput: {
+    backgroundColor: customColors.inputBackground,
+    height: 52,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: customColors.text,
+    borderWidth: 1,
+    borderColor: customColors.secondary,
+    flex: 1,
+    paddingRight: 50, // Để icon không đè lên text
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 16,
+    height: 52,
+    justifyContent: 'center',
   },
 });
