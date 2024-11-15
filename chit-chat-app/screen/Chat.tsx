@@ -77,7 +77,6 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
     const { name, userId, chatId } = route.params;
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
-    const [loading, setLoading] = useState(true);
     const [inputText, setInputText] = useState('');
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -98,12 +97,9 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
         if (currentUserId && chatId) {
             const loadMessages = async () => {
                 await fetchMessages();
-                if (isInitialLoad.current) {
-                    requestAnimationFrame(() => {
-                        scrollViewRef.current?.scrollToEnd({ animated: false });
-                        isInitialLoad.current = false;
-                    });
-                }
+                setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: false });
+                }, 100);
             };
             loadMessages();
             const subscription = subscribeToNewMessages();
@@ -141,7 +137,6 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
     const fetchMessages = async () => {
         try {
             if (!currentUserId) return;
-            setLoading(true);
 
             const messagesResponse = await client.graphql({
                 query: messagesByChat_idAndTimestamp,
@@ -168,10 +163,8 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                 const sortedMessages = [...fetchedMessages].reverse();
                 setMessages(sortedMessages);
             }
-            setLoading(false);
         } catch (error) {
             console.error('Error fetching messages:', error);
-            setLoading(false);
         }
     };
 
@@ -209,11 +202,9 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
 
                     setMessages(prev => [...prev, messageObj]);
 
-                    if (shouldAutoScroll) {
-                        setTimeout(() => {
-                            scrollViewRef.current?.scrollToEnd({ animated: true });
-                        }, 100);
-                    }
+                    setTimeout(() => {
+                        scrollViewRef.current?.scrollToEnd({ animated: true });
+                    }, 100);
                 }
             },
             error: (error) => console.warn(error)
@@ -256,9 +247,9 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
 
         setMessages(prev => [...prev, optimisticMessage]);
         
-        requestAnimationFrame(() => {
+        setTimeout(() => {
             scrollViewRef.current?.scrollToEnd({ animated: true });
-        });
+        }, 100);
 
         try {
             const newMessage = {
@@ -419,11 +410,7 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                         minIndexForVisible: 0,
                         autoscrollToTopThreshold: 10
                     }}
-                    ListFooterComponent={loading ? (
-                        <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="small" color="#999" />
-                        </View>
-                    ) : null}
+                    inverted={false}
                 />
                 <InputBar
                     inputText={inputText}
@@ -488,10 +475,6 @@ const styles = StyleSheet.create({
     emptyText: {
         color: '#666',
         fontSize: 16
-    },
-    loadingContainer: {
-        paddingVertical: 20,
-        alignItems: 'center'
     }
 });
 

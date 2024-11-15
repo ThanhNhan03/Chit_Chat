@@ -185,7 +185,6 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
     const fetchMessages = async () => {
         try {
             if (!currentUserId) return;
-            setLoading(true);
 
             const messagesResponse = await client.graphql({
                 query: messagesByChat_idAndTimestamp,
@@ -223,10 +222,8 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                     });
                 }
             }
-            setLoading(false);
         } catch (error) {
             console.error('Error fetching messages:', error);
-            setLoading(false);
         }
     };
 
@@ -571,11 +568,6 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                         minIndexForVisible: 0,
                         autoscrollToTopThreshold: 10
                     }}
-                    ListFooterComponent={loading ? (
-                        <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="small" color="#999" />
-                        </View>
-                    ) : null}
                 />
                 <InputBar
                     inputText={inputText}
@@ -723,11 +715,6 @@ const styles = StyleSheet.create({
     emptyText: {
         color: '#666',
         fontSize: 16
-    },
-    loadingContainer: {
-        height: 50,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
 });
 

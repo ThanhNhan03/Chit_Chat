@@ -34,7 +34,6 @@ Amplify.configure(config);
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Cấu hình notifications
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
