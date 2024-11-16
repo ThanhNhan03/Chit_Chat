@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
@@ -20,6 +20,7 @@ type Friend = {
   email: string;
   online?: boolean;
   lastSeen?: string;
+  profile_picture?: string;
 };
 
 export default function SelectUserScreen({ navigation }) {
@@ -80,7 +81,8 @@ export default function SelectUserScreen({ navigation }) {
             email: userData.email,
             status: userData.status || 'Hey there! I am using ChitChat',
             online: false, // You can implement online status logic here
-            lastSeen: 'Offline' // You can implement last seen logic here
+            lastSeen: 'Offline', // You can implement last seen logic here
+            profile_picture: userData.profile_picture
           };
         })
       );
@@ -117,7 +119,8 @@ export default function SelectUserScreen({ navigation }) {
             email: userData.email,
             status: userData.status || 'Hey there! I am using ChitChat',
             online: false,
-            lastSeen: 'Offline'
+            lastSeen: 'Offline',
+            profile_picture: userData.profile_picture
           };
           
           setFriends(prev => [...prev, newFriend]);
@@ -333,14 +336,16 @@ export default function SelectUserScreen({ navigation }) {
             delayLongPress={500}
           >
             <View style={styles.avatarContainer}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
-              </View>
-              {/* {item.online ? (
-                <View style={styles.onlineIndicator} />
+              {item.profile_picture ? (
+                <Image 
+                  source={{ uri: item.profile_picture }} 
+                  style={styles.avatar}
+                />
               ) : (
-                <Text style={styles.offlineTime}>{item.lastSeen}</Text>
-              )} */}
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
+                </View>
+              )}
             </View>
             <View style={styles.userInfo}>
               <Text style={styles.userName}>{item.name}</Text>
@@ -395,6 +400,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ddd',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   onlineIndicator: {
     width: 10,

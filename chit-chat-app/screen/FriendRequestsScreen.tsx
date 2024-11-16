@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
@@ -17,6 +17,7 @@ type FriendRequest = {
   name: string;
   created_at: string;
   status: string;
+  profile_picture?: string;
 };
 
 export default function FriendRequestsScreen() {
@@ -67,12 +68,14 @@ export default function FriendRequestsScreen() {
             variables: { id: request.from_user_id }
           });
           
+          const userData = userResponse.data.getUser;
           return {
             id: request.id,
             from_user_id: request.from_user_id,
-            name: userResponse.data.getUser.name,
+            name: userData.name,
             created_at: request.created_at,
-            status: request.status
+            status: request.status,
+            profile_picture: userData.profile_picture
           };
         })
       );
@@ -96,7 +99,6 @@ export default function FriendRequestsScreen() {
         if (data?.onCreateFriendRequests) {
           const newRequest = data.onCreateFriendRequests;
           
-          // Lấy thông tin người gửi lời mời
           const userResponse = await client.graphql({
             query: getUser,
             variables: { id: newRequest.from_user_id }
@@ -208,9 +210,16 @@ export default function FriendRequestsScreen() {
           renderItem={({ item }) => (
             <View style={styles.requestItem}>
               <View style={styles.userInfo}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
-                </View>
+                {item.profile_picture ? (
+                  <Image 
+                    source={{ uri: item.profile_picture }} 
+                    style={styles.avatar}
+                  />
+                ) : (
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
+                  </View>
+                )}
                 <View style={styles.textContainer}>
                   <Text style={styles.name}>{item.name}</Text>
                   <Text style={styles.timestamp}>{formatTimestamp(item.created_at)}</Text>
@@ -274,6 +283,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
+        overflow: 'hidden',
     },
     avatarText: {
         fontSize: 20,

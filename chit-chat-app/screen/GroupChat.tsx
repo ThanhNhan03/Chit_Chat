@@ -29,6 +29,8 @@ import { sendNotification } from '../utils/notificationHelper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MessageTimestamp from '../components/MessageTimestamp';
 import { ModelSortDirection } from '../src/API';
+import { getUrl, uploadData } from 'aws-amplify/storage';
+import { colors } from '../config/constrants';
 
 const client = generateClient();
 const CACHE_EXPIRY_TIME = 1000 * 60 * 60;
@@ -81,6 +83,7 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
     const [nextToken, setNextToken] = useState<string | null>(null);
     const isInitialLoad = useRef(true);
     const [isLoadingMembers, setIsLoadingMembers] = useState(true);
+    const [isUploading, setIsUploading] = useState(false);
 
     useEffect(() => {
         fetchCurrentUser();
@@ -334,36 +337,92 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
     };
 
     const handleImagePick = async () => {
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            quality: 1,
-        });
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                quality: 0.7,
+                allowsEditing: true,
+                aspect: [4, 3],
+            });
 
-        if (!result.canceled) {
-            try {
-                // TODO: Upload image to S3 first
-                const imageUrl = result.assets[0].uri;
-                
-                const newMessage = {
-                    chat_type: 'group',
-                    chat_id: chatId,
-                    sender_id: currentUserId,
-                    content: '',
-                    timestamp: new Date().toISOString(),
-                    status: 'sent',
-                    attachments: imageUrl
+            if (!result.canceled) {
+                setIsUploading(true);
+                const imageUri = result.assets[0].uri;
+                const timestamp = new Date().toISOString();
+                const tempId = `temp-${Date.now()}`;
+
+                const optimisticMessage: Message = {
+                    id: tempId,
+                    image: imageUri,
+                    timestamp: timestamp,
+                    type: 'image',
+                    isMe: true,
+                    senderId: currentUserId!,
+                    senderName: groupMembers.find(member => member.id === currentUserId)?.name
                 };
 
-                await client.graphql({
-                    query: createMessages,
-                    variables: { input: newMessage }
-                });
+                setMessages(prev => [...prev, optimisticMessage]);
+                scrollToBottom();
 
-                await updateLastMessage('📷 Image');
-            } catch (error) {
-                console.error('Error sending image:', error);
-                Alert.alert('Error', 'Failed to send image');
+                try {
+                    const response = await fetch(imageUri);
+                    const blob = await response.blob();
+                    const filename = `group-images/${chatId}/${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+
+                    await uploadData({
+                        key: filename,
+                        data: blob,
+                        options: {
+                            contentType: 'image/jpeg',
+                            accessLevel: 'guest'
+                        }
+                    }).result;
+
+                    const imageUrl = await getUrl({
+                        key: filename,
+                        options: {
+                            accessLevel: 'guest',
+                            expiresIn: 3600 * 24 * 7
+                        }
+                    });
+
+                    const newMessage = {
+                        chat_type: 'group',
+                        chat_id: chatId,
+                        sender_id: currentUserId,
+                        content: '📷 Image',
+                        timestamp: timestamp,
+                        status: 'sent',
+                        attachments: imageUrl.url.toString()
+                    };
+
+                    await Promise.all([
+                        client.graphql({
+                            query: createMessages,
+                            variables: { input: newMessage }
+                        }),
+                        updateLastMessage('📷 Image')
+                    ]);
+
+                    setMessages(prev => 
+                        prev.map(msg => 
+                            msg.id === tempId 
+                                ? { ...msg, image: imageUrl.url.toString() }
+                                : msg
+                        )
+                    );
+
+                } catch (error) {
+                    console.error('Error uploading image:', error);
+                    setMessages(prev => prev.filter(msg => msg.id !== tempId));
+                    Alert.alert('Error', 'Failed to send image');
+                }
             }
+        } catch (error) {
+            console.error('Error picking image:', error);
+            Alert.alert('Error', 'Failed to pick image');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -596,6 +655,12 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                 open={isEmojiPickerOpen} 
                 onClose={() => setIsEmojiPickerOpen(false)} 
             />
+            {isUploading && (
+                <View style={styles.uploadingOverlay}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <Text style={styles.uploadingText}>Uploading image...</Text>
+                </View>
+            )}
         </KeyboardAvoidingView>
     );
 };
@@ -715,6 +780,19 @@ const styles = StyleSheet.create({
     emptyText: {
         color: '#666',
         fontSize: 16
+    },
+    uploadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+    },
+    uploadingText: {
+        color: '#fff',
+        marginTop: 10,
+        fontSize: 16,
+        fontWeight: '500',
     },
 });
 

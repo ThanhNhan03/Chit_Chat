@@ -29,6 +29,8 @@ interface Message {
 }
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { colors } from '../config/constrants';
+import { getUrl, uploadData } from 'aws-amplify/storage';
 
 interface GroupedMessages {
     timestamp?: string;
@@ -88,6 +90,7 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
     const contentHeight = useRef(0);
     const scrollViewHeight = useRef(0);
     const isInitialLoad = useRef(true);
+    const [isUploading, setIsUploading] = useState(false);
 
     useEffect(() => {
         fetchCurrentUser();
@@ -277,49 +280,99 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
     };
 
     const handleImagePick = async () => {
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            quality: 1,
-        });
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                quality: 0.7,
+                allowsEditing: true,
+                aspect: [4, 3],
+            });
 
-        if (!result.canceled) {
-            const imageUrl = result.assets[0].uri;
-            const timestamp = new Date().toISOString();
+            if (!result.canceled) {
+                setIsUploading(true);
+                const imageUri = result.assets[0].uri;
+                const timestamp = new Date().toISOString();
+                const tempId = `temp-${Date.now()}`;
 
-            const optimisticMessage: Message = {
-                id: `temp-${Date.now()}`,
-                image: imageUrl,
-                timestamp: timestamp,
-                type: 'image',
-                isMe: true
-            };
-
-            setMessages(prev => [...prev, optimisticMessage]);
-            scrollToBottom();
-
-            try {
-                const newMessage = {
-                    chat_type: 'private',
-                    chat_id: chatId,
-                    sender_id: currentUserId,
-                    content: '',
+                // Tạo optimistic message
+                const optimisticMessage: Message = {
+                    id: tempId,
+                    image: imageUri,
                     timestamp: timestamp,
-                    status: 'sent',
-                    attachments: imageUrl
+                    type: 'image',
+                    isMe: true
                 };
 
-                await Promise.all([
-                    client.graphql({
-                        query: createMessages,
-                        variables: { input: newMessage }
-                    }),
-                    updateLastMessage('📷 Image')
-                ]);
-            } catch (error) {
-                console.error('Error sending image:', error);
-                setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
-                Alert.alert('Error', 'Failed to send image');
+                // Thêm message tạm thời vào UI
+                setMessages(prev => [...prev, optimisticMessage]);
+                scrollToBottom();
+
+                try {
+                    // Upload ảnh lên S3
+                    const response = await fetch(imageUri);
+                    const blob = await response.blob();
+                    const filename = `chat-images/${chatId}/${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+
+                    await uploadData({
+                        key: filename,
+                        data: blob,
+                        options: {
+                            contentType: 'image/jpeg',
+                            accessLevel: 'guest'
+                        }
+                    }).result;
+
+                    // Lấy URL của ảnh
+                    const imageUrl = await getUrl({
+                        key: filename,
+                        options: {
+                            accessLevel: 'guest',
+                            expiresIn: 3600 * 24 * 7 // URL hết hạn sau 7 ngày
+                        }
+                    });
+
+                    // Tạo message thật với URL từ S3
+                    const newMessage = {
+                        chat_type: 'private',
+                        chat_id: chatId,
+                        sender_id: currentUserId,
+                        content: '📷 Image',
+                        timestamp: timestamp,
+                        status: 'sent',
+                        attachments: imageUrl.url.toString()
+                    };
+
+                    // Gửi message lên server
+                    await Promise.all([
+                        client.graphql({
+                            query: createMessages,
+                            variables: { input: newMessage }
+                        }),
+                        updateLastMessage('📷 Image')
+                    ]);
+
+                    // Cập nhật UI với URL thật
+                    setMessages(prev => 
+                        prev.map(msg => 
+                            msg.id === tempId 
+                                ? { ...msg, image: imageUrl.url.toString() }
+                                : msg
+                        )
+                    );
+
+                } catch (error) {
+                    console.error('Error uploading image:', error);
+                    // Xóa message tạm nếu upload thất bại
+                    setMessages(prev => prev.filter(msg => msg.id !== tempId));
+                    Alert.alert('Error', 'Failed to send image');
+                } finally {
+                    setIsUploading(false);
+                }
             }
+        } catch (error) {
+            console.error('Error picking image:', error);
+            setIsUploading(false);
+            Alert.alert('Error', 'Failed to pick image');
         }
     };
 
@@ -439,6 +492,12 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                 open={isEmojiPickerOpen} 
                 onClose={() => setIsEmojiPickerOpen(false)} 
             />
+            {isUploading && (
+                <View style={styles.uploadingOverlay}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <Text style={styles.uploadingText}>Uploading image...</Text>
+                </View>
+            )}
         </KeyboardAvoidingView>
     );
 };
@@ -475,7 +534,20 @@ const styles = StyleSheet.create({
     emptyText: {
         color: '#666',
         fontSize: 16
-    }
+    },
+    uploadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+    },
+    uploadingText: {
+        color: '#fff',
+        marginTop: 10,
+        fontSize: 16,
+        fontWeight: '500',
+    },
 });
 
 export default Chat;

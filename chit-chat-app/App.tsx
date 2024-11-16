@@ -29,6 +29,7 @@ import { initializeNotifications, requestNotificationPermissions } from './utils
 import GroupChat from './screen/GroupChat';
 import GroupChatSettings from './screen/GroupChatSettings';
 import Settings from './screen/Settings';
+import Profile from './screen/Profile';
 
 Amplify.configure(config);
 const Stack = createNativeStackNavigator();
@@ -206,6 +207,11 @@ const App: React.FC = () => {
                   name="GroupChatSettings"
                   component={GroupChatSettings}
                   options={{ title: 'Group Settings', headerShown: false }}
+                />
+                <Stack.Screen
+                  name="Profile"
+                  component={Profile}
+                  options={{ title: 'Profile', headerShown: false }}
                 />
               </>
             ) : (
