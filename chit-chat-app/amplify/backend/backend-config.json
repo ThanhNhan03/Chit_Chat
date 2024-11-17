@@ -63,5 +63,11 @@
     }
   },
   "function": {},
-  "storage": {}
+  "storage": {
+    "userStorage": {
+      "dependsOn": [],
+      "providerPlugin": "awscloudformation",
+      "service": "S3"
+    }
+  }
 }
