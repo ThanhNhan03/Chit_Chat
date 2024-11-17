@@ -285,7 +285,7 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 quality: 0.7,
                 allowsEditing: true,
-                aspect: [4, 3],
+                // aspect: [4, 3],
             });
 
             if (!result.canceled) {
@@ -303,7 +303,6 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                     isMe: true
                 };
 
-                // Thêm message tạm thời vào UI
                 setMessages(prev => [...prev, optimisticMessage]);
                 scrollToBottom();
 
@@ -317,21 +316,14 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                         key: filename,
                         data: blob,
                         options: {
-                            contentType: 'image/jpeg',
-                            accessLevel: 'guest'
+                            contentType: 'image/jpeg'
                         }
                     }).result;
 
-                    // Lấy URL của ảnh
                     const imageUrl = await getUrl({
-                        key: filename,
-                        options: {
-                            accessLevel: 'guest',
-                            expiresIn: 3600 * 24 * 7 // URL hết hạn sau 7 ngày
-                        }
+                        key: filename
                     });
 
-                    // Tạo message thật với URL từ S3
                     const newMessage = {
                         chat_type: 'private',
                         chat_id: chatId,
@@ -342,7 +334,6 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                         attachments: imageUrl.url.toString()
                     };
 
-                    // Gửi message lên server
                     await Promise.all([
                         client.graphql({
                             query: createMessages,
@@ -362,7 +353,6 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
 
                 } catch (error) {
                     console.error('Error uploading image:', error);
-                    // Xóa message tạm nếu upload thất bại
                     setMessages(prev => prev.filter(msg => msg.id !== tempId));
                     Alert.alert('Error', 'Failed to send image');
                 } finally {

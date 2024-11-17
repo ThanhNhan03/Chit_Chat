@@ -201,6 +201,8 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                 }
             });
 
+            console.log('Fetched messages response:', messagesResponse.data.messagesByChat_idAndTimestamp.items);
+
             if (messagesResponse.data.messagesByChat_idAndTimestamp?.items) {
                 const fetchedMessages = messagesResponse.data.messagesByChat_idAndTimestamp.items
                     .map(msg => ({
@@ -215,15 +217,9 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                     }))
                     .reverse();
 
+                console.log('Processed messages:', fetchedMessages);
                 setMessages(fetchedMessages);
                 setNextToken(messagesResponse.data.messagesByChat_idAndTimestamp.nextToken);
-
-                if (isInitialLoad.current) {
-                    requestAnimationFrame(() => {
-                        scrollViewRef.current?.scrollToEnd({ animated: false });
-                        isInitialLoad.current = false;
-                    });
-                }
             }
         } catch (error) {
             console.error('Error fetching messages:', error);
@@ -342,7 +338,7 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 quality: 0.7,
                 allowsEditing: true,
-                aspect: [4, 3],
+                // aspect: [4, 3],
             });
 
             if (!result.canceled) {
@@ -373,17 +369,12 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                         key: filename,
                         data: blob,
                         options: {
-                            contentType: 'image/jpeg',
-                            accessLevel: 'guest'
+                            contentType: 'image/jpeg'
                         }
                     }).result;
 
                     const imageUrl = await getUrl({
-                        key: filename,
-                        options: {
-                            accessLevel: 'guest',
-                            expiresIn: 3600 * 24 * 7
-                        }
+                        key: filename
                     });
 
                     const newMessage = {

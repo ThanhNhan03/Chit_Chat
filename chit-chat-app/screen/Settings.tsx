@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Dimensions } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../config/constrants';
 import { AuthenticatedUserContext } from "../contexts/AuthContext";
 import { signOut, fetchUserAttributes } from 'aws-amplify/auth';
@@ -23,29 +24,35 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
   const { user, setUser } = useContext(AuthenticatedUserContext);
   const [userData, setUserData] = useState<GetUserQuery['getUser']>(null);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!user?.sub && !user?.userId) return;
+  const fetchUserData = async () => {
+    if (!user?.sub && !user?.userId) return;
+    
+    try {
+      const response = await client.graphql<GetUserQuery>({
+        query: getUser,
+        variables: { id: user.sub || user.userId },
+      });
       
-      try {
-        const response = await client.graphql<GetUserQuery>({
-          query: getUser,
-          variables: { id: user.sub || user.userId },
-        });
-        
-        if ('data' in response) {
-          const result = response as GraphQLResult<GetUserQuery>;
-          if (result.data?.getUser) {
-            setUserData(result.data.getUser);
-          }
+      if ('data' in response) {
+        const result = response as GraphQLResult<GetUserQuery>;
+        if (result.data?.getUser) {
+          setUserData(result.data.getUser);
         }
-      } catch (error) {
-        console.log('Error fetching user data:', error);
       }
-    };
+    } catch (error) {
+      console.log('Error fetching user data:', error);
+    }
+  };
 
-    fetchUserData();
-  }, [user]);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchUserData();
+    }, [])
+  );
+
+  const handleProfilePress = () => {
+    navigation.navigate('Profile');
+  };
 
   const handleSignOut = async () => {
     try {
@@ -68,7 +75,7 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
     <View style={styles.container}>
       <ScrollView style={styles.scrollContainer}>
         <View style={styles.section}>
-          <TouchableOpacity style={styles.userInfo} onPress={() => navigation.navigate('Profile')}>
+          <TouchableOpacity style={styles.userInfo} onPress={handleProfilePress}>
             {userData?.profile_picture ? (
               <Image 
                 source={{ uri: userData.profile_picture }} 

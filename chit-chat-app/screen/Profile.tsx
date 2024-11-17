@@ -9,6 +9,7 @@ import { getUser } from '../src/graphql/queries';
 import { updateUser } from '../src/graphql/mutations';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadData, getUrl } from 'aws-amplify/storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 const client = generateClient();
 
@@ -58,14 +59,12 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
         if (!isEditing) return;
 
         try {
-            // Yêu cầu quyền truy cập thư viện ảnh
             const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (!permissionResult.granted) {
                 Alert.alert('Permission Required', 'Please allow access to your photo library');
                 return;
             }
 
-            // Mở thư viện ảnh
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
@@ -74,11 +73,26 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
             });
 
             if (!result.canceled && result.assets[0]) {
-                // Upload ảnh lên S3
                 const imageUri = result.assets[0].uri;
-                const response = await fetch(imageUri);
-                const blob = await response.blob();
+                
+                setUserData(prev => ({
+                    ...prev,
+                    profile_picture: imageUri
+                }));
+            }
+        } catch (error) {
+            console.log('Error picking image:', error);
+            Alert.alert('Error', 'Failed to pick image');
+        }
+    };
 
+    const handleSave = async () => {
+        try {
+            let finalImageUrl = userData.profile_picture;
+
+            if (userData.profile_picture && userData.profile_picture.startsWith('file://')) {
+                const response = await fetch(userData.profile_picture);
+                const blob = await response.blob();
                 const fileName = `profile-pictures/${user.sub || user.userId}-${Date.now()}.jpg`;
 
                 await uploadData({
@@ -90,49 +104,31 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
                     }
                 });
 
-                // Lấy URL của ảnh
                 const imageUrl = await getUrl({
                     key: fileName,
                     options: {
                         accessLevel: 'private',
-                        expiresIn: 3600 // URL hết hạn sau 1 giờ
                     }
                 });
 
-                // Cập nhật state với URL mới
-                setUserData(prev => ({
-                    ...prev,
-                    profile_picture: imageUrl.url.toString()
-                }));
+                finalImageUrl = imageUrl.url.toString();
             }
-        } catch (error) {
-            console.log('Error picking/uploading image:', error);
-            Alert.alert('Error', 'Failed to upload image');
-        }
-    };
 
-    const handleSave = async () => {
-        try {
             const updateUserInput: UpdateUserInput = {
                 id: user.sub || user.userId,
                 name: userData.name,
-                profile_picture: userData.profile_picture,
+                profile_picture: finalImageUrl,
             };
 
             const response = await client.graphql({
                 query: updateUser,
                 variables: { input: updateUserInput },
-            }) as GraphQLResult<{
-                updateUser: {
-                    id: string;
-                    name: string;
-                    profile_picture: string;
-                }
-            }>;
+            });
 
             if (response.data && response.data.updateUser) {
                 Alert.alert('Success', 'Profile updated successfully');
                 setIsEditing(false);
+                navigation.goBack();
             }
         } catch (error) {
             console.log('Error updating user:', error);
