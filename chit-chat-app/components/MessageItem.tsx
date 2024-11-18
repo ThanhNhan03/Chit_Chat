@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
+import { themeColors } from '../config/themeColor';
 
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -96,56 +97,49 @@ const MessageItem: React.FC<MessageItemProps> = ({
 const styles = StyleSheet.create({
     senderName: {
         fontSize: 12,
-        color: '#666',
-        marginBottom: 2,
+        color: themeColors.textSecondary,
+        marginBottom: 4,
         marginLeft: 12,
         fontWeight: '500'
     },
     messageContainer: {
         maxWidth: '80%',
         marginVertical: 4,
-        padding: 10,
-        borderRadius: 15,
-        elevation: 2,
+        padding: 12,
+        borderRadius: 16,
     },
     myMessage: {
         alignSelf: 'flex-end',
-        backgroundColor: '#DCF8C6',
+        backgroundColor: themeColors.primary,
         marginLeft: '20%',
     },
     theirMessage: {
         alignSelf: 'flex-start',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: themeColors.surface,
         marginRight: '20%',
-        borderColor: '#e0e0e0',
         borderWidth: 1,
+        borderColor: themeColors.border,
     },
     messageText: {
         fontSize: 16,
-        lineHeight: 20,
+        lineHeight: 22,
     },
     myMessageText: {
-        color: '#000000',
+        color: '#FFFFFF',
     },
     theirMessageText: {
-        color: '#000000',
+        color: themeColors.text,
     },
-    // messageImage: {
-    //     width: 200,
-    //     height: 200,
-    //     borderRadius: 8,
-    // },
     timestamp: {
         fontSize: 12,
-        color: '#666666',
         alignSelf: 'flex-end',
         marginTop: 4,
     },
     myTimestamp: {
-        color: '#666666',
+        color: 'rgba(255,255,255,0.8)',
     },
     otherTimestamp: {
-        color: '#666666',
+        color: themeColors.textSecondary,
     },
     firstMyMessage: {
         borderTopRightRadius: 15,
@@ -173,14 +167,13 @@ const styles = StyleSheet.create({
     },
     
     imageWrapper: {
-        position: 'relative',
-        borderRadius: 8,
+        borderRadius: 16,
         overflow: 'hidden',
     },
     messageImage: {
         width: screenWidth * 0.6,
         height: screenWidth * 0.6,
-        borderRadius: 8,
+        borderRadius: 16,
     },
     uploadingImage: {
         opacity: 0.7,
@@ -188,7 +181,8 @@ const styles = StyleSheet.create({
     uploadingOverlay: {
         ...StyleSheet.absoluteFillObject,
         backgroundColor: 'rgba(0,0,0,0.1)',
-        justifyContent: 'flex-end',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     loadingBar: {
         height: 3,

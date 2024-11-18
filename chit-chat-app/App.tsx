@@ -8,7 +8,7 @@ import * as Notifications from 'expo-notifications';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from "./config/constrants";
+import { themeColors } from "./config/themeColor";
 
 // Screens
 import Login from './screen/Login';
@@ -57,12 +57,13 @@ const TabNavigator = () => {
           }
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: colors.teal,
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: themeColors.secondary,
+        tabBarInactiveTintColor: themeColors.text,
         tabBarStyle: {
           height: 60,
           paddingBottom: 5,
           paddingTop: 5,
+          shadowColor: 'transparent',
         },
         tabBarIconStyle: {
           width: 30,
@@ -71,7 +72,7 @@ const TabNavigator = () => {
         tabBarLabelStyle: {
           fontSize: 14,
           fontWeight: 'bold',
-        }
+        },
       })}
     >
       <Tab.Screen 
@@ -180,23 +181,23 @@ const App: React.FC = () => {
                   component={SelectUserScreen}
                   options={{
                     title: 'Friend List',
-                    headerShown: true
+                    headerShown: false
                   }}
                 />
                 <Stack.Screen
                   name="NewGroup"
                   component={NewGroupScreen}
-                  options={{ title: 'New Group', headerShown: true }}
+                  options={{ title: 'New Group', headerShown: false }}
                 />
                 <Stack.Screen
                   name="NewUser"
                   component={NewUserScreen}
-                  options={{ title: 'Add Friend', headerShown: true }}
+                  options={{ title: 'Add Friend', headerShown: false }}
                 />
                 <Stack.Screen 
                   name="FriendRequests"
                   component={FriendRequestsScreen}
-                  options={{ title: 'Friend Request', headerShown: true }} 
+                  options={{ title: 'Friend Request', headerShown: false }} 
                 />
                 <Stack.Screen
                   name="GroupChat"

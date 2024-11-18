@@ -5,7 +5,7 @@ import { getCurrentUser } from 'aws-amplify/auth';
 import { listUserFriendChats, getFriendChat, getUser, listUserGroupChats, getGroupChat, listMessages, listContacts } from '../src/graphql/queries';
 import { onUpdateFriendChat, onUpdateGroupChat } from '../src/graphql/subscriptions';
 import ContactRow from "../components/ContactRow";
-import Seperator from "../components/Seperator";
+// import Seperator from "../components/Seperator";
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from "../config/constrants";
 import {
@@ -16,6 +16,7 @@ import {
     GetUserQuery,
     ModelUserGroupChatConnection
 } from '../src/API';
+import { themeColors } from '../config/themeColor';
 
 const client = generateClient();
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -127,6 +128,8 @@ const formatTimestamp = (timestamp: string) => {
         });
     }
 };
+
+
 
 const Chats: React.FC<ChatsProps> = ({ navigation }) => {
     const [chats, setChats] = useState<Chat[]>([]);
@@ -618,19 +621,21 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
 
     const ListEmptyComponent = () => (
         <View style={styles.noChatsContainer}>
-            <Ionicons name="chatbubble-outline" size={50} color={colors.teal} />
+            <Ionicons name="chatbubble-outline" size={50} color={themeColors.primary} />
             <Text style={styles.noChatsText}>No messages yet</Text>
-            <Text style={styles.noChatsSubText}>Start a conversation by tapping the chat button below</Text>
+            <Text style={styles.noChatsSubText}>
+                Start a conversation by tapping the chat button below
+            </Text>
         </View>
     );
 
     return (
         <View style={styles.container}>
             <Text style={styles.header}>Chats</Text>
-            <Seperator style={styles.separator} />
+            {/* <Seperator style={styles.separator} /> */}
 
             {loading ? (
-                <ActivityIndicator size="large" style={styles.loadingContainer} color={colors.teal} />
+                <ActivityIndicator size="large" style={styles.loadingContainer} color={themeColors.primary} />
             ) : (
                 <FlatList
                     data={chats}
@@ -645,13 +650,13 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                 />
             )}
 
-            <Seperator />
+            {/* <Seperator /> */}
 
             <TouchableOpacity
                 style={styles.fab}
                 onPress={() => navigation.navigate('SelectUser')}
             >
-                <Ionicons name="chatbubble-ellipses" size={24} color="#fff" />
+                <Ionicons name="chatbubble-ellipses" size={24} color={themeColors.surface} />
             </TouchableOpacity>
         </View>
     );
@@ -660,19 +665,20 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: themeColors.background,
     },
     header: {
         fontSize: screenWidth * 0.06,
-        fontWeight: 'bold',
-        color: '#333',
+        fontWeight: '600',
+        color: themeColors.text,
         paddingHorizontal: screenWidth * 0.04,
-        paddingVertical: screenHeight * 0.015,
+        paddingVertical: screenHeight * 0.02,
+        backgroundColor: themeColors.surface,
+        marginTop: screenHeight * 0.02,
     },
     separator: {
         height: 1,
-        backgroundColor: '#e0e0e0',
-        marginHorizontal: screenWidth * 0.04,
+        backgroundColor: themeColors.border,
     },
     loadingContainer: {
         flex: 1,
@@ -682,58 +688,9 @@ const styles = StyleSheet.create({
     chatList: {
         flex: 1,
     },
-    contactRow: {
-        paddingHorizontal: screenWidth * 0.04,
-        paddingVertical: screenHeight * 0.015,
-        backgroundColor: '#fff',
-    },
-    footer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        paddingVertical: screenHeight * 0.015,
-        backgroundColor: '#fff',
-    },
-    footerIcon: {
-        alignItems: 'center',
-    },
-    footerText: {
-        fontSize: screenWidth * 0.03,
-        color: colors.teal,
-        marginTop: screenHeight * 0.005,
-    },
-    fab: {
-        position: 'absolute',
-        bottom: screenHeight * 0.05,
-        right: screenWidth * 0.05,
-        backgroundColor: colors.teal,
-        width: screenWidth * 0.15,
-        height: screenWidth * 0.15,
-        borderRadius: screenWidth * 0.075,
-        justifyContent: 'center',
-        alignItems: 'center',
-        elevation: 5,
-    },
-    noChatsContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingTop: screenHeight * 0.2,
-    },
-    noChatsText: {
-        fontSize: screenWidth * 0.045,
-        color: '#333',
-        marginTop: 20,
-        fontWeight: '600',
-    },
-    noChatsSubText: {
-        fontSize: screenWidth * 0.035,
-        color: '#666',
-        marginTop: 10,
-    },
     chatItem: {
-        padding: 15,
-        backgroundColor: '#fff',
+        padding: 16,
+        backgroundColor: themeColors.surface,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
     },
@@ -749,14 +706,13 @@ const styles = StyleSheet.create({
         width: screenWidth * 0.12,
         height: screenWidth * 0.12,
         borderRadius: screenWidth * 0.06,
-        backgroundColor: colors.primary,
-        overflow: 'hidden',
+        backgroundColor: themeColors.primary,
     },
     avatarPlaceholder: {
         width: screenWidth * 0.12,
         height: screenWidth * 0.12,
         borderRadius: screenWidth * 0.06,
-        backgroundColor: colors.primary,
+        backgroundColor: themeColors.primary,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -769,19 +725,20 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: -5,
         right: -5,
-        backgroundColor: colors.teal,
-        borderRadius: 10,
-        width: 20,
-        height: 20,
+        backgroundColor: themeColors.secondary,
+        borderRadius: 12,
+        minWidth: 22,
+        height: 22,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 1.5,
-        borderColor: '#fff',
+        borderWidth: 2,
+        borderColor: themeColors.surface,
+        paddingHorizontal: 4,
     },
     memberCountText: {
-        color: '#fff',
-        fontSize: 10,
-        fontWeight: 'bold',
+        color: themeColors.surface,
+        fontSize: 11,
+        fontWeight: '600',
     },
     chatDetails: {
         flex: 1,
@@ -794,28 +751,27 @@ const styles = StyleSheet.create({
     },
     chatName: {
         fontSize: screenWidth * 0.042,
-        fontWeight: '500',
+        fontWeight: '600',
+        color: themeColors.text,
         flex: 1,
         marginRight: 10,
-        color: '#333',
     },
     timestamp: {
         fontSize: screenWidth * 0.035,
-        color: '#666',
+        color: themeColors.textSecondary,
     },
     lastMessage: {
         fontSize: screenWidth * 0.038,
-        color: '#666',
-        fontWeight: '400',
-        marginTop: 2,
+        color: themeColors.textSecondary,
+        marginTop: 4,
         flex: 1,
     },
     newMessageText: {
-        fontWeight: '700',
-        color: colors.primary,
+        fontWeight: '600',
+        color: themeColors.secondary,
     },
     newMessageTimestamp: {
-        color: colors.primary,
+        color: themeColors.secondary,
         fontWeight: '600',
     },
     lastMessageContainer: {
@@ -824,16 +780,51 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     unreadIndicator: {
-        backgroundColor: colors.primary,
+        backgroundColor: themeColors.primary,
         paddingHorizontal: 8,
-        paddingVertical: 2,
+        paddingVertical: 3,
         borderRadius: 12,
         marginLeft: 8,
     },
     unreadIndicatorText: {
-        color: '#fff',
+        color: themeColors.surface,
         fontSize: 12,
         fontWeight: '600',
+    },
+    fab: {
+        position: 'absolute',
+        bottom: screenHeight * 0.05,
+        right: screenWidth * 0.05,
+        backgroundColor: themeColors.secondary,
+        width: screenWidth * 0.14,
+        height: screenWidth * 0.14,
+        borderRadius: screenWidth * 0.07,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 4,
+        shadowColor: themeColors.secondary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+    },
+    noChatsContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingTop: screenHeight * 0.2,
+    },
+    noChatsText: {
+        fontSize: screenWidth * 0.045,
+        color: themeColors.text,
+        marginTop: 20,
+        fontWeight: '600',
+    },
+    noChatsSubText: {
+        fontSize: screenWidth * 0.035,
+        color: themeColors.textSecondary,
+        marginTop: 8,
+        textAlign: 'center',
+        paddingHorizontal: 32,
     },
 });
 

@@ -14,6 +14,7 @@ import EmojiPicker from 'rn-emoji-keyboard';
 import ImageViewer from '../components/ImageViewer';
 import { sendNotification } from '../utils/notificationHelper';
 import MessageTimestamp from '../components/MessageTimestamp';
+import { themeColors } from '../config/themeColor';
 
 const client = generateClient();
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -510,7 +511,7 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: themeColors.background,
     },
     chatContainer: {
         flex: 1,
@@ -518,15 +519,15 @@ const styles = StyleSheet.create({
     },
     messagesContainer: {
         flex: 1,
+        backgroundColor: themeColors.background,
     },
     messagesContentContainer: {
         padding: 16,
         paddingBottom: 8,
         flexGrow: 1,
-        justifyContent: 'flex-end',
     },
     messageGroup: {
-        marginBottom: 8,
+        marginBottom: 12,
     },
     messagesWrapper: {
         flexDirection: 'column',
@@ -535,10 +536,13 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: themeColors.background,
     },
     emptyText: {
-        color: '#666',
-        fontSize: 16
+        color: themeColors.textSecondary,
+        fontSize: 16,
+        textAlign: 'center',
+        marginHorizontal: 32,
     },
 });
 

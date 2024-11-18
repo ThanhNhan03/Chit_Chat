@@ -1,6 +1,7 @@
 import React from 'react';
 import { SafeAreaView, View, TouchableOpacity, Image, StyleSheet, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { themeColors } from '../config/themeColor';
 
 interface ImageViewerProps {
     uri: string;
@@ -33,12 +34,13 @@ const styles = StyleSheet.create({
         padding: 16,
         flexDirection: 'row',
         justifyContent: 'flex-end',
+        backgroundColor: 'rgba(0,0,0,0.3)',
     },
     closeButton: {
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: themeColors.primary,
         justifyContent: 'center',
         alignItems: 'center',
     },

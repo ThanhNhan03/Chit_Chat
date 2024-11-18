@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { themeColors } from '../config/themeColor';
 
 interface Props {
     timestamp: string;
@@ -17,12 +18,12 @@ const styles = StyleSheet.create({
         marginVertical: 16,
     },
     text: {
-        color: '#666',
+        color: themeColors.textSecondary,
         fontSize: 12,
-        backgroundColor: '#f0f0f0',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 10,
+        backgroundColor: `${themeColors.primary}15`,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
     },
 });
 

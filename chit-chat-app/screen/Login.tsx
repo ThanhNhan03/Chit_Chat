@@ -34,7 +34,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
   const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
-  const { setUser } = useContext(AuthenticatedUserContext); // Lấy setUser từ context
+  const { setUser } = useContext(AuthenticatedUserContext);
 
   const onHandleLogin = async () => {
     try {

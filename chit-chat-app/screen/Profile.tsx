@@ -10,7 +10,7 @@ import { updateUser } from '../src/graphql/mutations';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadData, getUrl } from 'aws-amplify/storage';
 import { useFocusEffect } from '@react-navigation/native';
-
+import { themeColors } from '../config/themeColor';
 const client = generateClient();
 
 // Thêm constant cho CloudFront URL
@@ -137,45 +137,68 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={24} color="#000" />
+                <TouchableOpacity 
+                    style={styles.backButton}
+                    onPress={() => navigation.goBack()}
+                >
+                    <Ionicons name="arrow-back" size={24} color={themeColors.text} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Profile</Text>
-                <TouchableOpacity onPress={() => isEditing ? handleSave() : setIsEditing(true)}>
-                    <Text style={styles.editButton}>{isEditing ? 'Save' : 'Edit'}</Text>
+                <Text style={styles.headerTitle}>Edit Profile</Text>
+                <TouchableOpacity 
+                    style={styles.saveButton}
+                    onPress={() => isEditing ? handleSave() : setIsEditing(true)}
+                >
+                    <Text style={styles.saveButtonText}>
+                        {isEditing ? 'Save' : 'Edit'}
+                    </Text>
                 </TouchableOpacity>
             </View>
 
-            <View style={styles.profileSection}>
-                <TouchableOpacity onPress={handlePickImage}>
-                    {userData.profile_picture ? (
-                        <Image
-                            source={{ uri: userData.profile_picture }}
-                            style={styles.avatar}
-                        />
-                    ) : (
-                        <View style={styles.avatar}>
-                            <Text style={styles.initials}>
-                                {userData.name?.substring(0, 2).toUpperCase() || 'U'}
-                            </Text>
-                        </View>
-                    )}
+            <View style={styles.content}>
+                <View style={styles.avatarSection}>
+                    <TouchableOpacity 
+                        style={styles.avatarContainer}
+                        onPress={handlePickImage}
+                        disabled={!isEditing}
+                    >
+                        {userData.profile_picture ? (
+                            <Image
+                                source={{ uri: userData.profile_picture }}
+                                style={styles.avatarImage}
+                            />
+                        ) : (
+                            <View style={styles.avatarFallback}>
+                                <Text style={styles.avatarText}>
+                                    {userData.name?.substring(0, 2).toUpperCase() || 'U'}
+                                </Text>
+                            </View>
+                        )}
+                        {isEditing && (
+                            <View style={styles.cameraButton}>
+                                <Ionicons name="camera" size={20} color="#fff" />
+                            </View>
+                        )}
+                    </TouchableOpacity>
                     {isEditing && (
-                        <View style={styles.editIconContainer}>
-                            <Ionicons name="camera" size={20} color="#fff" />
-                        </View>
+                        <Text style={styles.changePhotoText}>Tap to change photo</Text>
                     )}
-                </TouchableOpacity>
+                </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Name</Text>
-                    <TextInput
-                        style={[styles.input, !isEditing && styles.disabledInput]}
-                        value={userData.name}
-                        onChangeText={(text) => setUserData(prev => ({ ...prev, name: text }))}
-                        editable={isEditing}
-                        placeholder="Enter your name"
-                    />
+                <View style={styles.formSection}>
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Full Name</Text>
+                        <TextInput
+                            style={[
+                                styles.input,
+                                !isEditing && styles.disabledInput
+                            ]}
+                            value={userData.name}
+                            onChangeText={(text) => setUserData(prev => ({ ...prev, name: text }))}
+                            editable={isEditing}
+                            placeholder="Enter your name"
+                            placeholderTextColor={themeColors.textSecondary}
+                        />
+                    </View>
                 </View>
             </View>
         </View>
@@ -189,68 +212,107 @@ const styles = StyleSheet.create({
     },
     header: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 20,
+        backgroundColor: '#fff',
+    },
+    backButton: {
+        padding: 4,
     },
     headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: 20,
+        fontWeight: '600',
+        color: themeColors.text,
     },
-    editButton: {
-        color: colors.primary,
+    saveButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+    },
+    saveButtonText: {
         fontSize: 16,
+        fontWeight: '600',
+        color: themeColors.primary,
     },
-    profileSection: {
-        padding: 20,
+    content: {
+        flex: 1,
+        paddingHorizontal: 20,
     },
-    avatar: {
+    avatarSection: {
+        alignItems: 'center',
+        marginTop: 20,
+        marginBottom: 40,
+    },
+    avatarContainer: {
         width: 120,
         height: 120,
         borderRadius: 60,
-        backgroundColor: colors.primary,
+        backgroundColor: themeColors.primary,
+        overflow: 'hidden',
+    },
+    avatarImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
+    },
+    avatarFallback: {
+        width: '100%',
+        height: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 20,
+        backgroundColor: themeColors.primary,
     },
-    initials: {
+    avatarText: {
+        fontSize: 40,
+        fontWeight: '600',
         color: '#fff',
-        fontSize: 36,
-        fontWeight: 'bold',
+    },
+    cameraButton: {
+        position: 'absolute',
+        right: 0,
+        bottom: 0,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: themeColors.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 3,
+        borderColor: '#fff',
+    },
+    changePhotoText: {
+        marginTop: 12,
+        fontSize: 14,
+        color: themeColors.primary,
+        fontWeight: '500',
+    },
+    formSection: {
+        flex: 1,
     },
     inputGroup: {
-        marginBottom: 20,
+        marginBottom: 24,
     },
     label: {
         fontSize: 14,
-        color: '#666',
-        marginBottom: 5,
+        fontWeight: '500',
+        color: themeColors.textSecondary,
+        marginBottom: 8,
     },
     input: {
+        height: 52,
+        backgroundColor: '#fff',
         borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        padding: 12,
+        borderColor: themeColors.border,
+        borderRadius: 12,
+        paddingHorizontal: 16,
         fontSize: 16,
+        color: themeColors.text,
     },
     disabledInput: {
-        backgroundColor: '#f5f5f5',
-        color: '#666',
-    },
-    editIconContainer: {
-        position: 'absolute',
-        right: 0,
-        bottom: 20,
-        backgroundColor: colors.primary,
-        padding: 8,
-        borderRadius: 20,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
+        backgroundColor: themeColors.background,
+        color: themeColors.textSecondary,
     },
 });
 

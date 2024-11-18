@@ -10,7 +10,7 @@ import { generateClient, GraphQLResult } from 'aws-amplify/api';
 import { GetUserQuery } from '../src/API';
 import { getUser } from '../src/graphql/queries';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { themeColors } from '../config/themeColor';
 
 const { width: screenWidth } = Dimensions.get('window');
 const client = generateClient();
@@ -73,9 +73,18 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Settings</Text>
+      </View>
+
       <ScrollView style={styles.scrollContainer}>
+        {/* Profile Section */}
         <View style={styles.section}>
-          <TouchableOpacity style={styles.userInfo} onPress={handleProfilePress}>
+          <TouchableOpacity 
+            style={styles.profileCard}
+            onPress={handleProfilePress}
+            activeOpacity={0.7}
+          >
             {userData?.profile_picture ? (
               <Image 
                 source={{ uri: userData.profile_picture }} 
@@ -96,41 +105,53 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
                 {userData?.email || ''}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#666" />
+            <View style={styles.editButton}>
+              <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+            </View>
           </TouchableOpacity>
         </View>
 
+        {/* Options Section */}
         <View style={styles.section}>
-          <TouchableOpacity style={styles.option}
-            onPress={() => navigation.navigate('Help')}
-          >
-            <View style={styles.optionLeft}>
-              <Ionicons name="information-circle-outline" size={22} color="#666" style={styles.optionIcon} />
-              <Text style={styles.optionText}>Help</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#666" />
-          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>General</Text>
+          <View style={styles.optionsCard}>
+            <TouchableOpacity 
+              style={styles.option}
+              onPress={() => navigation.navigate('Help')}
+            >
+              <View style={styles.optionLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: '#E8F5E9' }]}>
+                  <Ionicons name="information-circle-outline" size={22} color="#4CAF50" />
+                </View>
+                <Text style={styles.optionText}>Help</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={themeColors.textSecondary} />
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.option}
-            onPress={() => navigation.navigate('Account')}
-          >
-            <View style={styles.optionLeft}>
-              <Ionicons name="person-outline" size={22} color="#666" style={styles.optionIcon} />
-              <Text style={styles.optionText}>Account</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#666" />
-          </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.option}
+              onPress={() => navigation.navigate('Account')}
+            >
+              <View style={styles.optionLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: '#E3F2FD' }]}>
+                  <Ionicons name="person-outline" size={22} color="#2196F3" />
+                </View>
+                <Text style={styles.optionText}>Account</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={themeColors.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
+        {/* Logout Section */}
         <View style={styles.section}>
           <TouchableOpacity
-            style={[styles.option, styles.logoutOption]}
+            style={styles.logoutButton}
             onPress={handleSignOut}
+            activeOpacity={0.7}
           >
-            <View style={styles.optionLeft}>
-              <Ionicons name="log-out-outline" size={22} color="#ff3b30" style={styles.optionIcon} />
-              <Text style={[styles.optionText, styles.logoutText]}>Log out</Text>
-            </View>
+            <Ionicons name="log-out-outline" size={22} color="#fff" />
+            <Text style={styles.logoutText}>Log out</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -141,95 +162,112 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  header: {
     padding: 20,
+    paddingTop: 20,
     backgroundColor: '#fff',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: themeColors.text,
   },
-  userInfo: {
+  scrollContainer: {
+    flex: 1,
+  },
+  section: {
+    marginBottom: 24,
+    paddingHorizontal: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: themeColors.textSecondary,
+    marginBottom: 12,
+  },
+  profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 30,
-    marginTop: 50,
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 16,
+    marginTop: 12,
   },
   avatar: {
-    width: screenWidth * 0.14,
-    height: screenWidth * 0.14,
-    borderRadius: screenWidth * 0.07,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: themeColors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
-    overflow: 'hidden',
   },
   initials: {
     color: '#fff',
-    fontSize: 20,
-    // fontWeight: ,
+    fontSize: 24,
+    fontWeight: '600',
   },
   userDetails: {
     flex: 1,
+    marginLeft: 16,
   },
   username: {
     fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 10,
+    fontWeight: '600',
+    color: themeColors.text,
+    marginBottom: 4,
   },
   email: {
     fontSize: 14,
-    color: '#555',
-    marginLeft: 10,
+    color: themeColors.textSecondary,
+  },
+  editButton: {
+    padding: 8,
+  },
+  optionsCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    overflow: 'hidden',
   },
   option: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 15,
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  optionText: {
-    fontSize: 16,
-  },
-  githubLink: {
-    textAlign: 'center',
-    marginTop: 20,
-    color: '#007bff',
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  bottomNav: {
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#ccc',
-  },
-  navItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-  },
-  navText: {
-    fontSize: 16,
-    color: '#000',
-  },
-  section: {
-    marginBottom: 20,
+    borderBottomColor: '#f0f0f0',
   },
   optionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  optionIcon: {
-    marginRight: 10,
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
   },
-  logoutOption: {
-    borderBottomWidth: 0,
+  optionText: {
+    fontSize: 16,
+    color: themeColors.text,
+    fontWeight: '500',
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: themeColors.error,
+    padding: 16,
+    borderRadius: 16,
+    gap: 8,
   },
   logoutText: {
-    color: '#ff3b30',
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
