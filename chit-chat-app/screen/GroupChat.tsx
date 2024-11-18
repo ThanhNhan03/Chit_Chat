@@ -29,9 +29,12 @@ import { sendNotification } from '../utils/notificationHelper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MessageTimestamp from '../components/MessageTimestamp';
 import { ModelSortDirection } from '../src/API';
+import { getUrl, uploadData } from 'aws-amplify/storage';
+import { colors } from '../config/constrants';
 
 const client = generateClient();
 const CACHE_EXPIRY_TIME = 1000 * 60 * 60;
+const CLOUDFRONT_URL = 'https://d1uil1dxdmhthh.cloudfront.net';
 
 interface Message {
     id: string;
@@ -42,6 +45,7 @@ interface Message {
     isMe: boolean;
     senderId: string;
     senderName?: string;
+    isUploading?: boolean;
 }
 
 interface GroupMember {
@@ -81,6 +85,8 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
     const [nextToken, setNextToken] = useState<string | null>(null);
     const isInitialLoad = useRef(true);
     const [isLoadingMembers, setIsLoadingMembers] = useState(true);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchCurrentUser();
@@ -198,6 +204,8 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                 }
             });
 
+            // console.log('Fetched messages response:', messagesResponse.data.messagesByChat_idAndTimestamp.items);
+
             if (messagesResponse.data.messagesByChat_idAndTimestamp?.items) {
                 const fetchedMessages = messagesResponse.data.messagesByChat_idAndTimestamp.items
                     .map(msg => ({
@@ -212,15 +220,9 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                     }))
                     .reverse();
 
+                // console.log('Processed messages:', fetchedMessages);
                 setMessages(fetchedMessages);
                 setNextToken(messagesResponse.data.messagesByChat_idAndTimestamp.nextToken);
-
-                if (isInitialLoad.current) {
-                    requestAnimationFrame(() => {
-                        scrollViewRef.current?.scrollToEnd({ animated: false });
-                        isInitialLoad.current = false;
-                    });
-                }
             }
         } catch (error) {
             console.error('Error fetching messages:', error);
@@ -334,36 +336,85 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
     };
 
     const handleImagePick = async () => {
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            quality: 1,
-        });
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                quality: 0.7,
+                allowsEditing: true,
+            });
 
-        if (!result.canceled) {
-            try {
-                // TODO: Upload image to S3 first
-                const imageUrl = result.assets[0].uri;
-                
-                const newMessage = {
-                    chat_type: 'group',
-                    chat_id: chatId,
-                    sender_id: currentUserId,
-                    content: '',
-                    timestamp: new Date().toISOString(),
-                    status: 'sent',
-                    attachments: imageUrl
+            if (!result.canceled) {
+                const imageUri = result.assets[0].uri;
+                const timestamp = new Date().toISOString();
+                const tempId = `temp-${Date.now()}`;
+
+                const optimisticMessage: Message = {
+                    id: tempId,
+                    image: imageUri,
+                    timestamp: timestamp,
+                    type: 'image',
+                    isMe: true,
+                    senderId: currentUserId!,
+                    senderName: groupMembers.find(member => member.id === currentUserId)?.name,
+                    isUploading: true
                 };
 
-                await client.graphql({
-                    query: createMessages,
-                    variables: { input: newMessage }
-                });
+                setMessages(prev => [...prev, optimisticMessage]);
+                setUploadingImageId(tempId);
+                scrollToBottom();
 
-                await updateLastMessage('📷 Image');
-            } catch (error) {
-                console.error('Error sending image:', error);
-                Alert.alert('Error', 'Failed to send image');
+                try {
+                    const response = await fetch(imageUri);
+                    const blob = await response.blob();
+                    const filename = `group-images/${chatId}/${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+
+                    await uploadData({
+                        key: filename,
+                        data: blob,
+                        options: {
+                            contentType: 'image/jpeg'
+                        }
+                    }).result;
+
+                    const cloudFrontUrl = `${CLOUDFRONT_URL}/public/${filename}`;
+
+                    const newMessage = {
+                        chat_type: 'group',
+                        chat_id: chatId,
+                        sender_id: currentUserId,
+                        content: '📷 Image',
+                        timestamp: timestamp,
+                        status: 'sent',
+                        attachments: cloudFrontUrl
+                    };
+
+                    await Promise.all([
+                        client.graphql({
+                            query: createMessages,
+                            variables: { input: newMessage }
+                        }),
+                        updateLastMessage('📷 Image')
+                    ]);
+
+                    setMessages(prev => 
+                        prev.map(msg => 
+                            msg.id === tempId 
+                                ? { ...msg, image: cloudFrontUrl, isUploading: false }
+                                : msg
+                        )
+                    );
+
+                } catch (error) {
+                    console.error('Error uploading image:', error);
+                    setMessages(prev => prev.filter(msg => msg.id !== tempId));
+                    Alert.alert('Error', 'Failed to send image');
+                } finally {
+                    setUploadingImageId(null);
+                }
             }
+        } catch (error) {
+            console.error('Error picking image:', error);
+            Alert.alert('Error', 'Failed to pick image');
         }
     };
 
@@ -383,17 +434,17 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
 
         msgs.forEach((msg, index) => {
             const sender = groupMembers.find(member => member.id === msg.senderId);
-            
             const currentMsgTime = new Date(msg.timestamp).getTime();
-            const prevMsgTime = index > 0 ? new Date(msgs[index - 1].timestamp).getTime() : 0;
+            const prevMsg = index > 0 ? msgs[index - 1] : null;
             
-            const shouldShowTimestamp = index === 0 || 
-                Math.abs(currentMsgTime - prevMsgTime) > 900000; // 15 phút
-
-            if (shouldShowTimestamp || 
+            const needNewGroup = 
                 !currentGroup || 
-                msg.isMe !== (currentGroup.senderId === currentUserId)) {
-                
+            
+                currentGroup.senderId !== msg.senderId ||
+         
+                (prevMsg && (currentMsgTime - new Date(prevMsg.timestamp).getTime() > 900000));
+
+            if (needNewGroup) {
                 const date = new Date(msg.timestamp);
                 const formattedTimestamp = date.toLocaleString('vi-VN', {
                     hour: '2-digit',
@@ -404,10 +455,13 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                 });
                 
                 currentGroup = {
-                    timestamp: shouldShowTimestamp ? formattedTimestamp : undefined,
-                    senderName: msg.senderName,
-                    senderId: msg.isMe ? currentUserId! : msg.senderId,
-                    senderAvatar: sender?.profile_picture || undefined,
+                    timestamp: !prevMsg || 
+                        (currentMsgTime - new Date(prevMsg.timestamp).getTime() > 900000) 
+                        ? formattedTimestamp 
+                        : undefined,
+                    senderName: msg.senderName || sender?.name,
+                    senderId: msg.senderId,
+                    senderAvatar: sender?.profile_picture,
                     messages: []
                 };
                 groups.push(currentGroup);
@@ -427,14 +481,11 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
             {!group.messages[0].isMe && (
                 <View style={styles.senderInfo}>
                     {group.senderAvatar ? (
-                        <Image 
-                            source={{ uri: group.senderAvatar }} 
-                            style={styles.avatar} 
-                        />
+                        <Image source={{ uri: group.senderAvatar }} style={styles.avatar} />
                     ) : (
                         <View style={styles.avatarPlaceholder}>
                             <Text style={styles.avatarText}>
-                                {group.senderName?.[0]?.toUpperCase()}
+                                {group.senderName?.substring(0, 1).toUpperCase()}
                             </Text>
                         </View>
                     )}
@@ -443,7 +494,8 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
             )}
             <View style={[
                 styles.messagesWrapper,
-                !group.messages[0].isMe && styles.messagesWithAvatar
+                !group.messages[0].isMe && styles.messagesWithAvatar,
+                group.messages[0].isMe && styles.myMessagesWrapper
             ]}>
                 {group.messages.map((message, index) => (
                     <MessageItem 
@@ -452,6 +504,7 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                         onImagePress={setSelectedImage}
                         isFirstInGroup={index === 0}
                         isLastInGroup={index === group.messages.length - 1}
+                        showSender={false}
                     />
                 ))}
             </View>
@@ -668,6 +721,7 @@ const styles = StyleSheet.create({
     },
     messageGroup: {
         marginBottom: 16,
+        width: '100%',
     },
     senderInfo: {
         flexDirection: 'row',
@@ -702,9 +756,15 @@ const styles = StyleSheet.create({
     },
     messagesWrapper: {
         flexDirection: 'column',
+        width: '100%',
     },
     messagesWithAvatar: {
         marginLeft: 36,
+        width: '80%',
+    },
+    myMessagesWrapper: {
+        alignItems: 'flex-end',
+        paddingRight: 12,
     },
     emptyContainer: {
         flex: 1,

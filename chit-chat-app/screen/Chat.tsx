@@ -3,7 +3,7 @@ import { StyleSheet, View, FlatList, Modal, KeyboardAvoidingView, Platform, Aler
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { createMessages, updateFriendChat } from '../src/graphql/mutations';
-import { listMessages, messagesByChat_idAndTimestamp } from '../src/graphql/queries';
+import { listMessages, messagesByChat_idAndTimestamp, listUserFriendChats } from '../src/graphql/queries';
 import { onCreateMessages } from '../src/graphql/subscriptions';
 import { ModelSortDirection } from '../src/API';
 import Header from '../components/Header';
@@ -26,9 +26,12 @@ interface Message {
     timestamp: string;
     type: 'text' | 'image';
     isMe: boolean;
+    isUploading?: boolean;
 }
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { colors } from '../config/constrants';
+import { getUrl, uploadData } from 'aws-amplify/storage';
 
 interface GroupedMessages {
     timestamp?: string;
@@ -73,6 +76,8 @@ const groupMessages = (msgs: Message[]): GroupedMessages[] => {
 
 const getChatCacheKey = (chatId: string, userId: string) => `private_chat_messages_${chatId}_${userId}`;
 
+const CLOUDFRONT_URL = 'https://d1uil1dxdmhthh.cloudfront.net';
+
 const Chat: React.FC<any> = ({ route, navigation }) => {
     const { name, userId, chatId } = route.params;
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -88,6 +93,8 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
     const contentHeight = useRef(0);
     const scrollViewHeight = useRef(0);
     const isInitialLoad = useRef(true);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchCurrentUser();
@@ -138,6 +145,27 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
         try {
             if (!currentUserId) return;
 
+            // Kiểm tra quyền truy cập trước khi fetch messages
+            const hasAccess = await client.graphql({
+                query: listUserFriendChats,
+                variables: {
+                    filter: {
+                        and: [
+                            { friend_chat_id: { eq: chatId } },
+                            { user_id: { eq: currentUserId } }
+                        ]
+                    }
+                }
+            });
+
+            // Nếu không có quyền truy cập, return ngay
+            if (!hasAccess.data.listUserFriendChats.items.length) {
+                console.warn('Unauthorized access to chat');
+                navigation.goBack();
+                return;
+            }
+
+            // Nếu có quyền truy cập mới fetch messages
             const messagesResponse = await client.graphql({
                 query: messagesByChat_idAndTimestamp,
                 variables: {
@@ -277,49 +305,85 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
     };
 
     const handleImagePick = async () => {
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            quality: 1,
-        });
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                quality: 0.7,
+                allowsEditing: true,
+            });
 
-        if (!result.canceled) {
-            const imageUrl = result.assets[0].uri;
-            const timestamp = new Date().toISOString();
+            if (!result.canceled) {
+                const imageUri = result.assets[0].uri;
+                const timestamp = new Date().toISOString();
+                const tempId = `temp-${Date.now()}`;
 
-            const optimisticMessage: Message = {
-                id: `temp-${Date.now()}`,
-                image: imageUrl,
-                timestamp: timestamp,
-                type: 'image',
-                isMe: true
-            };
-
-            setMessages(prev => [...prev, optimisticMessage]);
-            scrollToBottom();
-
-            try {
-                const newMessage = {
-                    chat_type: 'private',
-                    chat_id: chatId,
-                    sender_id: currentUserId,
-                    content: '',
+                // Tạo optimistic message với trạng thái isUploading
+                const optimisticMessage: Message = {
+                    id: tempId,
+                    image: imageUri,
                     timestamp: timestamp,
-                    status: 'sent',
-                    attachments: imageUrl
+                    type: 'image',
+                    isMe: true,
+                    isUploading: true
                 };
 
-                await Promise.all([
-                    client.graphql({
-                        query: createMessages,
-                        variables: { input: newMessage }
-                    }),
-                    updateLastMessage('📷 Image')
-                ]);
-            } catch (error) {
-                console.error('Error sending image:', error);
-                setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
-                Alert.alert('Error', 'Failed to send image');
+                setMessages(prev => [...prev, optimisticMessage]);
+                setUploadingImageId(tempId);
+                scrollToBottom();
+
+                try {
+                    const response = await fetch(imageUri);
+                    const blob = await response.blob();
+                    const filename = `chat-images/${chatId}/${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+
+                    await uploadData({
+                        key: filename,
+                        data: blob,
+                        options: {
+                            contentType: 'image/jpeg'
+                        }
+                    }).result;
+
+                    const cloudFrontUrl = `${CLOUDFRONT_URL}/public/${filename}`;
+
+                    const newMessage = {
+                        chat_type: 'private',
+                        chat_id: chatId,
+                        sender_id: currentUserId,
+                        content: '📷 Image',
+                        timestamp: timestamp,
+                        status: 'sent',
+                        attachments: cloudFrontUrl
+                    };
+
+                    await Promise.all([
+                        client.graphql({
+                            query: createMessages,
+                            variables: { input: newMessage }
+                        }),
+                        updateLastMessage('📷 Image')
+                    ]);
+
+                    // Cập nhật UI với CloudFront URL và remove trạng thái uploading
+                    setMessages(prev => 
+                        prev.map(msg => 
+                            msg.id === tempId 
+                                ? { ...msg, image: cloudFrontUrl, isUploading: false }
+                                : msg
+                        )
+                    );
+
+                } catch (error) {
+                    console.error('Error uploading image:', error);
+                    setMessages(prev => prev.filter(msg => msg.id !== tempId));
+                    Alert.alert('Error', 'Failed to send image');
+                } finally {
+                    setUploadingImageId(null);
+                }
             }
+        } catch (error) {
+            console.error('Error picking image:', error);
+            Alert.alert('Error', 'Failed to pick image');
         }
     };
 
@@ -475,7 +539,7 @@ const styles = StyleSheet.create({
     emptyText: {
         color: '#666',
         fontSize: 16
-    }
+    },
 });
 
 export default Chat;

@@ -1,5 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
+
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 interface MessageItemProps {
     message: {
@@ -10,6 +13,7 @@ interface MessageItemProps {
         type: 'text' | 'image';
         isMe: boolean;
         senderName?: string;
+        isUploading?: boolean;
     };
     onImagePress: (uri: string) => void;
     showSender?: boolean;
@@ -57,13 +61,26 @@ const MessageItem: React.FC<MessageItemProps> = ({
                         {message.text}
                     </Text>
                 ) : (
-                    <TouchableOpacity onPress={() => onImagePress(message.image!)}>
-                        <Image
-                            source={{ uri: message.image }}
-                            style={styles.messageImage}
-                            resizeMode="cover"
-                        />
-                    </TouchableOpacity>
+                    <View style={styles.imageWrapper}>
+                        <TouchableOpacity 
+                            onPress={() => !message.isUploading && onImagePress(message.image!)}
+                            disabled={message.isUploading}
+                        >
+                            <Image
+                                source={{ uri: message.image }}
+                                style={[
+                                    styles.messageImage,
+                                    message.isUploading && styles.uploadingImage
+                                ]}
+                                resizeMode="cover"
+                            />
+                            {message.isUploading && (
+                                <View style={styles.uploadingOverlay}>
+                                   <ActivityIndicator size="small" color="#4CAF50" />
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    </View>
                 )}
                 <Text style={[
                     styles.timestamp,
@@ -113,11 +130,11 @@ const styles = StyleSheet.create({
     theirMessageText: {
         color: '#000000',
     },
-    messageImage: {
-        width: 200,
-        height: 200,
-        borderRadius: 8,
-    },
+    // messageImage: {
+    //     width: 200,
+    //     height: 200,
+    //     borderRadius: 8,
+    // },
     timestamp: {
         fontSize: 12,
         color: '#666666',
@@ -153,6 +170,32 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 5,
         borderBottomRightRadius: 15,
         borderBottomLeftRadius: 15,
+    },
+    
+    imageWrapper: {
+        position: 'relative',
+        borderRadius: 8,
+        overflow: 'hidden',
+    },
+    messageImage: {
+        width: screenWidth * 0.6,
+        height: screenWidth * 0.6,
+        borderRadius: 8,
+    },
+    uploadingImage: {
+        opacity: 0.7,
+    },
+    uploadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.1)',
+        justifyContent: 'flex-end',
+    },
+    loadingBar: {
+        height: 3,
+        backgroundColor: '#4CAF50', // hoặc màu bạn muốn
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
     },
 });
 
