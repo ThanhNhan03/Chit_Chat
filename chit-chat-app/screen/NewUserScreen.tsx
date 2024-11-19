@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { generateClient } from 'aws-amplify/api';
 import { listFriendRequests, listUsers, listContacts } from '../src/graphql/queries';
 import { createFriendRequests, deleteFriendRequests } from '../src/graphql/mutations';
 import { getCurrentUser } from 'aws-amplify/auth';
+import { Ionicons } from '@expo/vector-icons';
+import { themeColors } from '../config/themeColor';
 
 // Tạo client GraphQL
 const client = generateClient();
@@ -207,50 +209,87 @@ export default function NewUserScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Add Friend by Email</Text>
-      
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Add New Friend</Text>
+        <Text style={styles.headerSubtitle}>Find your friends by their email address</Text>
+      </View>
+
       <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter friend's email"
-          placeholderTextColor="#aaa"
-          value={searchEmail}
-          onChangeText={setSearchEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+        <View style={styles.searchInputContainer}>
+          <Ionicons name="mail-outline" size={20} color={themeColors.textSecondary} />
+          <TextInput
+            style={styles.input}
+            placeholder="Enter email address"
+            placeholderTextColor={themeColors.textSecondary}
+            value={searchEmail}
+            onChangeText={setSearchEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          {searchEmail.length > 0 && (
+            <TouchableOpacity 
+              onPress={() => setSearchEmail('')}
+              style={styles.clearButton}
+            >
+              <Ionicons name="close-circle" size={20} color={themeColors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
         <TouchableOpacity 
-          style={styles.searchButton}
+          style={[
+            styles.searchButton,
+            isSearching && styles.searchingButton
+          ]}
           onPress={handleSearch}
-          disabled={isSearching}
+          disabled={isSearching || !searchEmail.trim()}
         >
-          <Text style={styles.searchButtonText}>
-            {isSearching ? 'Searching...' : 'Search'}
-          </Text>
+          <Ionicons 
+            name={isSearching ? "hourglass-outline" : "search-outline"} 
+            size={24} 
+            color="#fff" 
+          />
         </TouchableOpacity>
       </View>
 
       {foundUser && (
-        <View style={styles.userItem}>
-          <View>
-            <Text style={styles.userName}>{foundUser.name}</Text>
-            <Text style={styles.userEmail}>{foundUser.email}</Text>
+        <View style={styles.resultContainer}>
+          <View style={styles.userItem}>
+            <View style={styles.avatarContainer}>
+              {foundUser.profile_picture ? (
+                <Image 
+                  source={{ uri: foundUser.profile_picture }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <Text style={styles.avatarText}>
+                    {foundUser.name.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{foundUser.name}</Text>
+              <Text style={styles.userEmail}>{foundUser.email}</Text>
+            </View>
+            {pendingRequests.includes(foundUser.id) ? (
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleCancelRequest}
+              >
+                <Ionicons name="close" size={20} color="#fff" />
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => handleSendRequest(foundUser)}
+              >
+                <Ionicons name="person-add" size={20} color="#fff" />
+                <Text style={styles.buttonText}>Add</Text>
+              </TouchableOpacity>
+            )}
           </View>
-          {pendingRequests.includes(foundUser.id) ? (
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={handleCancelRequest}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => handleSendRequest(foundUser)}
-            >
-              <Text style={styles.addButtonText}>Add</Text>
-            </TouchableOpacity>
-          )}
         </View>
       )}
     </View>
@@ -258,82 +297,135 @@ export default function NewUserScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#FFFFFF', 
-    padding: 20 
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
   },
-  title: { 
-    fontSize: 24, 
-    fontWeight: 'bold', 
-    color: '#333', 
-    marginVertical: 20 
+  header: {
+    padding: 20,
+    paddingTop: 40,
+    backgroundColor: '#fff',
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: themeColors.text,
+    marginBottom: 8,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: themeColors.textSecondary,
   },
   searchContainer: {
     flexDirection: 'row',
-    marginBottom: 20,
-    gap: 10,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: `${themeColors.primary}10`,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    height: 50,
   },
   input: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    color: '#333',
-    padding: 10,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    marginLeft: 12,
+    fontSize: 16,
+    color: themeColors.text,
+  },
+  clearButton: {
+    padding: 4,
   },
   searchButton: {
-    backgroundColor: '#007BFF',
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: themeColors.primary,
+    width: 50,
+    height: 50,
+    borderRadius: 12,
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  searchButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  searchingButton: {
+    opacity: 0.7,
+  },
+  resultContainer: {
+    marginTop: 20,
+    paddingHorizontal: 20,
   },
   userItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
-    padding: 15,
-    borderRadius: 8,
-    marginVertical: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  userName: { 
-    color: '#333', 
-    fontSize: 16, 
-    fontWeight: 'bold' 
+  avatarContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    overflow: 'hidden',
+    backgroundColor: themeColors.primary,
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarFallback: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: themeColors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  userInfo: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: themeColors.text,
+    marginBottom: 4,
   },
   userEmail: {
-    color: '#666',
     fontSize: 14,
-    marginTop: 4,
+    color: themeColors.textSecondary,
   },
   addButton: {
-    backgroundColor: '#28A745',
-    padding: 10,
-    borderRadius: 5,
-    minWidth: 80,
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  addButtonText: { 
-    color: '#fff', 
-    fontWeight: 'bold' 
+    backgroundColor: themeColors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 8,
   },
   cancelButton: {
-    backgroundColor: '#FF6347',
-    padding: 10,
-    borderRadius: 5,
-    minWidth: 80,
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: themeColors.error,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 8,
   },
-  cancelButtonText: { 
-    color: '#fff', 
-    fontWeight: 'bold' 
+  buttonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

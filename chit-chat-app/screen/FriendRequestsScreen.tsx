@@ -7,8 +7,9 @@ import { listFriendRequests, getUser } from '../src/graphql/queries';
 import { updateFriendRequests, createContact, deleteFriendRequests } from '../src/graphql/mutations';
 import { onCreateFriendRequests } from '../src/graphql/subscriptions';
 import { sendNotification } from '../utils/notificationHelper';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { themeColors } from '../config/themeColor';
 
-// Dữ liệu mẫu cho lời mời kết bạn
 const client = generateClient();
 
 type FriendRequest = {
@@ -19,7 +20,7 @@ type FriendRequest = {
   status: string;
 };
 
-export default function FriendRequestsScreen() {
+export default function FriendRequestsScreen({ navigation }) {
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -195,25 +196,41 @@ export default function FriendRequestsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Friend Requests</Text>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color={themeColors.primary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Friend Requests</Text>
+      </View>
+
       {friendRequests.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Icon name="people" size={48} color="#ccc" />
-          <Text style={styles.emptyText}>No friend requests</Text>
+          <Ionicons name="people-outline" size={64} color={themeColors.textSecondary} />
+          <Text style={styles.emptyText}>No friend requests yet</Text>
+          <Text style={styles.emptySubtext}>When someone sends you a friend request, it will appear here</Text>
         </View>
       ) : (
         <FlatList
           data={friendRequests}
           keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContainer}
           renderItem={({ item }) => (
             <View style={styles.requestItem}>
               <View style={styles.userInfo}>
                 <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
+                  <Text style={styles.avatarText}>
+                    {item.name.charAt(0).toUpperCase()}
+                  </Text>
                 </View>
                 <View style={styles.textContainer}>
                   <Text style={styles.name}>{item.name}</Text>
-                  <Text style={styles.timestamp}>{formatTimestamp(item.created_at)}</Text>
+                  <Text style={styles.timestamp}>
+                    <Ionicons name="time-outline" size={14} color={themeColors.textSecondary} />
+                    {' '}{formatTimestamp(item.created_at)}
+                  </Text>
                 </View>
               </View>
               <View style={styles.buttonContainer}>
@@ -221,13 +238,15 @@ export default function FriendRequestsScreen() {
                   style={[styles.button, styles.acceptButton]}
                   onPress={() => handleAccept(item)}
                 >
+                  <Ionicons name="checkmark" size={20} color="#fff" />
                   <Text style={styles.buttonText}>Accept</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.button, styles.declineButton]}
                   onPress={() => handleDecline(item)}
                 >
-                  <Text style={[styles.buttonText, styles.declineText]}>Decline</Text>
+                  <Ionicons name="close" size={20} color={themeColors.error} />
+                  <Text style={styles.declineText}>Decline</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -239,95 +258,117 @@ export default function FriendRequestsScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f9f9f9',
-        padding: 16,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 16,
-        color: '#333',
-    },
-    requestItem: {
-        backgroundColor: '#fff',
-        borderRadius: 8,
-        padding: 16,
-        marginBottom: 12,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
-    },
-    userInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    avatar: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: '#e0e0e0',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 12,
-    },
-    avatarText: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#666',
-    },
-    textContainer: {
-        flex: 1,
-    },
-    name: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-    },
-    timestamp: {
-        fontSize: 14,
-        color: '#666',
-        marginTop: 4,
-    },
-    buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    button: {
-        flex: 1,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 6,
-        marginHorizontal: 4,
-    },
-    acceptButton: {
-        backgroundColor: '#4CAF50',
-    },
-    declineButton: {
-        backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: '#ff6b6b',
-    },
-    buttonText: {
-        color: '#fff',
-        textAlign: 'center',
-        fontWeight: '600',
-    },
-    declineText: {
-        color: '#ff6b6b',
-    },
-    emptyContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    emptyText: {
-        marginTop: 16,
-        fontSize: 16,
-        color: '#666',
-    },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: 20,
+    backgroundColor: '#fff',
+  },
+  backButton: {
+    padding: 4,
+    marginRight: 12,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: themeColors.text,
+  },
+  listContainer: {
+    padding: 16,
+  },
+  requestItem: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: themeColors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  avatarText: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  textContainer: {
+    flex: 1,
+  },
+  name: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: themeColors.text,
+    marginBottom: 4,
+  },
+  timestamp: {
+    fontSize: 14,
+    color: themeColors.textSecondary,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  button: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  acceptButton: {
+    backgroundColor: themeColors.primary,
+  },
+  declineButton: {
+    backgroundColor: `${themeColors.error}10`,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  declineText: {
+    color: themeColors.error,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    marginTop: 16,
+    fontSize: 18,
+    fontWeight: '600',
+    color: themeColors.text,
+  },
+  emptySubtext: {
+    marginTop: 8,
+    fontSize: 14,
+    color: themeColors.textSecondary,
+    textAlign: 'center',
+  },
 });

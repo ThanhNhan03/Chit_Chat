@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, FlatList, TouchableOpacity, 
+  StyleSheet, ActivityIndicator, Alert, TextInput, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
@@ -9,6 +10,9 @@ import { ActionSheetProvider, useActionSheet } from '@expo/react-native-action-s
 import { deleteContact } from '../src/graphql/mutations';
 import { createFriendChat, createUserFriendChat } from '../src/graphql/mutations';
 import { listUserFriendChats } from '../src/graphql/queries';
+import { themeColors } from '../config/themeColor';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { debounce } from 'lodash';
 
 
 const client = generateClient();
@@ -20,6 +24,7 @@ type Friend = {
   email: string;
   online?: boolean;
   lastSeen?: string;
+  avatar?: string;
 };
 
 export default function SelectUserScreen({ navigation }) {
@@ -27,8 +32,33 @@ export default function SelectUserScreen({ navigation }) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const debouncedSearch = useCallback(
+    debounce((text: string) => {
+      setSearchQuery(text);
+    }, 1000),
+    []
+  );
 
   useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, []);
+
+  const filteredFriends = useMemo(() => {
+    if (!searchQuery.trim()) return friends;
+    return friends.filter(friend => 
+      friend.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      friend.email.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [friends, searchQuery]);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerShown: false
+    });
     fetchCurrentUser();
   }, []);
 
@@ -53,7 +83,6 @@ export default function SelectUserScreen({ navigation }) {
 
   const fetchFriends = async () => {
     try {
-      // Fetch all contacts for current user
       const contactsResponse = await client.graphql({
         query: listContacts,
         variables: {
@@ -65,7 +94,6 @@ export default function SelectUserScreen({ navigation }) {
 
       const contacts = contactsResponse.data.listContacts.items;
 
-      // Fetch detailed information for each friend
       const friendsData = await Promise.all(
         contacts.map(async (contact: any) => {
           const userResponse = await client.graphql({
@@ -79,8 +107,9 @@ export default function SelectUserScreen({ navigation }) {
             name: userData.name,
             email: userData.email,
             status: userData.status || 'Hey there! I am using ChitChat',
-            online: false, // You can implement online status logic here
-            lastSeen: 'Offline' // You can implement last seen logic here
+            online: false,
+            lastSeen: 'Offline',
+            avatar: userData.profile_picture
           };
         })
       );
@@ -104,7 +133,6 @@ export default function SelectUserScreen({ navigation }) {
     }).subscribe({
       next: async ({ data }) => {
         if (data?.onCreateContact) {
-          // Fetch the new friend's details and add to the list
           const userResponse = await client.graphql({
             query: getUser,
             variables: { id: data.onCreateContact.contact_user_id }
@@ -117,7 +145,8 @@ export default function SelectUserScreen({ navigation }) {
             email: userData.email,
             status: userData.status || 'Hey there! I am using ChitChat',
             online: false,
-            lastSeen: 'Offline'
+            lastSeen: 'Offline',
+            avatar: userData.profile_picture
           };
           
           setFriends(prev => [...prev, newFriend]);
@@ -220,7 +249,6 @@ export default function SelectUserScreen({ navigation }) {
 
   const handleUserSelect = async (friend: Friend) => {
     try {
-      // Check if chat already exists
       const existingChatsResponse = await client.graphql({
         query: listUserFriendChats,
         variables: {
@@ -233,7 +261,6 @@ export default function SelectUserScreen({ navigation }) {
       const existingChats = existingChatsResponse.data.listUserFriendChats.items;
       let friendChatId = null;
 
-      // Find if there's an existing chat with this friend
       for (const chat of existingChats) {
         const otherUserChat = await client.graphql({
           query: listUserFriendChats,
@@ -254,7 +281,6 @@ export default function SelectUserScreen({ navigation }) {
       }
 
       if (!friendChatId) {
-        // Create new FriendChat
         const newFriendChat = await client.graphql({
           query: createFriendChat,
           variables: {
@@ -268,7 +294,6 @@ export default function SelectUserScreen({ navigation }) {
 
         friendChatId = newFriendChat.data.createFriendChat.id;
 
-        // Create UserFriendChat entries for both users
         await Promise.all([
           client.graphql({
             query: createUserFriendChat,
@@ -302,28 +327,91 @@ export default function SelectUserScreen({ navigation }) {
     }
   };
 
+  const renderCustomHeader = () => (
+    <View style={styles.headerWrapper}>
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color={themeColors.primary} />
+      </TouchableOpacity>
+      <Text style={styles.headerText}>Select Contact</Text>
+    </View>
+  );
+
+  const renderSearchBar = () => (
+    <View style={styles.searchContainer}>
+      <Ionicons name="search" size={20} color={themeColors.textSecondary} />
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search friends..."
+        placeholderTextColor={themeColors.textSecondary}
+        onChangeText={debouncedSearch}
+        defaultValue={searchQuery}
+      />
+      {searchQuery.length > 0 && (
+        <TouchableOpacity 
+          onPress={() => {
+            setSearchQuery('');
+            debouncedSearch.cancel();
+          }}
+          style={styles.clearButton}
+        >
+          <Ionicons name="close-circle" size={20} color={themeColors.textSecondary} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
   const renderHeader = () => (
-    <>
-      <TouchableOpacity style={styles.option} onPress={() => navigation.navigate('NewGroup')}>
-        <Icon name="group" size={24} color="#4CAF50" style={styles.icon} />
-        <Text style={styles.optionText}>New Group</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.option} onPress={() => navigation.navigate('NewUser')}>
-        <Icon name="person-add" size={24} color="#2196F3" style={styles.icon} />
-        <Text style={styles.optionText}>Add Friends</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.option} onPress={() => navigation.navigate('FriendRequests')}>
-        <Icon name="people" size={24} color="#FF9800" style={styles.icon} />
-        <Text style={styles.optionText}>Friends Request</Text>
-      </TouchableOpacity>
-    </>
+    <View style={styles.headerContainer}>
+      <Text style={styles.headerTitle}>Start a conversation</Text>
+      <View style={styles.optionsContainer}>
+        <TouchableOpacity 
+          style={[styles.option, { backgroundColor: `${themeColors.primary}15` }]} 
+          onPress={() => navigation.navigate('NewGroup')}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: themeColors.primary }]}>
+            <Icon name="group" size={24} color="#fff" />
+          </View>
+          <Text style={styles.optionText}>New Group</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.option, { backgroundColor: `${themeColors.secondary}15` }]} 
+          onPress={() => navigation.navigate('NewUser')}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: themeColors.secondary }]}>
+            <Icon name="person-add" size={24} color="#fff" />
+          </View>
+          <Text style={styles.optionText}>Add Friends</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.option, { backgroundColor: `${themeColors.primary}15` }]} 
+          onPress={() => navigation.navigate('FriendRequests')}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: themeColors.primary }]}>
+            <Icon name="people" size={24} color="#fff" />
+          </View>
+          <Text style={styles.optionText}>Friend Requests</Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.sectionTitle}>Friends</Text>
+    </View>
   );
 
   return (
     <View style={styles.container}>
+      {renderCustomHeader()}
       <FlatList
-        data={friends}
-        ListHeaderComponent={renderHeader}
+        data={filteredFriends}
+        ListHeaderComponent={() => (
+          <View>
+            {renderSearchBar()}
+            {renderHeader()}
+          </View>
+        )}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity 
@@ -333,18 +421,26 @@ export default function SelectUserScreen({ navigation }) {
             delayLongPress={500}
           >
             <View style={styles.avatarContainer}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
-              </View>
-              {/* {item.online ? (
-                <View style={styles.onlineIndicator} />
+              {item.avatar ? (
+                <Image 
+                  source={{ uri: item.avatar }} 
+                  style={styles.avatar}
+                  // defaultSource={require('../assets/default-avatar.png')}
+                />
               ) : (
-                <Text style={styles.offlineTime}>{item.lastSeen}</Text>
-              )} */}
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>
+                    {item.name.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+              {item.online && <View style={styles.onlineIndicator} />}
             </View>
             <View style={styles.userInfo}>
               <Text style={styles.userName}>{item.name}</Text>
-              <Text style={styles.userStatus}>{item.status}</Text>
+              <Text style={styles.userStatus} numberOfLines={1}>
+                {item.status}
+              </Text>
             </View>
           </TouchableOpacity>
         )}
@@ -365,97 +461,157 @@ export default function SelectUserScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 10, backgroundColor: '#f9f9f9' },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    marginVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+  container: { 
+    flex: 1, 
+    backgroundColor: themeColors.background,
   },
-  icon: { marginRight: 10 },
-  optionText: { fontSize: 16, color: '#333', fontWeight: '500' },
-  userItem: { flexDirection: 'row', padding: 10, alignItems: 'center' },
+  headerContainer: {
+    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 8, 
+  },
+  headerTitle: {
+    fontSize: 20, 
+    fontWeight: '700',
+    color: themeColors.text,
+    marginBottom: 16,
+  },
+  optionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  option: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginHorizontal: 4,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  optionText: {
+    fontSize: 12,
+    color: themeColors.text,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: themeColors.text,
+    marginBottom: 8,
+  },
+  userItem: {
+    flexDirection: 'row',
+    padding: 16,
+    alignItems: 'center',
+    backgroundColor: themeColors.surface,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+  },
   avatarContainer: {
     position: 'relative',
-    marginRight: 10,
+    marginRight: 12,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#ddd',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: themeColors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  onlineIndicator: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#4CAF50',
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  offlineTime: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 5,
-    borderRadius: 5,
-    fontSize: 10,
-    color: '#555',
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   avatarText: {
-    fontSize: 18,
-    color: '#666',
-    fontWeight: '500',
+    fontSize: 20,
+    color: '#fff',
+    fontWeight: '600',
   },
   userInfo: {
     flex: 1,
-    justifyContent: 'center',
   },
   userName: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
+    fontWeight: '600',
+    color: themeColors.text,
+    marginBottom: 4,
   },
   userStatus: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
+    fontSize: 13,
+    color: themeColors.textSecondary,
   },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: 32,
   },
   emptyText: {
-    marginTop: 10,
+    marginTop: 16,
     fontSize: 16,
-    color: '#666',
+    color: themeColors.textSecondary,
+    textAlign: 'center',
   },
   loadingFooter: {
-    padding: 10,
+    padding: 16,
     alignItems: 'center',
+  },
+  onlineIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#4CAF50',
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    borderWidth: 2,
+    borderColor: themeColors.surface,
+  },
+  headerWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 20, 
+    paddingBottom: 16,
+    backgroundColor: themeColors.surface,
+    // borderBottomWidth: 1,
+    // borderBottomColor: themeColors.border,
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 8,
+  },
+  headerText: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: '600',
+    color: themeColors.text,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: `${themeColors.primary}10`,
+    marginHorizontal: 16,
+    marginVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 16,
+    color: themeColors.text,
+    paddingVertical: 8,
+  },
+  clearButton: {
+    padding: 4,
   },
 });

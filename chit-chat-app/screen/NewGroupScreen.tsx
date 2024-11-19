@@ -1,11 +1,16 @@
 import { getCurrentUser } from '@aws-amplify/auth';
 import { generateClient } from 'aws-amplify/api';
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Alert, Image } from 'react-native';
 import { getUser, listContacts } from '../src/graphql/queries';
 import { createGroupChat, createUserGroupChat } from '../src/graphql/mutations';
+import { themeColors } from '../config/themeColor';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { uploadData } from 'aws-amplify/storage';
 
 const client = generateClient();
+const CLOUDFRONT_URL = 'https://d1uil1dxdmhthh.cloudfront.net';
 
 export default function NewGroupScreen({ navigation }) {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -13,6 +18,8 @@ export default function NewGroupScreen({ navigation }) {
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(false);
   const [contacts, setContacts] = useState([]);
+  const [groupAvatar, setGroupAvatar] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchContacts();
@@ -35,7 +42,10 @@ export default function NewGroupScreen({ navigation }) {
           query: getUser,
           variables: { id: contact.contact_user_id }
         });
-        return userData.data.getUser;
+        return {
+          ...userData.data.getUser,
+          avatar: userData.data.getUser.profile_picture
+        };
       });
 
       const contactUsers = await Promise.all(contactPromises);
@@ -58,6 +68,30 @@ export default function NewGroupScreen({ navigation }) {
     }
   };
 
+  const handlePickImage = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert('Permission Required', 'Please allow access to your photo library');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setGroupAvatar(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image');
+    }
+  };
+
   const handleCreateGroup = async () => {
     if (groupName.trim() === '') {
       Alert.alert('Required', 'Please enter a group name.');
@@ -65,7 +99,7 @@ export default function NewGroupScreen({ navigation }) {
     }
 
     if (selectedUsers.length === 0) {
-      Alert.alert('Required', 'Please select at least one user to create a group.');
+      Alert.alert('Required', 'Please select at least 1 member to create a group.');
       return;
     }
 
@@ -73,13 +107,33 @@ export default function NewGroupScreen({ navigation }) {
     try {
       const currentUser = await getCurrentUser();
       
-      // Create new group chat
+      // Upload group avatar if exists
+      let groupPictureUrl = '';
+      if (groupAvatar && groupAvatar.startsWith('file://')) {
+        const response = await fetch(groupAvatar);
+        const blob = await response.blob();
+        const fileName = `groups/${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+
+        await uploadData({
+          key: fileName,
+          data: blob,
+          options: {
+            contentType: 'image/jpeg',
+          }
+        }).result;
+
+        groupPictureUrl = `${CLOUDFRONT_URL}/public/${fileName}`;
+      }
+
+      // Create new group chat theo đúng schema
       const newGroupChat = {
         group_name: groupName.trim(),
         created_by: currentUser.userId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        last_message: 'Group created'
+        last_message: 'Group created',
+        group_picture: groupPictureUrl || null,
+        description: '' // Optional
       };
 
       const groupResponse = await client.graphql({
@@ -127,217 +181,333 @@ export default function NewGroupScreen({ navigation }) {
     user.name.toLowerCase().includes(searchText.toLowerCase())
   );
 
+  const renderHeader = () => (
+    <View style={styles.headerWrapper}>
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color={themeColors.primary} />
+      </TouchableOpacity>
+      <Text style={styles.headerText}>New Group</Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Group Name"
-        placeholderTextColor="#666"
-        value={groupName}
-        onChangeText={setGroupName}
-      />
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search users..."
-        placeholderTextColor="#666"
-        value={searchText}
-        onChangeText={setSearchText}
-      />
-      {selectedUsers.length > 0 && (
-        <Text style={styles.selectedCount}>
-          Selected: {selectedUsers.length}/10 members
-        </Text>
-      )}
-      <FlatList
-        data={selectedUsers.map(id => contacts.find(user => user.id === id))}
-        horizontal
-        keyExtractor={item => item?.id || ''}
-        contentContainerStyle={styles.selectedUsersList}
-        renderItem={({ item }) => (
-          <View style={styles.selectedUserItem}>
-            <View style={styles.selectedAvatar}>
-              <Text style={styles.selectedUserText}>{item?.name.charAt(0)}</Text>
-            </View>
-            <TouchableOpacity onPress={() => handleSelectUser(item?.id || '')}>
-              <Text style={styles.removeButton}>X</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      />
-      <FlatList
-        data={filteredUsers}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.userItem}
-            onPress={() => handleSelectUser(item.id)}
+      {renderHeader()}
+      <View style={styles.contentContainer}>
+        <View style={styles.groupInfoContainer}>
+          <TouchableOpacity 
+            style={styles.groupAvatarContainer}
+            onPress={handlePickImage}
           >
-            <View style={styles.avatar}>
-              <Text>{item.name.charAt(0)}</Text>
-            </View>
-            <View>
-              <Text>{item.name}</Text>
-              <Text>{item.status}</Text>
-            </View>
-            {selectedUsers.includes(item.id) ? (
-              <View style={styles.selectedIcon} />
+            {groupAvatar ? (
+              <Image
+                source={{ uri: groupAvatar }}
+                style={styles.groupAvatar}
+              />
             ) : (
-              <View style={styles.circleIcon} />
+              <View style={styles.groupAvatar}>
+                <Ionicons name="people" size={32} color={themeColors.surface} />
+              </View>
             )}
+            <View style={styles.cameraIconContainer}>
+              <Ionicons name="camera" size={20} color="#fff" />
+            </View>
           </TouchableOpacity>
-        )}
-      />
-      <TouchableOpacity 
-        style={[styles.button, loading && styles.buttonDisabled]} 
-        onPress={handleCreateGroup}
-        disabled={loading}
-      >
-        <Text style={styles.buttonText}>
-          {loading ? 'Creating...' : 'Create Group'}
-        </Text>
-      </TouchableOpacity>
+          <TextInput
+            style={styles.groupNameInput}
+            placeholder="Group Name"
+            placeholderTextColor={themeColors.textSecondary}
+            value={groupName}
+            onChangeText={setGroupName}
+          />
+          <Text style={styles.selectedCount}>
+            Selected: {selectedUsers.length}/10 members
+          </Text>
+        </View>
+
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color={themeColors.textSecondary} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search users..."
+            placeholderTextColor={themeColors.textSecondary}
+            value={searchText}
+            onChangeText={setSearchText}
+          />
+          {searchText.length > 0 && (
+            <TouchableOpacity 
+              onPress={() => setSearchText('')}
+              style={styles.clearButton}
+            >
+              <Ionicons name="close-circle" size={20} color={themeColors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <FlatList
+          data={filteredUsers}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContainer}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.userItem}
+              onPress={() => handleSelectUser(item.id)}
+            >
+              <View style={styles.avatar}>
+                {item.profile_picture ? (
+                  <Image 
+                    source={{ uri: item.profile_picture }}
+                    style={styles.avatarImage}
+                    // defaultSource={require('../assets/default-avatar.png')}
+                  />
+                ) : (
+                  <View style={styles.avatarFallback}>
+                    <Text style={styles.avatarText}>
+                      {item.name.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.userInfo}>
+                <Text style={styles.userName}>{item.name}</Text>
+                <Text style={styles.userEmail} numberOfLines={1}>
+                  {item.email}
+                </Text>
+              </View>
+              <View style={[
+                styles.checkBox,
+                selectedUsers.includes(item.id) && styles.checkBoxSelected
+              ]}>
+                {selectedUsers.includes(item.id) && (
+                  <Ionicons name="checkmark" size={16} color="#fff" />
+                )}
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+
+        <TouchableOpacity 
+          style={[
+            styles.createButton, 
+            (!groupName.trim() || selectedUsers.length === 0 || loading) && styles.buttonDisabled
+          ]} 
+          onPress={handleCreateGroup}
+          disabled={!groupName.trim() || selectedUsers.length === 0 || loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? 'Creating...' : 'Create Group'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    padding: 16, 
-    backgroundColor: '#ffffff' 
+  container: {
+    flex: 1,
+    backgroundColor: themeColors.background,
   },
-  input: {
-    backgroundColor: '#f5f5f5',
-    padding: 15,
+  headerWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 16,
+    backgroundColor: themeColors.surface,
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 8,
+  },
+  headerText: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: '600',
+    color: themeColors.text,
+  },
+  contentContainer: {
+    flex: 1,
+    padding: 16,
+  },
+  groupInfoContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingHorizontal: 16,
+  },
+  groupAvatarContainer: {
+    marginBottom: 16,
+  },
+  groupAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: themeColors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  groupNameInput: {
+    width: '100%',
+    fontSize: 24,
+    fontWeight: '600',
+    color: themeColors.text,
+    textAlign: 'center',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: `${themeColors.primary}10`,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderRadius: 12,
-    fontSize: 16,
-    marginVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    marginBottom: 24,
   },
   searchInput: {
-    backgroundColor: '#f5f5f5',
-    padding: 15,
-    borderRadius: 12,
+    flex: 1,
+    marginLeft: 8,
     fontSize: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    color: themeColors.text,
   },
-  selectedCount: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-    fontWeight: '500',
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: themeColors.text,
+    marginBottom: 12,
   },
   selectedUsersList: {
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
   selectedUserItem: {
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#e3f2fd',
-    borderRadius: 30,
-    padding: 6,
-    marginHorizontal: 4,
-    width: 60,
-    height: 60,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    marginRight: 16,
+    width: 64,
   },
   selectedAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#2196F3',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: themeColors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 4,
   },
-  selectedUserText: { 
-    color: '#fff', 
-    fontWeight: 'bold', 
-    fontSize: 16 
+  selectedUserText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
   },
-  removeButton: { 
-    color: '#f44336', 
-    fontWeight: 'bold', 
-    fontSize: 14,
-    position: 'absolute',
-    top: -5,
-    right: -5,
-    backgroundColor: '#fff',
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+  selectedUserName: {
+    fontSize: 12,
+    color: themeColors.text,
     textAlign: 'center',
-    lineHeight: 20,
+    width: '100%',
   },
-  userItem: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    padding: 12,
-    backgroundColor: '#fff',
-    marginBottom: 8,
+  removeButton: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: themeColors.surface,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+  },
+  userItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    marginBottom: 8,
+    backgroundColor: themeColors.surface,
+    borderRadius: 12,
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#2196F3',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: themeColors.primary,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  avatarFallback: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: themeColors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
-  selectedIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#4CAF50',
-    marginLeft: 'auto',
-    marginRight: 8,
+  avatarText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
   },
-  circleIcon: {
+  userInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: themeColors.text,
+    marginBottom: 2,
+  },
+  userEmail: {
+    fontSize: 13,
+    color: themeColors.textSecondary,
+  },
+  checkBox: {
     width: 24,
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#4CAF50',
-    marginLeft: 'auto',
-    marginRight: 8,
+    borderColor: themeColors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  button: {
-    backgroundColor: '#4CAF50',
+  checkBoxSelected: {
+    backgroundColor: themeColors.primary,
+    borderWidth: 0,
+  },
+  createButton: {
+    margin: 16,
     padding: 16,
+    backgroundColor: themeColors.primary,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
   },
   buttonDisabled: {
-    backgroundColor: '#a5d6a7',
+    opacity: 0.5,
   },
-  buttonText: { 
-    color: '#fff', 
-    fontWeight: 'bold', 
-    fontSize: 16 
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  selectedCount: {
+    fontSize: 14,
+    color: themeColors.textSecondary,
+    marginTop: 8,
+  },
+  listContainer: {
+    paddingHorizontal: 16,
+  },
+  clearButton: {
+    padding: 4,
+  },
+  cameraIconContainer: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    backgroundColor: themeColors.primary,
+    padding: 8,
+    borderRadius: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
 });
