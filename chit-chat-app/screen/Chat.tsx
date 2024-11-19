@@ -410,8 +410,9 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                         message={message}
                         onImagePress={setSelectedImage}
                         isFirstInGroup={index === 0}
-                        isLastInGroup={index === group.messages.length - 1}
-                    />
+                        isLastInGroup={index === group.messages.length - 1} onReaction={function (messageId: string, reaction: string): void {
+                            throw new Error('Function not implemented.');
+                        } }                    />
                 ))}
             </View>
         </View>
