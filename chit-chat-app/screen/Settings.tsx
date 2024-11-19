@@ -74,6 +74,16 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Ionicons 
+            name="arrow-back" 
+            size={24} 
+            color={themeColors.primary} 
+          />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
       </View>
 
@@ -168,11 +178,14 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 20,
     backgroundColor: '#fff',
+    flexDirection: 'row',  
+    alignItems: 'center', 
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: '700',
     color: themeColors.text,
+    flex: 1,
   },
   scrollContainer: {
     flex: 1,
@@ -269,6 +282,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  backButton: {
+    marginRight: 16,      
+    padding: 4,           
+  },
+
 });
 
 export default Settings;

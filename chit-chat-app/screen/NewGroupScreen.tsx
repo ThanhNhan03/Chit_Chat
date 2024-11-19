@@ -1,24 +1,33 @@
-import { getCurrentUser } from '@aws-amplify/auth';
-import { generateClient } from 'aws-amplify/api';
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Alert, Image } from 'react-native';
-import { getUser, listContacts } from '../src/graphql/queries';
-import { createGroupChat, createUserGroupChat } from '../src/graphql/mutations';
-import { themeColors } from '../config/themeColor';
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import { uploadData } from 'aws-amplify/storage';
+import { getCurrentUser } from "@aws-amplify/auth";
+import { generateClient } from "aws-amplify/api";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+  StyleSheet,
+  Alert,
+  Image,
+} from "react-native";
+import { getUser, listContacts } from "../src/graphql/queries";
+import { createGroupChat, createUserGroupChat } from "../src/graphql/mutations";
+import { themeColors } from "../config/themeColor";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { uploadData } from "aws-amplify/storage";
 
 const client = generateClient();
-const CLOUDFRONT_URL = 'https://d1uil1dxdmhthh.cloudfront.net';
+const CLOUDFRONT_URL = "https://d1uil1dxdmhthh.cloudfront.net";
 
 export default function NewGroupScreen({ navigation }) {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [groupName, setGroupName] = useState('');
-  const [searchText, setSearchText] = useState('');
+  const [groupName, setGroupName] = useState("");
+  const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(false);
   const [contacts, setContacts] = useState([]);
-  const [groupAvatar, setGroupAvatar] = useState('');
+  const [groupAvatar, setGroupAvatar] = useState("");
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -32,36 +41,41 @@ export default function NewGroupScreen({ navigation }) {
         query: listContacts,
         variables: {
           filter: {
-            user_id: { eq: user.userId }
-          }
-        }
+            user_id: { eq: user.userId },
+          },
+        },
       });
 
-      const contactPromises = contactsData.data.listContacts.items.map(async (contact) => {
-        const userData = await client.graphql({
-          query: getUser,
-          variables: { id: contact.contact_user_id }
-        });
-        return {
-          ...userData.data.getUser,
-          avatar: userData.data.getUser.profile_picture
-        };
-      });
+      const contactPromises = contactsData.data.listContacts.items.map(
+        async (contact) => {
+          const userData = await client.graphql({
+            query: getUser,
+            variables: { id: contact.contact_user_id },
+          });
+          return {
+            ...userData.data.getUser,
+            avatar: userData.data.getUser.profile_picture,
+          };
+        }
+      );
 
       const contactUsers = await Promise.all(contactPromises);
       setContacts(contactUsers);
     } catch (error) {
-      console.error('Error fetching contacts:', error);
-      Alert.alert('Error', 'Failed to load contacts');
+      console.error("Error fetching contacts:", error);
+      Alert.alert("Error", "Failed to load contacts");
     }
   };
 
   const handleSelectUser = (id: string) => {
     if (selectedUsers.includes(id)) {
-      setSelectedUsers(selectedUsers.filter(userId => userId !== id));
+      setSelectedUsers(selectedUsers.filter((userId) => userId !== id));
     } else {
       if (selectedUsers.length >= 10) {
-        Alert.alert('Limit Reached', 'You can only add up to 10 members in a group.');
+        Alert.alert(
+          "Limit Reached",
+          "You can only add up to 10 members in a group."
+        );
         return;
       }
       setSelectedUsers([...selectedUsers, id]);
@@ -70,9 +84,13 @@ export default function NewGroupScreen({ navigation }) {
 
   const handlePickImage = async () => {
     try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permissionResult.granted) {
-        Alert.alert('Permission Required', 'Please allow access to your photo library');
+        Alert.alert(
+          "Permission Required",
+          "Please allow access to your photo library"
+        );
         return;
       }
 
@@ -87,39 +105,44 @@ export default function NewGroupScreen({ navigation }) {
         setGroupAvatar(result.assets[0].uri);
       }
     } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image');
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to pick image");
     }
   };
 
   const handleCreateGroup = async () => {
-    if (groupName.trim() === '') {
-      Alert.alert('Required', 'Please enter a group name.');
+    if (groupName.trim() === "") {
+      Alert.alert("Required", "Please enter a group name.");
       return;
     }
 
     if (selectedUsers.length === 0) {
-      Alert.alert('Required', 'Please select at least 1 member to create a group.');
+      Alert.alert(
+        "Required",
+        "Please select at least 1 member to create a group."
+      );
       return;
     }
 
     setLoading(true);
     try {
       const currentUser = await getCurrentUser();
-      
+
       // Upload group avatar if exists
-      let groupPictureUrl = '';
-      if (groupAvatar && groupAvatar.startsWith('file://')) {
+      let groupPictureUrl = "";
+      if (groupAvatar && groupAvatar.startsWith("file://")) {
         const response = await fetch(groupAvatar);
         const blob = await response.blob();
-        const fileName = `groups/${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+        const fileName = `groups/${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(7)}.jpg`;
 
         await uploadData({
           key: fileName,
           data: blob,
           options: {
-            contentType: 'image/jpeg',
-          }
+            contentType: "image/jpeg",
+          },
         }).result;
 
         groupPictureUrl = `${CLOUDFRONT_URL}/public/${fileName}`;
@@ -131,14 +154,14 @@ export default function NewGroupScreen({ navigation }) {
         created_by: currentUser.userId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        last_message: 'Group created',
+        last_message: "Group created",
         group_picture: groupPictureUrl || null,
-        description: '' // Optional
+        description: "", // Optional
       };
 
       const groupResponse = await client.graphql({
         query: createGroupChat,
-        variables: { input: newGroupChat }
+        variables: { input: newGroupChat },
       });
 
       const groupId = groupResponse.data.createGroupChat.id;
@@ -149,41 +172,43 @@ export default function NewGroupScreen({ navigation }) {
         variables: {
           input: {
             user_id: currentUser.userId,
-            group_chat_id: groupId
-          }
-        }
+            group_chat_id: groupId,
+          },
+        },
       });
 
       // Add selected users to group
-      await Promise.all(selectedUsers.map(userId =>
-        client.graphql({
-          query: createUserGroupChat,
-          variables: {
-            input: {
-              user_id: userId,
-              group_chat_id: groupId
-            }
-          }
-        })
-      ));
+      await Promise.all(
+        selectedUsers.map((userId) =>
+          client.graphql({
+            query: createUserGroupChat,
+            variables: {
+              input: {
+                user_id: userId,
+                group_chat_id: groupId,
+              },
+            },
+          })
+        )
+      );
 
-      Alert.alert('Success', `Group "${groupName}" has been created!`);
+      Alert.alert("Success", `Group "${groupName}" has been created!`);
       navigation.goBack();
     } catch (error) {
-      console.error('Error creating group:', error);
-      Alert.alert('Error', 'Failed to create group');
+      console.error("Error creating group:", error);
+      Alert.alert("Error", "Failed to create group");
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredUsers = contacts.filter(user =>
+  const filteredUsers = contacts.filter((user) =>
     user.name.toLowerCase().includes(searchText.toLowerCase())
   );
 
   const renderHeader = () => (
     <View style={styles.headerWrapper}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
@@ -198,15 +223,12 @@ export default function NewGroupScreen({ navigation }) {
       {renderHeader()}
       <View style={styles.contentContainer}>
         <View style={styles.groupInfoContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.groupAvatarContainer}
             onPress={handlePickImage}
           >
             {groupAvatar ? (
-              <Image
-                source={{ uri: groupAvatar }}
-                style={styles.groupAvatar}
-              />
+              <Image source={{ uri: groupAvatar }} style={styles.groupAvatar} />
             ) : (
               <View style={styles.groupAvatar}>
                 <Ionicons name="people" size={32} color={themeColors.surface} />
@@ -238,11 +260,15 @@ export default function NewGroupScreen({ navigation }) {
             onChangeText={setSearchText}
           />
           {searchText.length > 0 && (
-            <TouchableOpacity 
-              onPress={() => setSearchText('')}
+            <TouchableOpacity
+              onPress={() => setSearchText("")}
               style={styles.clearButton}
             >
-              <Ionicons name="close-circle" size={20} color={themeColors.textSecondary} />
+              <Ionicons
+                name="close-circle"
+                size={20}
+                color={themeColors.textSecondary}
+              />
             </TouchableOpacity>
           )}
         </View>
@@ -258,10 +284,10 @@ export default function NewGroupScreen({ navigation }) {
             >
               <View style={styles.avatar}>
                 {item.profile_picture ? (
-                  <Image 
+                  <Image
                     source={{ uri: item.profile_picture }}
                     style={styles.avatarImage}
-                    // defaultSource={require('../assets/default-avatar.png')}
+                  // defaultSource={require('../assets/default-avatar.png')}
                   />
                 ) : (
                   <View style={styles.avatarFallback}>
@@ -277,10 +303,12 @@ export default function NewGroupScreen({ navigation }) {
                   {item.email}
                 </Text>
               </View>
-              <View style={[
-                styles.checkBox,
-                selectedUsers.includes(item.id) && styles.checkBoxSelected
-              ]}>
+              <View
+                style={[
+                  styles.checkBox,
+                  selectedUsers.includes(item.id) && styles.checkBoxSelected,
+                ]}
+              >
                 {selectedUsers.includes(item.id) && (
                   <Ionicons name="checkmark" size={16} color="#fff" />
                 )}
@@ -289,16 +317,17 @@ export default function NewGroupScreen({ navigation }) {
           )}
         />
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
-            styles.createButton, 
-            (!groupName.trim() || selectedUsers.length === 0 || loading) && styles.buttonDisabled
-          ]} 
+            styles.createButton,
+            (!groupName.trim() || selectedUsers.length === 0 || loading) &&
+            styles.buttonDisabled,
+          ]}
           onPress={handleCreateGroup}
           disabled={!groupName.trim() || selectedUsers.length === 0 || loading}
         >
           <Text style={styles.buttonText}>
-            {loading ? 'Creating...' : 'Create Group'}
+            {loading ? "Creating..." : "Create Group"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -312,8 +341,8 @@ const styles = StyleSheet.create({
     backgroundColor: themeColors.background,
   },
   headerWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingTop: 20,
     paddingBottom: 16,
@@ -326,7 +355,7 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     color: themeColors.text,
   },
   contentContainer: {
@@ -334,7 +363,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   groupInfoContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 24,
     paddingHorizontal: 16,
   },
@@ -346,19 +375,19 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     backgroundColor: themeColors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   groupNameInput: {
-    width: '100%',
+    width: "100%",
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: "600",
     color: themeColors.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: `${themeColors.primary}10`,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -373,7 +402,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: themeColors.text,
     marginBottom: 12,
   },
@@ -381,7 +410,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   selectedUserItem: {
-    alignItems: 'center',
+    alignItems: "center",
     marginRight: 16,
     width: 64,
   },
@@ -390,31 +419,31 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     backgroundColor: themeColors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 4,
   },
   selectedUserText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   selectedUserName: {
     fontSize: 12,
     color: themeColors.text,
-    textAlign: 'center',
-    width: '100%',
+    textAlign: "center",
+    width: "100%",
   },
   removeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: -4,
     right: -4,
     backgroundColor: themeColors.surface,
     borderRadius: 12,
   },
   userItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     marginBottom: 8,
     backgroundColor: themeColors.surface,
@@ -424,25 +453,25 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    overflow: 'hidden',
+    overflow: "hidden",
     backgroundColor: themeColors.primary,
   },
   avatarImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
   avatarFallback: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     backgroundColor: themeColors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   userInfo: {
     flex: 1,
@@ -450,7 +479,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: themeColors.text,
     marginBottom: 2,
   },
@@ -464,8 +493,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 2,
     borderColor: themeColors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   checkBoxSelected: {
     backgroundColor: themeColors.primary,
@@ -476,15 +505,15 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: themeColors.primary,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   buttonDisabled: {
     opacity: 0.5,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   selectedCount: {
     fontSize: 14,
@@ -498,14 +527,14 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   cameraIconContainer: {
-    position: 'absolute',
+    position: "absolute",
     right: 0,
     bottom: 0,
     backgroundColor: themeColors.primary,
     padding: 8,
     borderRadius: 20,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,

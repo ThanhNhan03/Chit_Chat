@@ -131,6 +131,8 @@ const formatTimestamp = (timestamp: string) => {
 
 
 
+import MainHeader from '../components/MainHeader';
+
 const Chats: React.FC<ChatsProps> = ({ navigation }) => {
     const [chats, setChats] = useState<Chat[]>([]);
     const [loading, setLoading] = useState(true);
@@ -631,9 +633,7 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.header}>Chats</Text>
-            {/* <Seperator style={styles.separator} /> */}
-
+            <MainHeader title="Chats" />
             {loading ? (
                 <ActivityIndicator size="large" style={styles.loadingContainer} color={themeColors.primary} />
             ) : (
@@ -666,16 +666,17 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: themeColors.background,
+        // paddingTop: screenHeight * 0.02,
     },
-    header: {
-        fontSize: screenWidth * 0.06,
-        fontWeight: '600',
-        color: themeColors.text,
-        paddingHorizontal: screenWidth * 0.04,
-        paddingVertical: screenHeight * 0.02,
-        backgroundColor: themeColors.surface,
-        marginTop: screenHeight * 0.02,
-    },
+    // header: {
+    //     fontSize: screenWidth * 0.06,
+    //     fontWeight: '600',
+    //     color: themeColors.text,
+    //     paddingHorizontal: screenWidth * 0.04,
+    //     paddingVertical: screenHeight * 0.02,
+    //     backgroundColor: themeColors.surface,
+    //     marginTop: screenHeight * 0.02,
+    // },
     separator: {
         height: 1,
         backgroundColor: themeColors.border,
@@ -691,8 +692,8 @@ const styles = StyleSheet.create({
     chatItem: {
         padding: 16,
         backgroundColor: themeColors.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        // borderBottomWidth: 1,
+        // borderBottomColor: '#eee',
     },
     chatContent: {
         flexDirection: 'row',

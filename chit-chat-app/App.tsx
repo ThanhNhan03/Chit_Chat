@@ -21,6 +21,7 @@ import SelectUserScreen from './screen/SelectUserScreen';
 import NewGroupScreen from './screen/NewGroupScreen';
 import NewUserScreen from './screen/NewUserScreen';
 import FriendRequestsScreen from './screen/FriendRequestsScreen';
+import StoriesScreen from './screen/StoriesScreen';
 
 // Contexts and Config
 import { AuthenticatedUserContext } from './contexts/AuthContext';
@@ -52,8 +53,8 @@ const TabNavigator = () => {
           let iconName: any;
           if (route.name === 'Chats') {
             iconName = 'chatbubble';
-          } else if (route.name === 'Settings') {
-            iconName = 'settings';
+          } else if (route.name === 'Stories') {
+            iconName = 'aperture';
           }
           return <Ionicons name={iconName} size={size} color={color} />;
         },
@@ -84,11 +85,11 @@ const TabNavigator = () => {
         }} 
       />
       <Tab.Screen 
-        name="Settings" 
-        component={Settings}
+        name="Stories"
+        component={StoriesScreen}
         options={{ 
           headerShown: false,
-          title: 'Settings'
+          title: 'Stories'
         }} 
       />
     </Tab.Navigator>
@@ -166,6 +167,22 @@ const App: React.FC = () => {
                   options={{
                     headerShown: false,
                     gestureEnabled: false
+                  }}
+                />
+
+                <Stack.Screen
+                  name="Settings"
+                  component={Settings}
+                  options={{
+                    headerShown: false,
+                  }}
+                />
+
+                <Stack.Screen
+                  name="Chats"
+                  component={Chats}
+                  options={{
+                    headerShown: false,
                   }}
                 />
                 <Stack.Screen
