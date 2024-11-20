@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -11,6 +11,7 @@ import { GetUserQuery } from '../src/API';
 import { getUser } from '../src/graphql/queries';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { themeColors } from '../config/themeColor';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 const client = generateClient();
@@ -19,10 +20,10 @@ interface SettingsProps {
   navigation: any;
 }
 
-
 const Settings: React.FC<SettingsProps> = ({ navigation }) => {
   const { user, setUser } = useContext(AuthenticatedUserContext);
   const [userData, setUserData] = useState<GetUserQuery['getUser']>(null);
+  const { isDarkMode, toggleDarkMode, theme } = useTheme();
 
   const fetchUserData = async () => {
     if (!user?.sub && !user?.userId) return;
@@ -71,17 +72,27 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
     return email?.substring(0, 2).toUpperCase() || 'U';
   };
 
+  const containerStyle = {
+    ...styles.container,
+    backgroundColor: theme.backgroundColor
+  };
+
+  const headerStyle = {
+    ...styles.header,
+    backgroundColor: theme.cardBackground
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Settings</Text>
+    <View style={containerStyle}>
+      <View style={headerStyle}>
+        <Text style={[styles.headerTitle, isDarkMode && styles.darkText]}>Settings</Text>
       </View>
 
       <ScrollView style={styles.scrollContainer}>
         {/* Profile Section */}
         <View style={styles.section}>
           <TouchableOpacity 
-            style={styles.profileCard}
+            style={[styles.profileCard, isDarkMode && styles.darkCard]}
             onPress={handleProfilePress}
             activeOpacity={0.7}
           >
@@ -98,10 +109,10 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
               </View>
             )}
             <View style={styles.userDetails}>
-              <Text style={styles.username}>
+              <Text style={[styles.username, isDarkMode && styles.darkText]}>
                 {userData?.name || 'User Name'}
               </Text>
-              <Text style={styles.email}>
+              <Text style={[styles.email, isDarkMode && styles.darkText]}>
                 {userData?.email || ''}
               </Text>
             </View>
@@ -113,8 +124,25 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
 
         {/* Options Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>General</Text>
-          <View style={styles.optionsCard}>
+          <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>General</Text>
+          <View style={[styles.optionsCard, isDarkMode && styles.darkCard]}>
+            {/* Dark Mode Toggle */}
+            <View style={styles.option}>
+              <View style={styles.optionLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: '#E0E0E0' }]}>
+                  <Ionicons name="moon-outline" size={22} color="#757575" />
+                </View>
+                <Text style={[styles.optionText, isDarkMode && styles.darkText]}>Dark Mode</Text>
+              </View>
+              <Switch
+                value={isDarkMode}
+                onValueChange={toggleDarkMode}
+                trackColor={{ false: '#767577', true: themeColors.primary }}
+                thumbColor={isDarkMode ? '#fff' : '#f4f3f4'}
+              />
+            </View>
+
+            {/* Help Option */}
             <TouchableOpacity 
               style={styles.option}
               onPress={() => navigation.navigate('Help')}
@@ -123,11 +151,12 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
                 <View style={[styles.iconContainer, { backgroundColor: '#E8F5E9' }]}>
                   <Ionicons name="information-circle-outline" size={22} color="#4CAF50" />
                 </View>
-                <Text style={styles.optionText}>Help</Text>
+                <Text style={[styles.optionText, isDarkMode && styles.darkText]}>Help</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={themeColors.textSecondary} />
             </TouchableOpacity>
 
+            {/* Account Option */}
             <TouchableOpacity 
               style={styles.option}
               onPress={() => navigation.navigate('Account')}
@@ -136,7 +165,7 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
                 <View style={[styles.iconContainer, { backgroundColor: '#E3F2FD' }]}>
                   <Ionicons name="person-outline" size={22} color="#2196F3" />
                 </View>
-                <Text style={styles.optionText}>Account</Text>
+                <Text style={[styles.optionText, isDarkMode && styles.darkText]}>Account</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={themeColors.textSecondary} />
             </TouchableOpacity>
@@ -162,7 +191,6 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   header: {
     padding: 20,
@@ -176,6 +204,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   section: {
     marginBottom: 24,
@@ -268,6 +297,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  darkText: {
+    color: '#ffffff',
+  },
+  darkCard: {
+    backgroundColor: 'black',
   },
 });
 

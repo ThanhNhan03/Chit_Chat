@@ -7,4 +7,6 @@ export const themeColors = {
     textSecondary: '#636e72',
     border: '#dfe6e9',
     error: '#e74c3c',
+   
 };
+

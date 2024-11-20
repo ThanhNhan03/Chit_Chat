@@ -16,6 +16,7 @@ import { sendNotification } from '../utils/notificationHelper';
 import MessageTimestamp from '../components/MessageTimestamp';
 import { themeColors } from '../config/themeColor';
 
+
 const client = generateClient();
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const CACHE_EXPIRY_TIME = 1000 * 60 * 60;
@@ -79,7 +80,10 @@ const getChatCacheKey = (chatId: string, userId: string) => `private_chat_messag
 
 const CLOUDFRONT_URL = 'https://d1uil1dxdmhthh.cloudfront.net';
 
+import { useTheme } from '../contexts/ThemeContext';
+
 const Chat: React.FC<any> = ({ route, navigation }) => {
+    const { theme } = useTheme();
     const { name, userId, chatId } = route.params;
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -442,7 +446,7 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
 
     return (
         <KeyboardAvoidingView 
-            style={styles.container}
+            style={[styles.container, { backgroundColor: theme.backgroundColor }]}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
@@ -450,10 +454,13 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
             <View style={styles.chatContainer}>
                 <FlatList
                     ref={scrollViewRef}
-                    style={styles.messagesContainer}
+                    style={[styles.messagesContainer, { backgroundColor: theme.backgroundColor }]}
                     contentContainerStyle={[
                         styles.messagesContentContainer,
-                        messages.length === 0 && styles.emptyContainer
+                        messages.length === 0 && [
+                            styles.emptyContainer,
+                            { backgroundColor: theme.backgroundColor }
+                        ]
                     ]}
                     data={groupMessages(messages)}
                     renderItem={renderItem}
@@ -484,6 +491,7 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                     onImagePick={handleImagePick}
                     onEmojiToggle={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
                     showSendButton={!!inputText.trim()}
+                   
                 />
             </View>
             <Modal 

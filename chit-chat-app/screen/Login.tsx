@@ -55,11 +55,14 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
 
       // Nếu đã xác thực, tiếp tục flow đăng nhập bình thường
       const user = await getCurrentUser();
+      
       setUser(user);
       navigation.reset({
         index: 0,
         routes: [{ name: 'MainTabs' }],
+        
       });
+      console.log("user", user);
     } catch (error: any) {
       console.error("Error signing in", error);
       

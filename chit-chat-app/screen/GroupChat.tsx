@@ -31,6 +31,7 @@ import MessageTimestamp from '../components/MessageTimestamp';
 import { ModelSortDirection } from '../src/API';
 import { getUrl, uploadData } from 'aws-amplify/storage';
 import { colors } from '../config/constrants';
+import { useTheme } from '../contexts/ThemeContext';
 
 const client = generateClient();
 const CACHE_EXPIRY_TIME = 1000 * 60 * 60;
@@ -87,6 +88,7 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
     const [isLoadingMembers, setIsLoadingMembers] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
+    const { theme } = useTheme();
 
     useEffect(() => {
         fetchCurrentUser();
@@ -573,7 +575,7 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
 
     return (
         <KeyboardAvoidingView 
-            style={styles.container}
+            style={[styles.container, { backgroundColor: theme.backgroundColor }]}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
@@ -587,17 +589,22 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                             initialGroupName: name
                         })}
                     >
-                        <Ionicons name="ellipsis-vertical" size={24} color="black" />
+                        <Ionicons 
+                            name="ellipsis-vertical" 
+                            size={24} 
+                            color={theme.textColor} 
+                        />
                     </TouchableOpacity>
                 }
             />
-            <View style={styles.chatContainer}>
+            <View style={[styles.chatContainer, { backgroundColor: theme.backgroundColor }]}>
                 <FlatList
                     ref={scrollViewRef}
-                    style={styles.messagesContainer}
+                    style={[styles.messagesContainer, { backgroundColor: theme.backgroundColor }]}
                     contentContainerStyle={[
                         styles.messagesContentContainer,
-                        messages.length === 0 && styles.emptyContainer
+                        messages.length === 0 && styles.emptyContainer,
+                        { backgroundColor: theme.backgroundColor }
                     ]}
                     data={groupMessages(messages)}
                     renderItem={renderItem}
@@ -629,6 +636,7 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                     onImagePick={handleImagePick}
                     onEmojiToggle={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
                     showSendButton={!!inputText.trim()}
+                   
                 />
             </View>
             <Modal 
@@ -656,7 +664,6 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
     },
     chatContainer: {
         flex: 1,
@@ -747,11 +754,9 @@ const styles = StyleSheet.create({
     avatarText: {
         fontSize: 12,
         fontWeight: 'bold',
-        color: '#666',
     },
     senderName: {
         fontSize: 12,
-        color: '#666',
         fontWeight: '500',
     },
     messagesWrapper: {

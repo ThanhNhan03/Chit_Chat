@@ -36,7 +36,10 @@ interface GroupMember {
     profile_picture?: string;
 }
 
+import { useTheme } from '../contexts/ThemeContext';
+
 const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
+    const { theme } = useTheme();
     const { chatId, initialGroupName } = route.params;
     const [groupName, setGroupName] = useState(initialGroupName);
     const [isEditingName, setIsEditingName] = useState(false);
@@ -325,25 +328,29 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
     );
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
             <Header 
                 title="Group Settings" 
                 onBackPress={() => navigation.goBack()} 
             />
             
-            <View style={styles.content}>
+            <View style={[styles.content, { backgroundColor: theme.backgroundColor }]}>
                 {/* Group Name Section */}
-                <View style={styles.section}>
+                <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Group Name</Text>
+                        <Text style={[styles.sectionTitle, { color: theme.textColor }]}>Group Name</Text>
                         <TouchableOpacity onPress={() => setIsEditingName(true)}>
-                            <Ionicons name="pencil" size={20} color="#007AFF" />
+                            <Ionicons name="pencil" size={20} color={theme.textColor} />
                         </TouchableOpacity>
                     </View>
                     {isEditingName ? (
                         <View style={styles.editNameContainer}>
                             <TextInput
-                                style={styles.nameInput}
+                                style={[styles.nameInput, { 
+                                    backgroundColor: theme.input,
+                                    color: theme.textInput,
+                                    borderColor: theme.borderColor 
+                                }]}
                                 value={groupName}
                                 onChangeText={setGroupName}
                                 autoFocus
@@ -356,25 +363,47 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                             </TouchableOpacity>
                         </View>
                     ) : (
-                        <Text style={styles.groupName}>{groupName}</Text>
+                        <Text style={[styles.groupName, { color: theme.textColor }]}>{groupName}</Text>
                     )}
                 </View>
 
                 {/* Members Section */}
-                <View style={styles.section}>
+                <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>
+                        <Text style={[styles.sectionTitle, { color: theme.textColor }]}>
                             Members ({members.length})
                         </Text>
                         {isCreator && (
                             <TouchableOpacity onPress={handleAddMemberPress}>
-                                <Ionicons name="person-add" size={20} color="#007AFF" />
+                                <Ionicons name="person-add" size={20} color={theme.textColor} />
                             </TouchableOpacity>
                         )}
                     </View>
                     <FlatList
                         data={members}
-                        renderItem={renderMemberItem}
+                        renderItem={({ item }) => (
+                            <View style={[styles.memberItem, { borderBottomColor: theme.borderColor }]}>
+                                {item.profile_picture ? (
+                                    <Image 
+                                        source={{ uri: item.profile_picture }} 
+                                        style={styles.memberAvatar} 
+                                    />
+                                ) : (
+                                    <View style={styles.memberAvatarPlaceholder}>
+                                        <Text style={styles.avatarText}>{item.name[0].toUpperCase()}</Text>
+                                    </View>
+                                )}
+                                <Text style={[styles.memberName, { color: theme.textColor }]}>{item.name}</Text>
+                                {isCreator && item.id !== currentUserId && (
+                                    <TouchableOpacity 
+                                        style={styles.removeButton}
+                                        onPress={() => handleRemoveMember(item.id)}
+                                    >
+                                        <Ionicons name="remove-circle-outline" size={24} color="red" />
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        )}
                         keyExtractor={item => item.id}
                     />
                 </View>
@@ -407,13 +436,13 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                 onRequestClose={() => setShowAddMember(false)}
             >
                 <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Add Members</Text>
+                    <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
+                        <Text style={[styles.modalTitle, { color: theme.textColor }]}>Add Members</Text>
                         <FlatList
                             data={contacts}
                             renderItem={({ item }) => (
                                 <TouchableOpacity 
-                                    style={styles.contactItem}
+                                    style={[styles.contactItem, { borderBottomColor: theme.borderColor }]}
                                     onPress={() => handleAddMember(item.id)}
                                 >
                                     {item.profile_picture ? (
@@ -428,7 +457,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                                             </Text>
                                         </View>
                                     )}
-                                    <Text style={styles.contactName}>{item.name}</Text>
+                                    <Text style={[styles.contactName, { color: theme.textColor }]}>{item.name}</Text>
                                 </TouchableOpacity>
                             )}
                             keyExtractor={item => item.id}

@@ -11,6 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { uploadData, getUrl } from 'aws-amplify/storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { themeColors } from '../config/themeColor';
+import { useTheme } from '../contexts/ThemeContext';
 const client = generateClient();
 
 // Thêm constant cho CloudFront URL
@@ -19,9 +20,9 @@ const CLOUDFRONT_URL = 'https://d1uil1dxdmhthh.cloudfront.net';
 interface ProfileProps {
     navigation: any;
 }
-
 const Profile: React.FC<ProfileProps> = ({ navigation }) => {
     const { user } = useContext(AuthenticatedUserContext);
+    const { theme } = useTheme();
     const [isEditing, setIsEditing] = useState(false);
     const [userData, setUserData] = useState({
         name: '',
@@ -135,15 +136,15 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
+        <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
+            <View style={[styles.header, { backgroundColor: theme.backgroundColor }]}>
                 <TouchableOpacity 
                     style={styles.backButton}
                     onPress={() => navigation.goBack()}
                 >
-                    <Ionicons name="arrow-back" size={24} color={themeColors.text} />
+                    <Ionicons name="arrow-back" size={24} color={theme.textColor} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Edit Profile</Text>
+                <Text style={[styles.headerTitle, { color: theme.textColor }]}>Edit Profile</Text>
                 <TouchableOpacity 
                     style={styles.saveButton}
                     onPress={() => isEditing ? handleSave() : setIsEditing(true)}
@@ -186,17 +187,25 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
 
                 <View style={styles.formSection}>
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Full Name</Text>
+                        <Text style={[styles.label, { color: theme.textColor }]}>Full Name</Text>
                         <TextInput
                             style={[
                                 styles.input,
-                                !isEditing && styles.disabledInput
+                                { 
+                                    backgroundColor: theme.cardBackground,
+                                    borderColor: theme.borderColor,
+                                    color: theme.textColor 
+                                },
+                                !isEditing && [styles.disabledInput, { 
+                                    backgroundColor: theme.backgroundColor,
+                                    color: theme.textColor + '80'
+                                }]
                             ]}
                             value={userData.name}
                             onChangeText={(text) => setUserData(prev => ({ ...prev, name: text }))}
-                            editable={isEditing}
                             placeholder="Enter your name"
-                            placeholderTextColor={themeColors.textSecondary}
+                            placeholderTextColor={theme.textColor + '60'}
+                            editable={isEditing}
                         />
                     </View>
                 </View>
@@ -208,33 +217,41 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingTop: 20,
+        paddingTop: 50,
         paddingBottom: 20,
-        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.1)',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
     },
     backButton: {
-        padding: 4,
+        padding: 8,
+        borderRadius: 20,
     },
     headerTitle: {
-        fontSize: 20,
-        fontWeight: '600',
-        color: themeColors.text,
+        fontSize: 22,
+        fontWeight: '700',
+        letterSpacing: 0.5,
     },
     saveButton: {
         paddingVertical: 8,
-        paddingHorizontal: 12,
+        paddingHorizontal: 16,
+        backgroundColor: themeColors.primary,
+        borderRadius: 20,
     },
     saveButtonText: {
         fontSize: 16,
         fontWeight: '600',
-        color: themeColors.primary,
+        color: '#fff',
     },
     content: {
         flex: 1,
@@ -242,15 +259,20 @@ const styles = StyleSheet.create({
     },
     avatarSection: {
         alignItems: 'center',
-        marginTop: 20,
+        marginTop: 30,
         marginBottom: 40,
     },
     avatarContainer: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
+        width: 140,
+        height: 140,
+        borderRadius: 70,
         backgroundColor: themeColors.primary,
         overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+        elevation: 5,
     },
     avatarImage: {
         width: '100%',
@@ -271,48 +293,56 @@ const styles = StyleSheet.create({
     },
     cameraButton: {
         position: 'absolute',
-        right: 0,
-        bottom: 0,
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        right: 5,
+        bottom: 5,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         backgroundColor: themeColors.primary,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 3,
         borderColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     changePhotoText: {
-        marginTop: 12,
-        fontSize: 14,
+        marginTop: 16,
+        fontSize: 15,
         color: themeColors.primary,
-        fontWeight: '500',
+        fontWeight: '600',
+        letterSpacing: 0.5,
     },
     formSection: {
         flex: 1,
     },
     inputGroup: {
         marginBottom: 24,
+        paddingHorizontal: 5,
     },
     label: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: themeColors.textSecondary,
+        fontSize: 15,
+        fontWeight: '600',
         marginBottom: 8,
+        letterSpacing: 0.5,
     },
     input: {
-        height: 52,
-        backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: themeColors.border,
-        borderRadius: 12,
-        paddingHorizontal: 16,
+        height: 56,
+        borderWidth: 1.5,
+        borderRadius: 16,
+        paddingHorizontal: 20,
         fontSize: 16,
-        color: themeColors.text,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
     },
     disabledInput: {
-        backgroundColor: themeColors.background,
-        color: themeColors.textSecondary,
+        opacity: 0.7,
     },
 });
 

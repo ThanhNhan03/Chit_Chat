@@ -81,6 +81,7 @@ interface ChatsProps {
 }
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from "../contexts/ThemeContext";
 
 const CACHE_EXPIRY_TIME = 1000 * 60 * 60;
 
@@ -136,6 +137,7 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
     const [loading, setLoading] = useState(true);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
+    const { isDarkMode, theme } = useTheme();
 
     useEffect(() => {
         fetchCurrentUser();
@@ -553,7 +555,10 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
     const renderItem = ({ item }) => {
         return (
             <TouchableOpacity
-                style={styles.chatItem}
+                style={[styles.chatItem, { 
+                    backgroundColor: theme.cardBackground,
+                    borderBottomColor: theme.borderColor 
+                }]}
                 onPress={() => handleChatPress(item)}
             >
                 <View style={styles.chatContent}>
@@ -584,6 +589,7 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                             <Text 
                                 style={[
                                     styles.chatName, 
+                                    { color: theme.textColor },
                                     item.isNew && styles.newMessageText
                                 ]} 
                                 numberOfLines={1}
@@ -592,6 +598,7 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                             </Text>
                             <Text style={[
                                 styles.timestamp,
+                                { color: theme.textColor },
                                 item.isNew && styles.newMessageTimestamp
                             ]}>
                                 {formatTimestamp(item.timestamp)}
@@ -601,6 +608,7 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                             <Text 
                                 style={[
                                     styles.lastMessage, 
+                                    { color: theme.textColor },
                                     item.isNew && styles.newMessageText
                                 ]} 
                                 numberOfLines={1}
@@ -630,8 +638,11 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
     );
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.header}>Chats</Text>
+        <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
+            <Text style={[styles.header, { 
+                backgroundColor: theme.cardBackground,
+                color: theme.textColor 
+            }]}>Chats</Text>
             {/* <Seperator style={styles.separator} /> */}
 
             {loading ? (
