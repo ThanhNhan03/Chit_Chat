@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Pressable, Modal, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Pressable, Modal, Animated, TouchableWithoutFeedback } from 'react-native';
 
 interface Reaction {
   id: string;
@@ -47,55 +47,62 @@ const MessageReactions: React.FC<MessageReactionsProps> = ({ reactions, onPressR
     return acc;
   }, {} as Record<string, Reaction[]>);
 
+  // Get top 2 reactions by count
+  const topReactions = Object.entries(groupedReactions)
+    .sort(([, a], [, b]) => b.length - a.length)
+    .slice(0, 2);
+
   return (
-    <>
+    <View style={styles.reactionsContainer}>
       {hoveredIcon && (
-        <Pressable 
-          style={styles.overlay} 
-          onPress={closeTooltip}
-        />
+        <TouchableWithoutFeedback onPress={closeTooltip}>
+          <View style={StyleSheet.absoluteFill} />
+        </TouchableWithoutFeedback>
       )}
       
-      <View style={styles.reactionsContainer}>
-        {Object.entries(groupedReactions).map(([icon, reactionGroup]) => (
-          <View key={icon} style={styles.reactionGroupWrapper}>
-            <TouchableOpacity
-              onPress={() => {
-                if (hoveredIcon === icon) {
-                  closeTooltip();
-                } else {
-                  setHoveredIcon(icon);
-                  fadeIn();
-                }
-              }}
-              style={styles.reactionGroup}
+      {topReactions.map(([icon, reactionGroup]) => (
+        <View key={icon} style={styles.reactionGroupWrapper}>
+          <TouchableOpacity
+            onPress={() => {
+              if (hoveredIcon === icon) {
+                closeTooltip();
+              } else {
+                setHoveredIcon(icon);
+                fadeIn();
+              }
+            }}
+            style={styles.reactionGroup}
+          >
+            <Text style={styles.reaction}>
+              {icon}
+            </Text>
+          </TouchableOpacity>
+          
+          {hoveredIcon === icon && (
+            <Animated.View 
+              style={[
+                styles.hoverCard,
+                { opacity: fadeAnim }
+              ]}
             >
-              <Text style={styles.reaction}>
-                {icon} {reactionGroup.length}
-              </Text>
-            </TouchableOpacity>
-            
-            {hoveredIcon === icon && (
-              <Animated.View 
-                style={[
-                  styles.hoverCard,
-                  { opacity: fadeAnim }
-                ]}
-              >
-                <View style={styles.tooltipArrow} />
-                <View style={styles.userListContainer}>
-                  {reactionGroup.map(reaction => (
-                    <Text key={reaction.id} style={styles.tooltipUserName}>
+              <View style={styles.tooltipArrow} />
+              <View style={styles.userListContainer}>
+                {reactionGroup.map(reaction => (
+                  <TouchableOpacity 
+                    key={reaction.id}
+                    onPress={() => onPressReaction(reaction)}
+                  >
+                    <Text style={styles.tooltipUserName}>
                       {reaction.userName || 'Unknown user'}
                     </Text>
-                  ))}
-                </View>
-              </Animated.View>
-            )}
-          </View>
-        ))}
-      </View>
-    </>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Animated.View>
+          )}
+        </View>
+      ))}
+    </View>
   );
 };
 
@@ -117,6 +124,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    zIndex: 1,
   },
   reactionGroupWrapper: {
     position: 'relative',
@@ -181,7 +189,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 8,
     width: 150,
-    zIndex: 1000,
+    zIndex: 2,
   },
   tooltipArrow: {
     position: 'absolute',
