@@ -23,16 +23,7 @@ import { useTheme } from '../contexts/ThemeContext';
 
 const client = generateClient();
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-const [friends, setFriends] = useState<Friend[]>([
-    { id: '1', name: 'Alice', profilePicture: null },
-    { id: '2', name: 'Bob', profilePicture: null },
-    // Add more mock friends here...
-]);
-interface Friend {
-    id: string;
-    name: string;
-    profilePicture?: string;
-}
+
 interface UserFriendChat {
     id: string;
     user_id: string;
@@ -151,6 +142,8 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
     const [loading, setLoading] = useState(true);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filteredChats, setFilteredChats] = useState<Chat[]>([]);
 
     useEffect(() => {
         fetchCurrentUser();
@@ -169,6 +162,18 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
             };
         }
     }, [currentUserId]);
+
+    useEffect(() => {
+        if (searchQuery.trim() === '') {
+            setFilteredChats(chats);
+        } else {
+            const filtered = chats.filter(chat => 
+                chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                chat.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+            setFilteredChats(filtered);
+        }
+    }, [searchQuery, chats]);
 
     const loadCachedChats = async () => {
         try {
@@ -565,6 +570,10 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
         setRefreshing(false);
     };
 
+    const handleSearch = (text: string) => {
+        setSearchQuery(text);
+    };
+
     const renderItem = ({ item }) => {
         return (
             <TouchableOpacity
@@ -648,19 +657,16 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
     return (
         <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
             <MainHeader title="Chats" />
-       <SearchBar
-   placeholder="Search chats"
-    value={null}
-        onChangeText={null}/>
-      {/* <FriendBar
-    friends={friends}
-    onFriendPress={(friend) => console.log('Friend pressed:', friend)}
-/> */}
+            <SearchBar
+                placeholder="Search chats"
+                value={searchQuery}
+                onChangeText={handleSearch}
+            />
             {loading ? (
                 <ActivityIndicator size="large" style={styles.loadingContainer} color={themeColors.primary} />
             ) : (
                 <FlatList
-                    data={chats}
+                    data={filteredChats}
                     renderItem={renderItem}
                     keyExtractor={item => item.id}
                     refreshControl={
