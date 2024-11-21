@@ -8,6 +8,7 @@ type GeneratedQuery<InputType, OutputType> = string & {
   __generatedQueryOutput: OutputType;
 };
 
+
 export const getGroupChat = /* GraphQL */ `query GetGroupChat($id: ID!) {
   getGroupChat(id: $id) {
     id
