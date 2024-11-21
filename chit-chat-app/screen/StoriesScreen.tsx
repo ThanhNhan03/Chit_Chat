@@ -96,7 +96,10 @@ const StoriesScreen = ({ navigation }) => {
   const renderStoryItem = ({ item }) => {
     if (item.isCurrentUser) {
       return (
-        <TouchableOpacity style={styles.storyContainer}>
+        <TouchableOpacity 
+          style={styles.storyContainer}
+          onPress={() => navigation.navigate('AddStory')}
+        >
           {item.hasStory ? (
             <Image source={{ uri: item.imageUrl }} style={styles.storyImage} />
           ) : (

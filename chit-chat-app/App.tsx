@@ -31,6 +31,8 @@ import GroupChat from './screen/GroupChat';
 import GroupChatSettings from './screen/GroupChatSettings';
 import Settings from './screen/Settings';
 import Profile from './screen/Profile';
+import AddStoryScreen from './screen/AddStoryScreen';
+import EditStoryScreen from './screen/EditStoryScreen';
 
 Amplify.configure(config);
 const Stack = createNativeStackNavigator();
@@ -230,6 +232,16 @@ const App: React.FC = () => {
                   name="Profile"
                   component={Profile}
                   options={{ title: 'Profile', headerShown: false }}
+                />
+                <Stack.Screen
+                  name="AddStory"
+                  component={AddStoryScreen}
+                  options={{ title: 'Add Story', headerShown: false }}
+                />
+                <Stack.Screen
+                  name="EditStory"
+                  component={EditStoryScreen}
+                  options={{ title: 'Edit Story', headerShown: false }}
                 />
               </>
             ) : (
