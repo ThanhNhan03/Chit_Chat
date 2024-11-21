@@ -7,7 +7,7 @@ import { getCurrentUser } from 'aws-amplify/auth';
 import * as Notifications from 'expo-notifications';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { themeColors } from "./config/themeColor";
 
 // Screens
@@ -52,11 +52,11 @@ const TabNavigator = () => {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: any;
           if (route.name === 'Chats') {
-            iconName = 'chatbubble';
+    iconName = 'chat';
           } else if (route.name === 'Stories') {
-            iconName = 'aperture';
+        iconName = 'web-stories';
           }
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <MaterialIcons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: themeColors.secondary,
         tabBarInactiveTintColor: themeColors.text,
