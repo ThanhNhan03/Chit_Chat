@@ -131,6 +131,8 @@ export type User = {
   SentFriendRequests?: ModelFriendRequestsConnection | null,
   ReceivedFriendRequests?: ModelFriendRequestsConnection | null,
   Reactions?: ModelReactionsConnection | null,
+  Stories?: ModelStoryConnection | null,
+  StoryViews?: ModelStoryViewConnection | null,
   createdAt: string,
   updatedAt: string,
 };
@@ -210,6 +212,64 @@ export type Reactions = {
   user_id: string,
   icon?: string | null,
   created_at?: string | null,
+  createdAt: string,
+  updatedAt: string,
+};
+
+export type ModelStoryConnection = {
+  __typename: "ModelStoryConnection",
+  items:  Array<Story | null >,
+  nextToken?: string | null,
+};
+
+export type Story = {
+  __typename: "Story",
+  id: string,
+  user_id: string,
+  user?: User | null,
+  type: string,
+  media_url?: string | null,
+  text_content?: string | null,
+  background_color?: string | null,
+  thumbnail_url?: string | null,
+  duration?: number | null,
+  music_id?: string | null,
+  music?: Music | null,
+  views?: ModelStoryViewConnection | null,
+  created_at?: string | null,
+  expires_at?: string | null,
+  createdAt: string,
+  updatedAt: string,
+};
+
+export type Music = {
+  __typename: "Music",
+  id: string,
+  title: string,
+  artist?: string | null,
+  url: string,
+  duration?: number | null,
+  cover_image?: string | null,
+  created_at?: string | null,
+  Stories?: ModelStoryConnection | null,
+  createdAt: string,
+  updatedAt: string,
+};
+
+export type ModelStoryViewConnection = {
+  __typename: "ModelStoryViewConnection",
+  items:  Array<StoryView | null >,
+  nextToken?: string | null,
+};
+
+export type StoryView = {
+  __typename: "StoryView",
+  id: string,
+  story_id: string,
+  user_id: string,
+  user?: User | null,
+  story?: Story | null,
+  viewed_at?: string | null,
   createdAt: string,
   updatedAt: string,
 };
@@ -500,6 +560,135 @@ export type DeleteUserFriendChatInput = {
   id: string,
 };
 
+export type CreateMusicInput = {
+  id?: string | null,
+  title: string,
+  artist?: string | null,
+  url: string,
+  duration?: number | null,
+  cover_image?: string | null,
+  created_at?: string | null,
+};
+
+export type ModelMusicConditionInput = {
+  title?: ModelStringInput | null,
+  artist?: ModelStringInput | null,
+  url?: ModelStringInput | null,
+  duration?: ModelIntInput | null,
+  cover_image?: ModelStringInput | null,
+  created_at?: ModelStringInput | null,
+  and?: Array< ModelMusicConditionInput | null > | null,
+  or?: Array< ModelMusicConditionInput | null > | null,
+  not?: ModelMusicConditionInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
+};
+
+export type ModelIntInput = {
+  ne?: number | null,
+  eq?: number | null,
+  le?: number | null,
+  lt?: number | null,
+  ge?: number | null,
+  gt?: number | null,
+  between?: Array< number | null > | null,
+  attributeExists?: boolean | null,
+  attributeType?: ModelAttributeTypes | null,
+};
+
+export type UpdateMusicInput = {
+  id: string,
+  title?: string | null,
+  artist?: string | null,
+  url?: string | null,
+  duration?: number | null,
+  cover_image?: string | null,
+  created_at?: string | null,
+};
+
+export type DeleteMusicInput = {
+  id: string,
+};
+
+export type CreateStoryInput = {
+  id?: string | null,
+  user_id: string,
+  type: string,
+  media_url?: string | null,
+  text_content?: string | null,
+  background_color?: string | null,
+  thumbnail_url?: string | null,
+  duration?: number | null,
+  music_id?: string | null,
+  created_at?: string | null,
+  expires_at?: string | null,
+};
+
+export type ModelStoryConditionInput = {
+  user_id?: ModelIDInput | null,
+  type?: ModelStringInput | null,
+  media_url?: ModelStringInput | null,
+  text_content?: ModelStringInput | null,
+  background_color?: ModelStringInput | null,
+  thumbnail_url?: ModelStringInput | null,
+  duration?: ModelIntInput | null,
+  music_id?: ModelIDInput | null,
+  created_at?: ModelStringInput | null,
+  expires_at?: ModelStringInput | null,
+  and?: Array< ModelStoryConditionInput | null > | null,
+  or?: Array< ModelStoryConditionInput | null > | null,
+  not?: ModelStoryConditionInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
+};
+
+export type UpdateStoryInput = {
+  id: string,
+  user_id?: string | null,
+  type?: string | null,
+  media_url?: string | null,
+  text_content?: string | null,
+  background_color?: string | null,
+  thumbnail_url?: string | null,
+  duration?: number | null,
+  music_id?: string | null,
+  created_at?: string | null,
+  expires_at?: string | null,
+};
+
+export type DeleteStoryInput = {
+  id: string,
+};
+
+export type CreateStoryViewInput = {
+  id?: string | null,
+  story_id: string,
+  user_id: string,
+  viewed_at?: string | null,
+};
+
+export type ModelStoryViewConditionInput = {
+  story_id?: ModelIDInput | null,
+  user_id?: ModelIDInput | null,
+  viewed_at?: ModelStringInput | null,
+  and?: Array< ModelStoryViewConditionInput | null > | null,
+  or?: Array< ModelStoryViewConditionInput | null > | null,
+  not?: ModelStoryViewConditionInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
+};
+
+export type UpdateStoryViewInput = {
+  id: string,
+  story_id?: string | null,
+  user_id?: string | null,
+  viewed_at?: string | null,
+};
+
+export type DeleteStoryViewInput = {
+  id: string,
+};
+
 export type ModelGroupChatFilterInput = {
   id?: ModelIDInput | null,
   group_name?: ModelStringInput | null,
@@ -660,6 +849,58 @@ export type ModelUserFriendChatFilterInput = {
   not?: ModelUserFriendChatFilterInput | null,
 };
 
+export type ModelMusicFilterInput = {
+  id?: ModelIDInput | null,
+  title?: ModelStringInput | null,
+  artist?: ModelStringInput | null,
+  url?: ModelStringInput | null,
+  duration?: ModelIntInput | null,
+  cover_image?: ModelStringInput | null,
+  created_at?: ModelStringInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
+  and?: Array< ModelMusicFilterInput | null > | null,
+  or?: Array< ModelMusicFilterInput | null > | null,
+  not?: ModelMusicFilterInput | null,
+};
+
+export type ModelMusicConnection = {
+  __typename: "ModelMusicConnection",
+  items:  Array<Music | null >,
+  nextToken?: string | null,
+};
+
+export type ModelStoryFilterInput = {
+  id?: ModelIDInput | null,
+  user_id?: ModelIDInput | null,
+  type?: ModelStringInput | null,
+  media_url?: ModelStringInput | null,
+  text_content?: ModelStringInput | null,
+  background_color?: ModelStringInput | null,
+  thumbnail_url?: ModelStringInput | null,
+  duration?: ModelIntInput | null,
+  music_id?: ModelIDInput | null,
+  created_at?: ModelStringInput | null,
+  expires_at?: ModelStringInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
+  and?: Array< ModelStoryFilterInput | null > | null,
+  or?: Array< ModelStoryFilterInput | null > | null,
+  not?: ModelStoryFilterInput | null,
+};
+
+export type ModelStoryViewFilterInput = {
+  id?: ModelIDInput | null,
+  story_id?: ModelIDInput | null,
+  user_id?: ModelIDInput | null,
+  viewed_at?: ModelStringInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
+  and?: Array< ModelStoryViewFilterInput | null > | null,
+  or?: Array< ModelStoryViewFilterInput | null > | null,
+  not?: ModelStoryViewFilterInput | null,
+};
+
 export type ModelSubscriptionGroupChatFilterInput = {
   id?: ModelSubscriptionIDInput | null,
   group_name?: ModelSubscriptionStringInput | null,
@@ -799,6 +1040,61 @@ export type ModelSubscriptionUserFriendChatFilterInput = {
   updatedAt?: ModelSubscriptionStringInput | null,
   and?: Array< ModelSubscriptionUserFriendChatFilterInput | null > | null,
   or?: Array< ModelSubscriptionUserFriendChatFilterInput | null > | null,
+};
+
+export type ModelSubscriptionMusicFilterInput = {
+  id?: ModelSubscriptionIDInput | null,
+  title?: ModelSubscriptionStringInput | null,
+  artist?: ModelSubscriptionStringInput | null,
+  url?: ModelSubscriptionStringInput | null,
+  duration?: ModelSubscriptionIntInput | null,
+  cover_image?: ModelSubscriptionStringInput | null,
+  created_at?: ModelSubscriptionStringInput | null,
+  createdAt?: ModelSubscriptionStringInput | null,
+  updatedAt?: ModelSubscriptionStringInput | null,
+  and?: Array< ModelSubscriptionMusicFilterInput | null > | null,
+  or?: Array< ModelSubscriptionMusicFilterInput | null > | null,
+};
+
+export type ModelSubscriptionIntInput = {
+  ne?: number | null,
+  eq?: number | null,
+  le?: number | null,
+  lt?: number | null,
+  ge?: number | null,
+  gt?: number | null,
+  between?: Array< number | null > | null,
+  in?: Array< number | null > | null,
+  notIn?: Array< number | null > | null,
+};
+
+export type ModelSubscriptionStoryFilterInput = {
+  id?: ModelSubscriptionIDInput | null,
+  user_id?: ModelSubscriptionIDInput | null,
+  type?: ModelSubscriptionStringInput | null,
+  media_url?: ModelSubscriptionStringInput | null,
+  text_content?: ModelSubscriptionStringInput | null,
+  background_color?: ModelSubscriptionStringInput | null,
+  thumbnail_url?: ModelSubscriptionStringInput | null,
+  duration?: ModelSubscriptionIntInput | null,
+  music_id?: ModelSubscriptionIDInput | null,
+  created_at?: ModelSubscriptionStringInput | null,
+  expires_at?: ModelSubscriptionStringInput | null,
+  createdAt?: ModelSubscriptionStringInput | null,
+  updatedAt?: ModelSubscriptionStringInput | null,
+  and?: Array< ModelSubscriptionStoryFilterInput | null > | null,
+  or?: Array< ModelSubscriptionStoryFilterInput | null > | null,
+};
+
+export type ModelSubscriptionStoryViewFilterInput = {
+  id?: ModelSubscriptionIDInput | null,
+  story_id?: ModelSubscriptionIDInput | null,
+  user_id?: ModelSubscriptionIDInput | null,
+  viewed_at?: ModelSubscriptionStringInput | null,
+  createdAt?: ModelSubscriptionStringInput | null,
+  updatedAt?: ModelSubscriptionStringInput | null,
+  and?: Array< ModelSubscriptionStoryViewFilterInput | null > | null,
+  or?: Array< ModelSubscriptionStoryViewFilterInput | null > | null,
 };
 
 export type CreateGroupChatMutationVariables = {
@@ -1215,6 +1511,14 @@ export type CreateUserMutation = {
       __typename: "ModelReactionsConnection",
       nextToken?: string | null,
     } | null,
+    Stories?:  {
+      __typename: "ModelStoryConnection",
+      nextToken?: string | null,
+    } | null,
+    StoryViews?:  {
+      __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -1259,6 +1563,14 @@ export type UpdateUserMutation = {
       __typename: "ModelReactionsConnection",
       nextToken?: string | null,
     } | null,
+    Stories?:  {
+      __typename: "ModelStoryConnection",
+      nextToken?: string | null,
+    } | null,
+    StoryViews?:  {
+      __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -1301,6 +1613,14 @@ export type DeleteUserMutation = {
     } | null,
     Reactions?:  {
       __typename: "ModelReactionsConnection",
+      nextToken?: string | null,
+    } | null,
+    Stories?:  {
+      __typename: "ModelStoryConnection",
+      nextToken?: string | null,
+    } | null,
+    StoryViews?:  {
+      __typename: "ModelStoryViewConnection",
       nextToken?: string | null,
     } | null,
     createdAt: string,
@@ -1540,6 +1860,369 @@ export type DeleteUserFriendChatMutation = {
       createdAt: string,
       updatedAt: string,
     } | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type CreateMusicMutationVariables = {
+  input: CreateMusicInput,
+  condition?: ModelMusicConditionInput | null,
+};
+
+export type CreateMusicMutation = {
+  createMusic?:  {
+    __typename: "Music",
+    id: string,
+    title: string,
+    artist?: string | null,
+    url: string,
+    duration?: number | null,
+    cover_image?: string | null,
+    created_at?: string | null,
+    Stories?:  {
+      __typename: "ModelStoryConnection",
+      nextToken?: string | null,
+    } | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type UpdateMusicMutationVariables = {
+  input: UpdateMusicInput,
+  condition?: ModelMusicConditionInput | null,
+};
+
+export type UpdateMusicMutation = {
+  updateMusic?:  {
+    __typename: "Music",
+    id: string,
+    title: string,
+    artist?: string | null,
+    url: string,
+    duration?: number | null,
+    cover_image?: string | null,
+    created_at?: string | null,
+    Stories?:  {
+      __typename: "ModelStoryConnection",
+      nextToken?: string | null,
+    } | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type DeleteMusicMutationVariables = {
+  input: DeleteMusicInput,
+  condition?: ModelMusicConditionInput | null,
+};
+
+export type DeleteMusicMutation = {
+  deleteMusic?:  {
+    __typename: "Music",
+    id: string,
+    title: string,
+    artist?: string | null,
+    url: string,
+    duration?: number | null,
+    cover_image?: string | null,
+    created_at?: string | null,
+    Stories?:  {
+      __typename: "ModelStoryConnection",
+      nextToken?: string | null,
+    } | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type CreateStoryMutationVariables = {
+  input: CreateStoryInput,
+  condition?: ModelStoryConditionInput | null,
+};
+
+export type CreateStoryMutation = {
+  createStory?:  {
+    __typename: "Story",
+    id: string,
+    user_id: string,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    type: string,
+    media_url?: string | null,
+    text_content?: string | null,
+    background_color?: string | null,
+    thumbnail_url?: string | null,
+    duration?: number | null,
+    music_id?: string | null,
+    music?:  {
+      __typename: "Music",
+      id: string,
+      title: string,
+      artist?: string | null,
+      url: string,
+      duration?: number | null,
+      cover_image?: string | null,
+      created_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    views?:  {
+      __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
+    created_at?: string | null,
+    expires_at?: string | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type UpdateStoryMutationVariables = {
+  input: UpdateStoryInput,
+  condition?: ModelStoryConditionInput | null,
+};
+
+export type UpdateStoryMutation = {
+  updateStory?:  {
+    __typename: "Story",
+    id: string,
+    user_id: string,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    type: string,
+    media_url?: string | null,
+    text_content?: string | null,
+    background_color?: string | null,
+    thumbnail_url?: string | null,
+    duration?: number | null,
+    music_id?: string | null,
+    music?:  {
+      __typename: "Music",
+      id: string,
+      title: string,
+      artist?: string | null,
+      url: string,
+      duration?: number | null,
+      cover_image?: string | null,
+      created_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    views?:  {
+      __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
+    created_at?: string | null,
+    expires_at?: string | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type DeleteStoryMutationVariables = {
+  input: DeleteStoryInput,
+  condition?: ModelStoryConditionInput | null,
+};
+
+export type DeleteStoryMutation = {
+  deleteStory?:  {
+    __typename: "Story",
+    id: string,
+    user_id: string,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    type: string,
+    media_url?: string | null,
+    text_content?: string | null,
+    background_color?: string | null,
+    thumbnail_url?: string | null,
+    duration?: number | null,
+    music_id?: string | null,
+    music?:  {
+      __typename: "Music",
+      id: string,
+      title: string,
+      artist?: string | null,
+      url: string,
+      duration?: number | null,
+      cover_image?: string | null,
+      created_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    views?:  {
+      __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
+    created_at?: string | null,
+    expires_at?: string | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type CreateStoryViewMutationVariables = {
+  input: CreateStoryViewInput,
+  condition?: ModelStoryViewConditionInput | null,
+};
+
+export type CreateStoryViewMutation = {
+  createStoryView?:  {
+    __typename: "StoryView",
+    id: string,
+    story_id: string,
+    user_id: string,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    story?:  {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    viewed_at?: string | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type UpdateStoryViewMutationVariables = {
+  input: UpdateStoryViewInput,
+  condition?: ModelStoryViewConditionInput | null,
+};
+
+export type UpdateStoryViewMutation = {
+  updateStoryView?:  {
+    __typename: "StoryView",
+    id: string,
+    story_id: string,
+    user_id: string,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    story?:  {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    viewed_at?: string | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type DeleteStoryViewMutationVariables = {
+  input: DeleteStoryViewInput,
+  condition?: ModelStoryViewConditionInput | null,
+};
+
+export type DeleteStoryViewMutation = {
+  deleteStoryView?:  {
+    __typename: "StoryView",
+    id: string,
+    story_id: string,
+    user_id: string,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    story?:  {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    viewed_at?: string | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -2078,6 +2761,14 @@ export type GetUserQuery = {
       __typename: "ModelReactionsConnection",
       nextToken?: string | null,
     } | null,
+    Stories?:  {
+      __typename: "ModelStoryConnection",
+      nextToken?: string | null,
+    } | null,
+    StoryViews?:  {
+      __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -2339,6 +3030,310 @@ export type UserFriendChatsByFriend_chat_idQuery = {
       id: string,
       user_id: string,
       friend_chat_id: string,
+      createdAt: string,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
+export type GetMusicQueryVariables = {
+  id: string,
+};
+
+export type GetMusicQuery = {
+  getMusic?:  {
+    __typename: "Music",
+    id: string,
+    title: string,
+    artist?: string | null,
+    url: string,
+    duration?: number | null,
+    cover_image?: string | null,
+    created_at?: string | null,
+    Stories?:  {
+      __typename: "ModelStoryConnection",
+      nextToken?: string | null,
+    } | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type ListMusicQueryVariables = {
+  filter?: ModelMusicFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type ListMusicQuery = {
+  listMusic?:  {
+    __typename: "ModelMusicConnection",
+    items:  Array< {
+      __typename: "Music",
+      id: string,
+      title: string,
+      artist?: string | null,
+      url: string,
+      duration?: number | null,
+      cover_image?: string | null,
+      created_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
+export type GetStoryQueryVariables = {
+  id: string,
+};
+
+export type GetStoryQuery = {
+  getStory?:  {
+    __typename: "Story",
+    id: string,
+    user_id: string,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    type: string,
+    media_url?: string | null,
+    text_content?: string | null,
+    background_color?: string | null,
+    thumbnail_url?: string | null,
+    duration?: number | null,
+    music_id?: string | null,
+    music?:  {
+      __typename: "Music",
+      id: string,
+      title: string,
+      artist?: string | null,
+      url: string,
+      duration?: number | null,
+      cover_image?: string | null,
+      created_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    views?:  {
+      __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
+    created_at?: string | null,
+    expires_at?: string | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type ListStoriesQueryVariables = {
+  filter?: ModelStoryFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type ListStoriesQuery = {
+  listStories?:  {
+    __typename: "ModelStoryConnection",
+    items:  Array< {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
+export type StoriesByUser_idQueryVariables = {
+  user_id: string,
+  sortDirection?: ModelSortDirection | null,
+  filter?: ModelStoryFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type StoriesByUser_idQuery = {
+  storiesByUser_id?:  {
+    __typename: "ModelStoryConnection",
+    items:  Array< {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
+export type StoriesByMusic_idQueryVariables = {
+  music_id: string,
+  sortDirection?: ModelSortDirection | null,
+  filter?: ModelStoryFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type StoriesByMusic_idQuery = {
+  storiesByMusic_id?:  {
+    __typename: "ModelStoryConnection",
+    items:  Array< {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
+export type GetStoryViewQueryVariables = {
+  id: string,
+};
+
+export type GetStoryViewQuery = {
+  getStoryView?:  {
+    __typename: "StoryView",
+    id: string,
+    story_id: string,
+    user_id: string,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    story?:  {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    viewed_at?: string | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type ListStoryViewsQueryVariables = {
+  filter?: ModelStoryViewFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type ListStoryViewsQuery = {
+  listStoryViews?:  {
+    __typename: "ModelStoryViewConnection",
+    items:  Array< {
+      __typename: "StoryView",
+      id: string,
+      story_id: string,
+      user_id: string,
+      viewed_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
+export type StoryViewsByStory_idQueryVariables = {
+  story_id: string,
+  sortDirection?: ModelSortDirection | null,
+  filter?: ModelStoryViewFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type StoryViewsByStory_idQuery = {
+  storyViewsByStory_id?:  {
+    __typename: "ModelStoryViewConnection",
+    items:  Array< {
+      __typename: "StoryView",
+      id: string,
+      story_id: string,
+      user_id: string,
+      viewed_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
+export type StoryViewsByUser_idQueryVariables = {
+  user_id: string,
+  sortDirection?: ModelSortDirection | null,
+  filter?: ModelStoryViewFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type StoryViewsByUser_idQuery = {
+  storyViewsByUser_id?:  {
+    __typename: "ModelStoryViewConnection",
+    items:  Array< {
+      __typename: "StoryView",
+      id: string,
+      story_id: string,
+      user_id: string,
+      viewed_at?: string | null,
       createdAt: string,
       updatedAt: string,
     } | null >,
@@ -2741,6 +3736,14 @@ export type OnCreateUserSubscription = {
       __typename: "ModelReactionsConnection",
       nextToken?: string | null,
     } | null,
+    Stories?:  {
+      __typename: "ModelStoryConnection",
+      nextToken?: string | null,
+    } | null,
+    StoryViews?:  {
+      __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -2784,6 +3787,14 @@ export type OnUpdateUserSubscription = {
       __typename: "ModelReactionsConnection",
       nextToken?: string | null,
     } | null,
+    Stories?:  {
+      __typename: "ModelStoryConnection",
+      nextToken?: string | null,
+    } | null,
+    StoryViews?:  {
+      __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -2825,6 +3836,14 @@ export type OnDeleteUserSubscription = {
     } | null,
     Reactions?:  {
       __typename: "ModelReactionsConnection",
+      nextToken?: string | null,
+    } | null,
+    Stories?:  {
+      __typename: "ModelStoryConnection",
+      nextToken?: string | null,
+    } | null,
+    StoryViews?:  {
+      __typename: "ModelStoryViewConnection",
       nextToken?: string | null,
     } | null,
     createdAt: string,
@@ -3058,6 +4077,360 @@ export type OnDeleteUserFriendChatSubscription = {
       createdAt: string,
       updatedAt: string,
     } | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnCreateMusicSubscriptionVariables = {
+  filter?: ModelSubscriptionMusicFilterInput | null,
+};
+
+export type OnCreateMusicSubscription = {
+  onCreateMusic?:  {
+    __typename: "Music",
+    id: string,
+    title: string,
+    artist?: string | null,
+    url: string,
+    duration?: number | null,
+    cover_image?: string | null,
+    created_at?: string | null,
+    Stories?:  {
+      __typename: "ModelStoryConnection",
+      nextToken?: string | null,
+    } | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnUpdateMusicSubscriptionVariables = {
+  filter?: ModelSubscriptionMusicFilterInput | null,
+};
+
+export type OnUpdateMusicSubscription = {
+  onUpdateMusic?:  {
+    __typename: "Music",
+    id: string,
+    title: string,
+    artist?: string | null,
+    url: string,
+    duration?: number | null,
+    cover_image?: string | null,
+    created_at?: string | null,
+    Stories?:  {
+      __typename: "ModelStoryConnection",
+      nextToken?: string | null,
+    } | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnDeleteMusicSubscriptionVariables = {
+  filter?: ModelSubscriptionMusicFilterInput | null,
+};
+
+export type OnDeleteMusicSubscription = {
+  onDeleteMusic?:  {
+    __typename: "Music",
+    id: string,
+    title: string,
+    artist?: string | null,
+    url: string,
+    duration?: number | null,
+    cover_image?: string | null,
+    created_at?: string | null,
+    Stories?:  {
+      __typename: "ModelStoryConnection",
+      nextToken?: string | null,
+    } | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnCreateStorySubscriptionVariables = {
+  filter?: ModelSubscriptionStoryFilterInput | null,
+};
+
+export type OnCreateStorySubscription = {
+  onCreateStory?:  {
+    __typename: "Story",
+    id: string,
+    user_id: string,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    type: string,
+    media_url?: string | null,
+    text_content?: string | null,
+    background_color?: string | null,
+    thumbnail_url?: string | null,
+    duration?: number | null,
+    music_id?: string | null,
+    music?:  {
+      __typename: "Music",
+      id: string,
+      title: string,
+      artist?: string | null,
+      url: string,
+      duration?: number | null,
+      cover_image?: string | null,
+      created_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    views?:  {
+      __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
+    created_at?: string | null,
+    expires_at?: string | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnUpdateStorySubscriptionVariables = {
+  filter?: ModelSubscriptionStoryFilterInput | null,
+};
+
+export type OnUpdateStorySubscription = {
+  onUpdateStory?:  {
+    __typename: "Story",
+    id: string,
+    user_id: string,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    type: string,
+    media_url?: string | null,
+    text_content?: string | null,
+    background_color?: string | null,
+    thumbnail_url?: string | null,
+    duration?: number | null,
+    music_id?: string | null,
+    music?:  {
+      __typename: "Music",
+      id: string,
+      title: string,
+      artist?: string | null,
+      url: string,
+      duration?: number | null,
+      cover_image?: string | null,
+      created_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    views?:  {
+      __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
+    created_at?: string | null,
+    expires_at?: string | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnDeleteStorySubscriptionVariables = {
+  filter?: ModelSubscriptionStoryFilterInput | null,
+};
+
+export type OnDeleteStorySubscription = {
+  onDeleteStory?:  {
+    __typename: "Story",
+    id: string,
+    user_id: string,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    type: string,
+    media_url?: string | null,
+    text_content?: string | null,
+    background_color?: string | null,
+    thumbnail_url?: string | null,
+    duration?: number | null,
+    music_id?: string | null,
+    music?:  {
+      __typename: "Music",
+      id: string,
+      title: string,
+      artist?: string | null,
+      url: string,
+      duration?: number | null,
+      cover_image?: string | null,
+      created_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    views?:  {
+      __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
+    created_at?: string | null,
+    expires_at?: string | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnCreateStoryViewSubscriptionVariables = {
+  filter?: ModelSubscriptionStoryViewFilterInput | null,
+};
+
+export type OnCreateStoryViewSubscription = {
+  onCreateStoryView?:  {
+    __typename: "StoryView",
+    id: string,
+    story_id: string,
+    user_id: string,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    story?:  {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    viewed_at?: string | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnUpdateStoryViewSubscriptionVariables = {
+  filter?: ModelSubscriptionStoryViewFilterInput | null,
+};
+
+export type OnUpdateStoryViewSubscription = {
+  onUpdateStoryView?:  {
+    __typename: "StoryView",
+    id: string,
+    story_id: string,
+    user_id: string,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    story?:  {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    viewed_at?: string | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnDeleteStoryViewSubscriptionVariables = {
+  filter?: ModelSubscriptionStoryViewFilterInput | null,
+};
+
+export type OnDeleteStoryViewSubscription = {
+  onDeleteStoryView?:  {
+    __typename: "StoryView",
+    id: string,
+    story_id: string,
+    user_id: string,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    story?:  {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    viewed_at?: string | null,
     createdAt: string,
     updatedAt: string,
   } | null,

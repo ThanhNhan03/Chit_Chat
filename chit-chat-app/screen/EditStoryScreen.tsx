@@ -14,6 +14,7 @@ import { themeColors } from '../config/themeColor';
 import { Dimensions } from 'react-native';
 import { solidColors, textColors, getContrastTextColor } from '../config/colorConfig';
 import { useFonts } from 'expo-font';
+import { Music } from '../src/API';
 
 const { width, height } = Dimensions.get('window');
 
@@ -44,10 +45,15 @@ const EditStoryScreen = ({ route, navigation }: EditStoryScreenProps) => {
     const [currentBgColor, setCurrentBgColor] = useState(backgroundColor || themeColors.primary);
     const [showColorPicker, setShowColorPicker] = useState(false);
     const [showMusicPicker, setShowMusicPicker] = useState(false);
+    const [selectedMusic, setSelectedMusic] = useState<Music | null>(null);
 
     const handleMusicPress = () => {
         setShowMusicPicker(true);
-        // Thêm logic xử lý music picker ở đây
+    };
+
+    const handleSelectMusic = (music: Music) => {
+        setSelectedMusic(music);
+        setShowMusicPicker(false);
     };
 
     const renderColorPicker = () => (

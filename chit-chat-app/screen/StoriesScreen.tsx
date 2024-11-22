@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -11,6 +11,12 @@ import {
 } from "react-native";
 import { themeColors } from "../config/themeColor";
 import MainHeader from '../components/MainHeader';
+import { AuthenticatedUserContext } from "../contexts/AuthContext";
+import { generateClient, GraphQLResult } from 'aws-amplify/api';
+import { GetUserQuery } from '../src/API';
+import { getUser } from '../src/graphql/queries'
+
+const client = generateClient();
 
 const { width, height } = Dimensions.get("window");
 const COLUMN_COUNT = 2;
@@ -93,6 +99,52 @@ const CURRENT_USER = {
 const STORIES_DATA = [CURRENT_USER, ...DUMMY_STORIES];
 
 const StoriesScreen = ({ navigation }) => {
+  const { user } = useContext(AuthenticatedUserContext);
+  const [userData, setUserData] = useState({
+    name: '',
+    profile_picture: '',
+  });
+
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  const fetchUserData = async () => {
+    if (!user?.userId) return;
+
+    try {
+      const response = await client.graphql({
+        query: getUser,
+        variables: { id: user.userId },
+      }) as GraphQLResult<{
+        getUser: {
+          name: string;
+          profile_picture: string;
+        }
+      }>;
+
+      if (response.data && response.data.getUser) {
+        const fetchedUser = response.data.getUser;
+        setUserData({
+          name: fetchedUser.name || '',
+          profile_picture: fetchedUser.profile_picture || '',
+        });
+      }
+    } catch (error) {
+      console.log('Error fetching user data:', error);
+    }
+  };
+
+  const CURRENT_USER = {
+    id: "current",
+    username: userData.name || "Your Story",
+    imageUrl: userData.profile_picture,
+    hasStory: false,
+    isCurrentUser: true,
+  };
+
+  const STORIES_DATA = [CURRENT_USER, ...DUMMY_STORIES];
+
   const renderStoryItem = ({ item }) => {
     if (item.isCurrentUser) {
       return (
@@ -105,14 +157,18 @@ const StoriesScreen = ({ navigation }) => {
           ) : (
             <View style={styles.currentUserContainer}>
               <Image 
-                source={{ uri: item.imageUrl }} 
-                style={styles.avatarImage} 
+                source={{ 
+                  uri: userData.profile_picture
+                }} 
+                style={styles.avatarImage}
               />
               <View style={styles.addButton}>
                 <Text style={styles.plusIcon}>+</Text>
               </View>
               <View style={styles.userInfo}>
-                <Text style={styles.username}>Add to Story</Text>
+                <Text style={styles.username}>
+                  Add to Story
+                </Text>
               </View>
             </View>
           )}
@@ -121,7 +177,19 @@ const StoriesScreen = ({ navigation }) => {
     }
 
     return (
-      <TouchableOpacity style={styles.storyContainer}>
+      <TouchableOpacity 
+        style={styles.storyContainer}
+        onPress={() => {
+          navigation.navigate('ViewStory', {
+            imageUri: item.imageUrl,
+            mode: 'image',
+            username: item.username,
+            userAvatar: item.imageUrl,
+            duration: 5000,
+            previousScreen: 'Stories'
+          })
+        }}
+      >
         <Image source={{ uri: item.imageUrl }} style={styles.storyImage} />
         <View style={styles.userInfo}>
           <Text style={styles.username}>{item.username}</Text>
@@ -257,6 +325,19 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginTop: -2,
+  },
+  avatarFallback: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: themeColors.primary,
+    borderRadius: 12,
+  },
+  avatarText: {
+    fontSize: 40,
+    fontWeight: '600',
+    color: '#fff',
   },
 });
 

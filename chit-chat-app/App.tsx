@@ -33,6 +33,7 @@ import Settings from './screen/Settings';
 import Profile from './screen/Profile';
 import AddStoryScreen from './screen/AddStoryScreen';
 import EditStoryScreen from './screen/EditStoryScreen';
+import ViewStoryScreen from './screen/ViewStoryScreen';
 
 Amplify.configure(config);
 const Stack = createNativeStackNavigator();
@@ -242,6 +243,11 @@ const App: React.FC = () => {
                   name="EditStory"
                   component={EditStoryScreen}
                   options={{ title: 'Edit Story', headerShown: false }}
+                />
+                <Stack.Screen
+                  name="ViewStory"
+                  component={ViewStoryScreen}
+                  options={{ title: 'View Story', headerShown: false, gestureEnabled: false }}
                 />
               </>
             ) : (
