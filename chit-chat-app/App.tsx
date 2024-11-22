@@ -22,6 +22,8 @@ import NewGroupScreen from './screen/NewGroupScreen';
 import NewUserScreen from './screen/NewUserScreen';
 import FriendRequestsScreen from './screen/FriendRequestsScreen';
 import StoriesScreen from './screen/StoriesScreen';
+import StoryViewScreen from './screen/StoryViewScreen';
+import CreateStoryScreen from './screen/EditStoryScreen';
 
 // Contexts and Config
 import { AuthenticatedUserContext } from './contexts/AuthContext';
@@ -230,6 +232,22 @@ const App: React.FC = () => {
                   name="Profile"
                   component={Profile}
                   options={{ title: 'Profile', headerShown: false }}
+                />
+                <Stack.Screen
+                  name="StoryView"
+                  component={StoryViewScreen}
+                  options={{ 
+                    headerShown: false,
+                    gestureEnabled: true
+                  }}
+                />
+                <Stack.Screen
+                  name="CreateStory"
+                  component={CreateStoryScreen}
+                  options={{ 
+                    headerShown: false,
+                    gestureEnabled: true
+                  }}
                 />
               </>
             ) : (

@@ -96,7 +96,12 @@ const StoriesScreen = ({ navigation }) => {
   const renderStoryItem = ({ item }) => {
     if (item.isCurrentUser) {
       return (
-        <TouchableOpacity style={styles.storyContainer}>
+        <TouchableOpacity 
+          style={styles.storyContainer}
+          onPress={() => navigation.navigate('CreateStory', {
+            user: CURRENT_USER,
+          })}
+        >
           {item.hasStory ? (
             <Image source={{ uri: item.imageUrl }} style={styles.storyImage} />
           ) : (
@@ -118,7 +123,18 @@ const StoriesScreen = ({ navigation }) => {
     }
 
     return (
-      <TouchableOpacity style={styles.storyContainer}>
+      <TouchableOpacity 
+        style={styles.storyContainer}
+        onPress={() => navigation.navigate('StoryView', { 
+          storyId: item.id,
+          username: item.username,
+          timePosted: "21h",
+          source: "Story",
+          avatarUrl: item.imageUrl,
+          storyUrl: item.imageUrl,
+          viewers: []
+        })}
+      >
         <Image source={{ uri: item.imageUrl }} style={styles.storyImage} />
         <View style={styles.userInfo}>
           <Text style={styles.username}>{item.username}</Text>
