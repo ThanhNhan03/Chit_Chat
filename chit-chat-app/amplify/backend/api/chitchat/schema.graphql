@@ -118,6 +118,8 @@ type Story @model @auth(rules: [{allow: public}]) {
   views: [StoryView] @hasMany(indexName: "byStory", fields: ["id"])
   created_at: AWSDateTime
   expires_at: AWSDateTime
+  music_start_time: Float    # Thời điểm bắt đầu (seconds)
+  music_end_time: Float      # Thời điểm kết thúc (seconds)
 }
 
 # Type để theo dõi người xem story

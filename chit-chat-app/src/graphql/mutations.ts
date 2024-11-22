@@ -922,6 +922,8 @@ export const createStory = /* GraphQL */ `mutation CreateStory(
     }
     created_at
     expires_at
+    music_start_time
+    music_end_time
     createdAt
     updatedAt
     __typename
@@ -975,6 +977,8 @@ export const updateStory = /* GraphQL */ `mutation UpdateStory(
     }
     created_at
     expires_at
+    music_start_time
+    music_end_time
     createdAt
     updatedAt
     __typename
@@ -1028,6 +1032,8 @@ export const deleteStory = /* GraphQL */ `mutation DeleteStory(
     }
     created_at
     expires_at
+    music_start_time
+    music_end_time
     createdAt
     updatedAt
     __typename
@@ -1069,6 +1075,8 @@ export const createStoryView = /* GraphQL */ `mutation CreateStoryView(
       music_id
       created_at
       expires_at
+      music_start_time
+      music_end_time
       createdAt
       updatedAt
       __typename
@@ -1115,6 +1123,8 @@ export const updateStoryView = /* GraphQL */ `mutation UpdateStoryView(
       music_id
       created_at
       expires_at
+      music_start_time
+      music_end_time
       createdAt
       updatedAt
       __typename
@@ -1161,6 +1171,8 @@ export const deleteStoryView = /* GraphQL */ `mutation DeleteStoryView(
       music_id
       created_at
       expires_at
+      music_start_time
+      music_end_time
       createdAt
       updatedAt
       __typename

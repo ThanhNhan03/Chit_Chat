@@ -993,6 +993,8 @@ export const getStory = /* GraphQL */ `query GetStory($id: ID!) {
     }
     created_at
     expires_at
+    music_start_time
+    music_end_time
     createdAt
     updatedAt
     __typename
@@ -1017,6 +1019,8 @@ export const listStories = /* GraphQL */ `query ListStories(
       music_id
       created_at
       expires_at
+      music_start_time
+      music_end_time
       createdAt
       updatedAt
       __typename
@@ -1055,6 +1059,8 @@ export const storiesByUser_id = /* GraphQL */ `query StoriesByUser_id(
       music_id
       created_at
       expires_at
+      music_start_time
+      music_end_time
       createdAt
       updatedAt
       __typename
@@ -1093,6 +1099,8 @@ export const storiesByMusic_id = /* GraphQL */ `query StoriesByMusic_id(
       music_id
       created_at
       expires_at
+      music_start_time
+      music_end_time
       createdAt
       updatedAt
       __typename
@@ -1134,6 +1142,8 @@ export const getStoryView = /* GraphQL */ `query GetStoryView($id: ID!) {
       music_id
       created_at
       expires_at
+      music_start_time
+      music_end_time
       createdAt
       updatedAt
       __typename

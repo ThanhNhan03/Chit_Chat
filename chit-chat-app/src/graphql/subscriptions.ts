@@ -853,6 +853,8 @@ export const onCreateStory = /* GraphQL */ `subscription OnCreateStory($filter: 
     }
     created_at
     expires_at
+    music_start_time
+    music_end_time
     createdAt
     updatedAt
     __typename
@@ -903,6 +905,8 @@ export const onUpdateStory = /* GraphQL */ `subscription OnUpdateStory($filter: 
     }
     created_at
     expires_at
+    music_start_time
+    music_end_time
     createdAt
     updatedAt
     __typename
@@ -953,6 +957,8 @@ export const onDeleteStory = /* GraphQL */ `subscription OnDeleteStory($filter: 
     }
     created_at
     expires_at
+    music_start_time
+    music_end_time
     createdAt
     updatedAt
     __typename
@@ -991,6 +997,8 @@ export const onCreateStoryView = /* GraphQL */ `subscription OnCreateStoryView($
       music_id
       created_at
       expires_at
+      music_start_time
+      music_end_time
       createdAt
       updatedAt
       __typename
@@ -1034,6 +1042,8 @@ export const onUpdateStoryView = /* GraphQL */ `subscription OnUpdateStoryView($
       music_id
       created_at
       expires_at
+      music_start_time
+      music_end_time
       createdAt
       updatedAt
       __typename
@@ -1077,6 +1087,8 @@ export const onDeleteStoryView = /* GraphQL */ `subscription OnDeleteStoryView($
       music_id
       created_at
       expires_at
+      music_start_time
+      music_end_time
       createdAt
       updatedAt
       __typename
