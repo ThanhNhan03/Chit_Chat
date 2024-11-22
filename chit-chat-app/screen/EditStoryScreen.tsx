@@ -8,6 +8,8 @@ import {
     Text,
     TextInput,
     ScrollView,
+    Alert,
+    ActivityIndicator,
 } from 'react-native';
 import Icon from '@expo/vector-icons/Ionicons';
 import { themeColors } from '../config/themeColor';
@@ -20,6 +22,9 @@ import { listMusic } from '../src/graphql/queries';
 import { Audio } from 'expo-av';
 import MusicPicker from '../components/MusicPicker';
 import { AppState } from 'react-native';
+import { uploadData } from 'aws-amplify/storage';
+import { createStory } from '../src/graphql/mutations';
+import { getCurrentUser } from 'aws-amplify/auth';
 
 Audio.setAudioModeAsync({
     allowsRecordingIOS: false,
@@ -53,6 +58,10 @@ interface TextOverlay {
     };
 }
 
+const CLOUDFRONT_URL = 'https://d1uil1dxdmhthh.cloudfront.net';
+
+const STORY_DURATION = 15; // 15 seconds
+
 const EditStoryScreen = ({ route, navigation }: EditStoryScreenProps) => {
     const { imageUri, mode, backgroundColor } = route.params;
     const [text, setText] = useState('');
@@ -66,6 +75,79 @@ const EditStoryScreen = ({ route, navigation }: EditStoryScreenProps) => {
     const [sound, setSound] = useState<Audio.Sound | null>(null);
     const [playingMusicId, setPlayingMusicId] = useState<string | null>(null);
     const [isPlayingOnStory, setIsPlayingOnStory] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetchCurrentUser();
+    }, []);
+
+    const fetchCurrentUser = async () => {
+        try {
+            const user = await getCurrentUser();
+            setCurrentUserId(user.userId);
+        } catch (error) {
+            console.error('Error fetching current user:', error);
+        }
+    };
+
+    const handleShareStory = async () => {
+        if (!currentUserId) {
+            Alert.alert('Error', 'User not authenticated');
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            let mediaUrl = '';
+
+            // Handle image/video upload if exists
+            if (imageUri) {
+                const response = await fetch(imageUri);
+                const blob = await response.blob();
+                const filename = `stories/${currentUserId}/${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+
+                await uploadData({
+                    key: filename,
+                    data: blob,
+                    options: {
+                        contentType: 'image/jpeg'
+                    }
+                }).result;
+
+                mediaUrl = `${CLOUDFRONT_URL}/public/${filename}`;
+            }
+
+            // Create story object với duration 15s
+            const storyInput = {
+                user_id: currentUserId,
+                type: mode || 'image',
+                media_url: mediaUrl || null,
+                text_content: text || null,
+                background_color: mode === 'text' ? currentBgColor : null,
+                thumbnail_url: mode === 'text' ? null : mediaUrl,
+                duration: STORY_DURATION, // Thêm duration 15s
+                music_id: selectedMusic?.id || null,
+                created_at: new Date().toISOString(),
+                expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                music_start_time: 0,
+                music_end_time: selectedMusic ? Math.min(selectedMusic.duration || 0, STORY_DURATION) : 0 // Giới hạn music end time không vượt quá 15s
+            };
+
+            // Create story in database
+            await client.graphql({
+                query: createStory,
+                variables: { input: storyInput }
+            });
+
+            navigation.goBack();
+        } catch (error) {
+            console.error('Error sharing story:', error);
+            Alert.alert('Error', 'Failed to share story');
+        } finally {
+            setIsUploading(false);
+        }
+    };
 
     // Cleanup function
     const stopSound = useCallback(async () => {
@@ -89,27 +171,30 @@ const EditStoryScreen = ({ route, navigation }: EditStoryScreenProps) => {
     // Update handleSelectMusic to auto play
     const handleSelectMusic = useCallback(async (music: Music) => {
         try {
-            // Stop current sound if any
             await stopSound();
             setSelectedMusic(music);
             setShowMusicPicker(false);
 
-            // Auto play the selected music
             const soundObject = new Audio.Sound();
             await soundObject.loadAsync(
                 { uri: music.url },
-                { shouldPlay: true }  // Auto play
+                { 
+                    shouldPlay: true,
+                    positionMillis: 0,
+                }
             );
             
             setSound(soundObject);
             setIsPlayingOnStory(true);
 
-            // Add status update listener
             soundObject.setOnPlaybackStatusUpdate((status) => {
                 if (status && 'didJustFinish' in status && status.didJustFinish) {
                     setIsPlayingOnStory(false);
-                    // Optional: Loop the music
-                    // soundObject.replayAsync();
+                }
+                // Dừng nhạc sau 15s
+                if (status && 'positionMillis' in status && status.positionMillis >= STORY_DURATION * 1000) {
+                    soundObject.stopAsync();
+                    setIsPlayingOnStory(false);
                 }
             });
         } catch (error) {
@@ -326,6 +411,24 @@ const EditStoryScreen = ({ route, navigation }: EditStoryScreenProps) => {
         }
     };
 
+    // Update the share button in render
+    const renderShareButton = () => (
+        <TouchableOpacity 
+            style={styles.shareButton} 
+            onPress={handleShareStory}
+            disabled={isUploading}
+        >
+            {isUploading ? (
+                <ActivityIndicator color="#fff" size="small" />
+            ) : (
+                <>
+                    <Text style={styles.shareButtonText}>Share now</Text>
+                    <Icon name="arrow-forward" size={20} color="#fff" />
+                </>
+            )}
+        </TouchableOpacity>
+    );
+
     if (mode === 'text') {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: currentBgColor }]}>
@@ -365,15 +468,24 @@ const EditStoryScreen = ({ route, navigation }: EditStoryScreenProps) => {
                 </View>
 
                 {showColorPicker && renderColorPicker()}
+                {renderSelectedMusic()}
 
                 <View style={styles.bottomTools}>
                     <View style={styles.toolsRow}>
-                        <TouchableOpacity style={styles.shareButton}>
-                            <Text style={styles.shareButtonText}>Share now</Text>
-                            <Icon name="arrow-forward" size={20} color="#fff" />
-                        </TouchableOpacity>
+                        {renderShareButton()}
                     </View>
                 </View>
+
+                {showMusicPicker && (
+                    <MusicPicker
+                        musicList={musicList}
+                        playingMusicId={playingMusicId}
+                        selectedMusic={selectedMusic}
+                        onClose={() => setShowMusicPicker(false)}
+                        onPlayPreview={handlePlayPreview}
+                        onSelectMusic={handleSelectMusic}
+                    />
+                )}
             </SafeAreaView>
         );
     }
@@ -407,10 +519,7 @@ const EditStoryScreen = ({ route, navigation }: EditStoryScreenProps) => {
 
             <View style={styles.bottomTools}>
                 <View style={styles.toolsRow}>
-                    <TouchableOpacity style={styles.shareButton}>
-                        <Text style={styles.shareButtonText}>Share now</Text>
-                        <Icon name="arrow-forward" size={20} color="#fff" />
-                    </TouchableOpacity>
+                    {renderShareButton()}
                 </View>
             </View>
 
