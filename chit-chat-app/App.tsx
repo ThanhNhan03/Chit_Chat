@@ -1,36 +1,40 @@
-import React, { createContext, useState, useEffect, useRef } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ActivityIndicator } from 'react-native';
-import { Amplify } from 'aws-amplify';
-import { getCurrentUser } from 'aws-amplify/auth';
-import * as Notifications from 'expo-notifications';
-import { ActionSheetProvider } from '@expo/react-native-action-sheet';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
+import React, { createContext, useState, useEffect, useRef } from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { ActivityIndicator } from "react-native";
+import { Amplify } from "aws-amplify";
+import { getCurrentUser } from "aws-amplify/auth";
+import * as Notifications from "expo-notifications";
+import { ActionSheetProvider } from "@expo/react-native-action-sheet";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Ionicons } from "@expo/vector-icons";
 import { themeColors } from "./config/themeColor";
 
 // Screens
-import Login from './screen/Login';
-import SignUp from './screen/SignUp';
-import ConfirmEmail from './screen/ConfirmEmail';
-import Chats from './screen/Chats';
-import SettingTemp from './screen/SettingTemp';
-import Chat from './screen/Chat';
-import SelectUserScreen from './screen/SelectUserScreen';
-import NewGroupScreen from './screen/NewGroupScreen';
-import NewUserScreen from './screen/NewUserScreen';
-import FriendRequestsScreen from './screen/FriendRequestsScreen';
-import StoriesScreen from './screen/StoriesScreen';
+import Login from "./screen/Login";
+import SignUp from "./screen/SignUp";
+import ConfirmEmail from "./screen/ConfirmEmail";
+import Chats from "./screen/Chats";
+import SettingTemp from "./screen/SettingTemp";
+import Chat from "./screen/Chat";
+import SelectUserScreen from "./screen/SelectUserScreen";
+import NewGroupScreen from "./screen/NewGroupScreen";
+import NewUserScreen from "./screen/NewUserScreen";
+import FriendRequestsScreen from "./screen/FriendRequestsScreen";
+import StoriesScreen from "./screen/StoriesScreen";
 
 // Contexts and Config
-import { AuthenticatedUserContext } from './contexts/AuthContext';
-import config from './aws-exports';
-import { initializeNotifications, requestNotificationPermissions } from './utils/notificationHelper';
-import GroupChat from './screen/GroupChat';
-import GroupChatSettings from './screen/GroupChatSettings';
-import Settings from './screen/Settings';
-import Profile from './screen/Profile';
+import { AuthenticatedUserContext } from "./contexts/AuthContext";
+import config from "./aws-exports";
+import {
+  initializeNotifications,
+  requestNotificationPermissions,
+} from "./utils/notificationHelper";
+import GroupChat from "./screen/GroupChat";
+import GroupChatSettings from "./screen/GroupChatSettings";
+import Settings from "./screen/Settings";
+import Profile from "./screen/Profile";
+import CreateStory from "./screen/CreateStory";
 
 Amplify.configure(config);
 const Stack = createNativeStackNavigator();
@@ -51,10 +55,10 @@ const TabNavigator = () => {
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: any;
-          if (route.name === 'Chats') {
-            iconName = 'chatbubble';
-          } else if (route.name === 'Stories') {
-            iconName = 'aperture';
+          if (route.name === "Chats") {
+            iconName = "chatbubble";
+          } else if (route.name === "Stories") {
+            iconName = "aperture";
           }
           return <Ionicons name={iconName} size={size} color={color} />;
         },
@@ -64,7 +68,7 @@ const TabNavigator = () => {
           height: 60,
           paddingBottom: 5,
           paddingTop: 5,
-          shadowColor: 'transparent',
+          shadowColor: "transparent",
         },
         tabBarIconStyle: {
           width: 30,
@@ -72,25 +76,25 @@ const TabNavigator = () => {
         },
         tabBarLabelStyle: {
           fontSize: 14,
-          fontWeight: 'bold',
+          fontWeight: "bold",
         },
       })}
     >
-      <Tab.Screen 
-        name="Chats" 
+      <Tab.Screen
+        name="Chats"
         component={Chats}
-        options={{ 
+        options={{
           headerShown: false,
-          title: 'Chats'
-        }} 
+          title: "Chats",
+        }}
       />
-      <Tab.Screen 
+      <Tab.Screen
         name="Stories"
         component={StoriesScreen}
-        options={{ 
+        options={{
           headerShown: false,
-          title: 'Stories'
-        }} 
+          title: "Stories",
+        }}
       />
     </Tab.Navigator>
   );
@@ -107,7 +111,9 @@ const App: React.FC = () => {
     setupApp();
     return () => {
       if (notificationListener.current) {
-        Notifications.removeNotificationSubscription(notificationListener.current);
+        Notifications.removeNotificationSubscription(
+          notificationListener.current
+        );
       }
       if (responseListener.current) {
         Notifications.removeNotificationSubscription(responseListener.current);
@@ -122,28 +128,30 @@ const App: React.FC = () => {
 
       await initializeNotifications();
       const hasPermission = await requestNotificationPermissions();
-      
+
       if (hasPermission) {
-        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-          // console.log('Received notification:', notification);
-        });
+        notificationListener.current =
+          Notifications.addNotificationReceivedListener((notification) => {
+            // console.log('Received notification:', notification);
+          });
 
-        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-          const data = response.notification.request.content.data;
+        responseListener.current =
+          Notifications.addNotificationResponseReceivedListener((response) => {
+            const data = response.notification.request.content.data;
 
-          if (data.type === 'message') {
-            navigationRef.current?.navigate('Chat', {
-              chatId: data.chatId,
-              userId: data.userId,
-              name: data.name
-            });
-          } else if (data.type === 'friend_request') {
-            navigationRef.current?.navigate('FriendRequests');
-          }
-        });
+            if (data.type === "message") {
+              navigationRef.current?.navigate("Chat", {
+                chatId: data.chatId,
+                userId: data.userId,
+                name: data.name,
+              });
+            } else if (data.type === "friend_request") {
+              navigationRef.current?.navigate("FriendRequests");
+            }
+          });
       }
     } catch (error) {
-      console.error('Error setting up app:', error);
+      console.error("Error setting up app:", error);
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -151,7 +159,7 @@ const App: React.FC = () => {
   };
 
   if (isLoading) {
-    return <ActivityIndicator/>;
+    return <ActivityIndicator />;
   }
 
   return (
@@ -166,7 +174,7 @@ const App: React.FC = () => {
                   component={TabNavigator}
                   options={{
                     headerShown: false,
-                    gestureEnabled: false
+                    gestureEnabled: false,
                   }}
                 />
 
@@ -190,46 +198,46 @@ const App: React.FC = () => {
                   component={Chat}
                   options={{
                     headerShown: false,
-                    gestureEnabled: true
+                    gestureEnabled: true,
                   }}
                 />
                 <Stack.Screen
                   name="SelectUser"
                   component={SelectUserScreen}
                   options={{
-                    title: 'Friend List',
-                    headerShown: false
+                    title: "Friend List",
+                    headerShown: false,
                   }}
                 />
                 <Stack.Screen
                   name="NewGroup"
                   component={NewGroupScreen}
-                  options={{ title: 'New Group', headerShown: false }}
+                  options={{ title: "New Group", headerShown: false }}
                 />
                 <Stack.Screen
                   name="NewUser"
                   component={NewUserScreen}
-                  options={{ title: 'Add Friend', headerShown: false }}
+                  options={{ title: "Add Friend", headerShown: false }}
                 />
-                <Stack.Screen 
+                <Stack.Screen
                   name="FriendRequests"
                   component={FriendRequestsScreen}
-                  options={{ title: 'Friend Request', headerShown: false }} 
+                  options={{ title: "Friend Request", headerShown: false }}
                 />
                 <Stack.Screen
                   name="GroupChat"
                   component={GroupChat}
-                  options={{ title: 'Group Chat', headerShown: false }}
+                  options={{ title: "Group Chat", headerShown: false }}
                 />
                 <Stack.Screen
                   name="GroupChatSettings"
                   component={GroupChatSettings}
-                  options={{ title: 'Group Settings', headerShown: false }}
+                  options={{ title: "Group Settings", headerShown: false }}
                 />
                 <Stack.Screen
                   name="Profile"
                   component={Profile}
-                  options={{ title: 'Profile', headerShown: false }}
+                  options={{ title: "Profile", headerShown: false }}
                 />
               </>
             ) : (
@@ -237,22 +245,23 @@ const App: React.FC = () => {
                 <Stack.Screen
                   name="Login"
                   component={Login}
-                  options={{ title: 'Log In', headerShown: false }}
+                  options={{ title: "Log In", headerShown: false }}
                 />
                 <Stack.Screen
                   name="SignUp"
                   component={SignUp}
-                  options={{ title: 'Sign Up', headerShown: false }}
+                  options={{ title: "Sign Up", headerShown: false }}
                 />
                 <Stack.Screen
                   name="ConfirmEmail"
                   component={ConfirmEmail}
-                  options={{ title: 'Confirm Email' }}
+                  options={{ title: "Confirm Email" }}
                 />
               </>
             )}
           </Stack.Navigator>
         </NavigationContainer>
+        {/* <CreateStory /> */}
       </AuthenticatedUserContext.Provider>
     </ActionSheetProvider>
   );

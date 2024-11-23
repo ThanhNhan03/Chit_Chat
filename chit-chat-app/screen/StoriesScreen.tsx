@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
@@ -8,9 +8,13 @@ import {
   Image,
   Text,
   SafeAreaView,
+  Modal,
+  Alert,
 } from "react-native";
 import { themeColors } from "../config/themeColor";
-import MainHeader from '../components/MainHeader';
+import MainHeader from "../components/MainHeader";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 
 const { width, height } = Dimensions.get("window");
 const COLUMN_COUNT = 2;
@@ -85,7 +89,8 @@ const DUMMY_STORIES = [
 const CURRENT_USER = {
   id: "current",
   username: "Your Story",
-  imageUrl: "https://i.pinimg.com/736x/48/7f/80/487f80f8f2ec327633ad5e54c2a5cbe6.jpg", 
+  imageUrl:
+    "https://i.pinimg.com/736x/48/7f/80/487f80f8f2ec327633ad5e54c2a5cbe6.jpg",
   hasStory: false,
   isCurrentUser: true,
 };
@@ -93,17 +98,57 @@ const CURRENT_USER = {
 const STORIES_DATA = [CURRENT_USER, ...DUMMY_STORIES];
 
 const StoriesScreen = ({ navigation }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  const handleChooseStory = (item) => {
+    if (item.isCurrentUser) {
+      setIsVisible(true);
+    }
+  };
+
+  const handlePickImage = async () => {
+    setIsVisible(false);
+    try {
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert(
+          "Permission Required",
+          "Please allow access to your photo library"
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const imageUri = result.assets[0].uri;
+      }
+    } catch (error) {
+      console.log("Error picking image:", error);
+      Alert.alert("Error", "Failed to pick image");
+    }
+  };
+
   const renderStoryItem = ({ item }) => {
     if (item.isCurrentUser) {
       return (
-        <TouchableOpacity style={styles.storyContainer}>
+        <TouchableOpacity
+          onPress={() => handleChooseStory(item)}
+          style={styles.storyContainer}
+        >
           {item.hasStory ? (
             <Image source={{ uri: item.imageUrl }} style={styles.storyImage} />
           ) : (
             <View style={styles.currentUserContainer}>
-              <Image 
-                source={{ uri: item.imageUrl }} 
-                style={styles.avatarImage} 
+              <Image
+                source={{ uri: item.imageUrl }}
+                style={styles.avatarImage}
               />
               <View style={styles.addButton}>
                 <Text style={styles.plusIcon}>+</Text>
@@ -124,17 +169,95 @@ const StoriesScreen = ({ navigation }) => {
           <Text style={styles.username}>{item.username}</Text>
         </View>
         <View style={styles.storyRingContainer}>
-          <Image 
-            source={{ uri: item.imageUrl }} 
-            style={styles.avatarInRing} 
-          />
+          <Image source={{ uri: item.imageUrl }} style={styles.avatarInRing} />
         </View>
       </TouchableOpacity>
     );
   };
 
+  const renderModal = () => {
+    return (
+      <Modal
+        animationType="slide"
+        transparent={true}
+        onDismiss={() => {
+          console.log("he");
+        }}
+        onRequestClose={() => {
+          console.log("chay");
+
+          setIsVisible(false);
+        }}
+        visible={isVisible}
+        style={{
+          backgroundColor: "red",
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: "#00000080",
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: "#00000080",
+              borderRadius: 12,
+            }}
+          >
+            <Ionicons
+              onPress={() => {
+                setIsVisible(false);
+              }}
+              style={{
+                padding: 12,
+                alignSelf: "flex-end",
+              }}
+              size={28}
+              name="close"
+              color="red"
+            />
+            <View
+              style={{
+                paddingHorizontal: 20,
+                gap: 20,
+                paddingBottom: 20,
+                flexDirection: "row",
+                borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ChooseItem
+                onPress={handlePickImage}
+                label="Camera"
+                icon="camera-outline"
+              />
+              <ChooseItem onPress={null} label="Văn bản" icon="text-outline" />
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+  const ChooseItem = ({ label, icon, onPress }) => {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.6}
+        style={styles.chooseItem}
+      >
+        <Ionicons name={icon} size={24} />
+        <Text style={styles.chooseItemText}>{label}</Text>
+      </TouchableOpacity>
+    );
+  };
   return (
     <SafeAreaView style={styles.safeArea}>
+      {isVisible && renderModal()}
       <View style={styles.container}>
         <MainHeader title="Stories" />
         <FlatList
@@ -210,39 +333,39 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 2,
     borderColor: themeColors.primary,
-    overflow: 'hidden',    // Đảm bảo avatar không tràn ra ngoài
+    overflow: "hidden", // Đảm bảo avatar không tràn ra ngoài
     backgroundColor: themeColors.surface,
-    elevation: 4,         // Thêm độ nổi
+    elevation: 4, // Thêm độ nổi
   },
   avatarInRing: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 20,     // Làm tròn avatar
+    width: "100%",
+    height: "100%",
+    borderRadius: 20, // Làm tròn avatar
   },
   currentUserContainer: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: themeColors.surface,
   },
 
   avatarImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     borderRadius: 12,
   },
 
   addButton: {
-    position: 'absolute',
+    position: "absolute",
     top: ITEM_HEIGHT * 0.05,
     left: ITEM_WIDTH * 0.08,
     width: 28,
     height: 28,
     borderRadius: 14,
     backgroundColor: themeColors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
     borderColor: themeColors.surface,
     elevation: 4,
@@ -250,10 +373,23 @@ const styles = StyleSheet.create({
   },
 
   plusIcon: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: -2,
+  },
+  chooseItem: {
+    padding: 24,
+    backgroundColor: "#9B59B6",
+    alignItems: "center",
+    aspectRatio: 1,
+    justifyContent: "center",
+    borderRadius: 18,
+    gap: 12,
+  },
+  chooseItemText: {
+    fontSize: 16,
+    fontWeight: "500",
   },
 });
 
