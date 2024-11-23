@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Image, Text, ScrollView, Dimensions } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image, Text, ScrollView, Dimensions, TextInput } from 'react-native';
 import Icon from '@expo/vector-icons/Ionicons';
 import { themeColors } from '../config/themeColor';
 import { Music } from '../src/API';
@@ -23,6 +23,12 @@ const MusicPicker = ({
     onPlayPreview,
     onSelectMusic,
 }: MusicPickerProps) => {
+    const [searchQuery, setSearchQuery] = useState('');
+    const filteredMusicList = musicList.filter(music => 
+        music.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        music.artist.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     return (
         <View style={styles.musicPickerContainer}>
             <View style={styles.musicPickerHeader}>
@@ -31,9 +37,20 @@ const MusicPicker = ({
                     <Icon name="close" size={24} color="#fff" />
                 </TouchableOpacity>
             </View>
+
+            <View style={styles.searchContainer}>
+                <Icon name="search" size={20} color="rgba(255,255,255,0.5)" />
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search music or artist..."
+                    placeholderTextColor="rgba(255,255,255,0.5)"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                />
+            </View>
             
             <ScrollView style={styles.musicList}>
-                {musicList.map((music) => (
+                {filteredMusicList.map((music) => (
                     <TouchableOpacity 
                         key={music.id} 
                         style={[
@@ -146,10 +163,25 @@ const styles = StyleSheet.create({
         marginLeft: 'auto'
     },
     playingButton: {
-        backgroundColor: themeColors.secondary,
+        
     },
     selectedMusicItem: {
         backgroundColor: 'rgba(255,255,255,0.1)',
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderRadius: 10,
+        paddingHorizontal: 15,
+        marginBottom: 15,
+    },
+    searchInput: {
+        flex: 1,
+        color: '#fff',
+        paddingVertical: 10,
+        paddingLeft: 10,
+        fontSize: 16,
     },
 });
 

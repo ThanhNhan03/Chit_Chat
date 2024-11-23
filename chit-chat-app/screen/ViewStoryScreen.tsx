@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import {
     View,
     StyleSheet,
@@ -9,6 +9,7 @@ import {
     Animated,
     Text,
     TouchableWithoutFeedback,
+    Alert,
 } from 'react-native';
 import Icon from '@expo/vector-icons/Ionicons';
 import { themeColors } from '../config/themeColor';
@@ -17,6 +18,8 @@ import { Audio, AVPlaybackStatus } from 'expo-av';
 import { generateClient, GraphQLResult } from 'aws-amplify/api';
 import { useFocusEffect } from '@react-navigation/native';
 import { BackHandler } from 'react-native';
+import { AuthenticatedUserContext } from '../contexts/AuthContext';
+import { deleteStory } from '../src/graphql/mutations';
 
 const client = generateClient();
 
@@ -113,6 +116,7 @@ const formatTimeAgo = (dateString: string) => {
 };
 
 const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
+    const { user } = useContext(AuthenticatedUserContext);
     const { 
         stories: originalStories, 
         initialStoryIndex, 
@@ -122,10 +126,10 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
         isCurrentUser 
     } = route.params;
     
-    // Sort stories by created_at when component mounts
-    const [stories] = useState(() => 
+    // Thay đổi từ useState readonly sang useState có thể update
+    const [stories, setStories] = useState(() => 
         [...originalStories].sort((a, b) => 
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         )
     );
     const [currentIndex, setCurrentIndex] = useState(() => {
@@ -289,7 +293,6 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
         };
     }, [currentIndex]);
 
-    // Thêm useEffect để cleanup khi component unmount
     useEffect(() => {
         return () => {
             isMountedRef.current = false;
@@ -327,6 +330,73 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
         }
     };
 
+    const handleDeleteStory = async () => {
+        if (!user?.userId || user.userId !== currentStory.user_id) {
+            console.log('Unauthorized to delete this story');
+            return;
+        }
+
+        Alert.alert(
+            "Delete Story",
+            "Are you sure you want to delete this story?",
+            [
+                {
+                    text: "Cancel",
+                    style: "cancel"
+                },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            // Cleanup trước khi xóa
+                            await cleanupSound();
+                            progress.stopAnimation();
+
+                            await client.graphql({
+                                query: deleteStory,
+                                variables: {
+                                    input: {
+                                        id: currentStory.id
+                                    }
+                                }
+                            });
+
+                            // Xóa story khỏi danh sách và xử lý navigation
+                            const newStories = stories.filter(s => s.id !== currentStory.id);
+
+                            if (newStories.length === 0) {
+                                // Nếu không còn story nào, quay về màn hình trước
+                                handleBack();
+                            } else {
+                                // Cập nhật stories trước
+                                setStories(newStories);
+                                
+                                // Sau đó mới cập nhật currentIndex nếu cần
+                                if (currentIndex >= newStories.length) {
+                                    setCurrentIndex(newStories.length - 1);
+                                }
+                            }
+
+                        } catch (error) {
+                            console.error('Error deleting story:', error);
+                            Alert.alert(
+                                "Error",
+                                "Failed to delete story. Please try again."
+                            );
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    // Thêm useEffect để xử lý khi stories hoặc currentIndex thay đổi
+    useEffect(() => {
+        if (stories.length === 0) {
+            handleBack();
+        }
+    }, [stories, currentIndex]);
 
     return (
         <SafeAreaView style={[
@@ -413,6 +483,14 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
                                 size={24} 
                                 color="#fff" 
                             />
+                        </TouchableOpacity>
+                    )}
+                    {user?.userId === currentStory.user_id && (
+                        <TouchableOpacity 
+                            style={styles.headerIcon}
+                            onPress={handleDeleteStory}
+                        >
+                            <Icon name="trash-outline" size={24} color="#fff" />
                         </TouchableOpacity>
                     )}
                     <TouchableOpacity 

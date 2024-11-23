@@ -8,6 +8,7 @@ import {
   Image,
   Text,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import { themeColors } from "../config/themeColor";
 import MainHeader from '../components/MainHeader';
@@ -17,6 +18,7 @@ import { GetUserQuery } from '../src/API';
 import { listContacts, listStories} from '../src/graphql/queries'
 import { getUser } from '../src/graphql/queries'
 import { listStoryViews } from '../src/graphql/queries'
+import { useFocusEffect } from '@react-navigation/native';
 
 const client = generateClient();
 
@@ -60,6 +62,7 @@ const StoriesScreen = ({ navigation }) => {
   const [otherStories, setOtherStories] = useState<Story[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [friendIds, setFriendIds] = useState<string[]>([]);
+  const [lastUpdate, setLastUpdate] = useState(new Date());
 
   useEffect(() => {
     fetchUserData();
@@ -71,6 +74,14 @@ const StoriesScreen = ({ navigation }) => {
       fetchStories();
     }
   }, [friendIds]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (friendIds.length > 0) {
+        fetchStories();
+      }
+    }, [friendIds])
+  );
 
   const fetchUserData = async () => {
     if (!user?.userId) return;
@@ -131,82 +142,90 @@ const StoriesScreen = ({ navigation }) => {
         query: listStories,
         variables: {
           filter: {
-            and: [
-              {
-                expires_at: {
-                  gt: now
-                }
-              },
-              {
-                or: friendIds.map(id => ({
-                  user_id: { eq: id }
-                }))
-              }
-            ]
+            expires_at: {
+              gt: now
+            }
           }
         }
       });
 
-      if (response.data?.listStories?.items) {
-        const stories = response.data.listStories.items as Story[];
-        
-        // 2. Fetch user details for friend stories
-        const friendUserIds = [...new Set(stories
-          .filter(story => story.user_id !== user?.userId)
-          .map(story => story.user_id))];
-
-        const userDetailsPromises = friendUserIds.map(userId =>
-          client.graphql({
-            query: getUser,
-            variables: { id: userId }
-          })
-        );
-
-        const userDetailsResponses = await Promise.all(userDetailsPromises);
-        const userDetails = userDetailsResponses.reduce((acc, response) => {
-          if (response.data?.getUser) {
-            acc[response.data.getUser.id] = response.data.getUser;
-          }
-          return acc;
-        }, {});
-
-        // 3. Map stories with user details and sort by created_at
-        const currentUserStories = stories
-          .filter(story => story.user_id === user?.userId)
-          .map(story => ({
-            ...story,
-            user: {
-              id: user?.userId || '',
-              name: userData.name,
-              profile_picture: userData.profile_picture
-            }
-          }))
-          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-        const friendStories = stories
-          .filter(story => story.user_id !== user?.userId && friendIds.includes(story.user_id))
-          .map(story => ({
-            ...story,
-            user: userDetails[story.user_id] ? {
-              id: story.user_id,
-              name: userDetails[story.user_id].name,
-              profile_picture: userDetails[story.user_id].profile_picture
-            } : {
-              id: story.user_id,
-              name: 'Unknown',
-              profile_picture: ''
-            }
-          }))
-          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        
-        setUserStories(currentUserStories);
-        setOtherStories(friendStories);
+      if (!response.data?.listStories?.items) {
+        setUserStories([]);
+        setOtherStories([]);
+        return;
       }
+
+      const stories = response.data.listStories.items as Story[];
+      
+      const validStories = stories.filter(story => 
+        friendIds.includes(story.user_id)
+      );
+      
+      const friendUserIds = [...new Set(validStories
+        .filter(story => story.user_id !== user?.userId)
+        .map(story => story.user_id))];
+
+      const userDetailsPromises = friendUserIds.map(userId =>
+        client.graphql({
+          query: getUser,
+          variables: { id: userId }
+        })
+      );
+
+      const userDetailsResponses = await Promise.all(userDetailsPromises);
+      const userDetails = userDetailsResponses.reduce((acc, response) => {
+        if (response.data?.getUser) {
+          acc[response.data.getUser.id] = response.data.getUser;
+        }
+        return acc;
+      }, {});
+
+      const currentUserStories = validStories
+        .filter(story => story.user_id === user?.userId)
+        .map(story => ({
+          ...story,
+          user: {
+            id: user?.userId || '',
+            name: userData.name,
+            profile_picture: userData.profile_picture
+          }
+        }))
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      const friendStories = validStories
+        .filter(story => story.user_id !== user?.userId && friendIds.includes(story.user_id))
+        .map(story => ({
+          ...story,
+          user: userDetails[story.user_id] ? {
+            id: story.user_id,
+            name: userDetails[story.user_id].name,
+            profile_picture: userDetails[story.user_id].profile_picture
+          } : {
+            id: story.user_id,
+            name: 'Unknown',
+            profile_picture: ''
+          }
+        }))
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      setUserStories(currentUserStories);
+      setOtherStories(friendStories);
+      setLastUpdate(new Date());
     } catch (error) {
       console.error('Error fetching stories:', error);
+      Alert.alert(
+        'Error',
+        'Failed to load stories. Pull down to refresh.'
+      );
+      setUserStories([]);
+      setOtherStories([]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    fetchStories();
   };
 
   const renderAddStoryButton = () => {
@@ -248,16 +267,18 @@ const StoriesScreen = ({ navigation }) => {
           allStories: [story]
         };
       } else {
-        // Add story to allStories array and sort by created_at
         acc[story.user_id].allStories.push(story);
         acc[story.user_id].allStories.sort((a, b) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
+        Object.assign(acc[story.user_id], {
+          ...acc[story.user_id].allStories[0],
+          allStories: acc[story.user_id].allStories
+        });
       }
       return acc;
     }, {});
     
-    // Sort users by their most recent story
     return Object.values(grouped).sort((a, b) => {
       const latestA = a.allStories[0].created_at;
       const latestB = b.allStories[0].created_at;
@@ -311,13 +332,14 @@ const StoriesScreen = ({ navigation }) => {
             <Image 
               source={{ uri: item.user.profile_picture }} 
               style={styles.avatarInRing} 
-              defaultSource={require('../assets/default-avatar.png')}
+              
             />
           ) : (
             <View style={[styles.avatarInRing, { backgroundColor: themeColors.primary }]}>
-              <Text style={styles.avatarText}>
-                {isCurrentUser ? 'Y' : item.user.name?.charAt(0)?.toUpperCase()}
-              </Text>
+              <Image 
+                source={require('../assets/default-avatar.png')} 
+                style={styles.avatarInRing}
+              />
             </View>
           )}
         </View>
@@ -340,7 +362,7 @@ const StoriesScreen = ({ navigation }) => {
           numColumns={COLUMN_COUNT}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
-          onRefresh={fetchStories}
+          onRefresh={handleRefresh}
           refreshing={isLoading}
         />
       </View>
