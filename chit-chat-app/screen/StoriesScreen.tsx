@@ -45,6 +45,11 @@ interface Story {
   };
 }
 
+// Thêm interface mới để định nghĩa kiểu dữ liệu cho grouped stories
+interface GroupedStory extends Story {
+  allStories: Story[];
+}
+
 const StoriesScreen = ({ navigation }) => {
   const { user } = useContext(AuthenticatedUserContext);
   const [userData, setUserData] = useState({
@@ -122,7 +127,6 @@ const StoriesScreen = ({ navigation }) => {
     try {
       const now = new Date().toISOString();
       
-      // 1. Fetch stories với or operator
       const response = await client.graphql({
         query: listStories,
         variables: {
@@ -166,7 +170,7 @@ const StoriesScreen = ({ navigation }) => {
           return acc;
         }, {});
 
-        // 3. Map stories with user details
+        // 3. Map stories with user details and sort by created_at
         const currentUserStories = stories
           .filter(story => story.user_id === user?.userId)
           .map(story => ({
@@ -176,7 +180,8 @@ const StoriesScreen = ({ navigation }) => {
               name: userData.name,
               profile_picture: userData.profile_picture
             }
-          }));
+          }))
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
         const friendStories = stories
           .filter(story => story.user_id !== user?.userId && friendIds.includes(story.user_id))
@@ -191,7 +196,8 @@ const StoriesScreen = ({ navigation }) => {
               name: 'Unknown',
               profile_picture: ''
             }
-          }));
+          }))
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         
         setUserStories(currentUserStories);
         setOtherStories(friendStories);
@@ -214,6 +220,7 @@ const StoriesScreen = ({ navigation }) => {
             <Image 
               source={{ uri: userData.profile_picture }} 
               style={styles.avatarImage}
+              defaultSource={require('../assets/default-avatar.png')}
             />
           ) : (
             <View style={styles.avatarFallback}>
@@ -233,25 +240,37 @@ const StoriesScreen = ({ navigation }) => {
     );
   };
 
-  const groupStoriesByUser = (stories: Story[]) => {
-    const grouped = stories.reduce((acc, story) => {
+  const groupStoriesByUser = (stories: Story[]): GroupedStory[] => {
+    const grouped = stories.reduce<Record<string, GroupedStory>>((acc, story) => {
       if (!acc[story.user_id]) {
         acc[story.user_id] = {
-          ...story, // Lấy story đầu tiên làm preview
+          ...story,
           allStories: [story]
         };
       } else {
+        // Add story to allStories array and sort by created_at
         acc[story.user_id].allStories.push(story);
+        acc[story.user_id].allStories.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
       }
       return acc;
     }, {});
-    return Object.values(grouped);
+    
+    // Sort users by their most recent story
+    return Object.values(grouped).sort((a, b) => {
+      const latestA = a.allStories[0].created_at;
+      const latestB = b.allStories[0].created_at;
+      return new Date(latestB).getTime() - new Date(latestA).getTime();
+    });
   };
 
-  const renderStoryItem = ({ item }) => {
-    if (item.isAddStory) {
+  const renderStoryItem = ({ item }: { item: GroupedStory | { id: string; isAddStory: boolean } }) => {
+    if ('isAddStory' in item) {
       return renderAddStoryButton();
     }
+
+    const isCurrentUser = item.user_id === user?.userId;
 
     return (
       <TouchableOpacity 
@@ -262,11 +281,12 @@ const StoriesScreen = ({ navigation }) => {
             initialStoryIndex: 0,
             username: item.user.name,
             userAvatar: item.user.profile_picture,
-            previousScreen: 'Stories'
+            previousScreen: 'Stories',
+            isCurrentUser: isCurrentUser
           });
         }}
       >
-        {item.type === 'image' ? (
+        {item.type === 'image' && item.media_url ? (
           <Image 
             source={{ uri: item.media_url }} 
             style={styles.storyImage} 
@@ -279,16 +299,27 @@ const StoriesScreen = ({ navigation }) => {
           </View>
         )}
         <View style={styles.userInfo}>
-          <Text style={styles.username}>{item.user.name}</Text>
+          <Text style={styles.username}>
+            {isCurrentUser ? 'You' : item.user.name}
+          </Text>
         </View>
         <View style={[
           styles.storyRingContainer,
-          item.user_id === user?.userId && styles.activeStoryRing
+          isCurrentUser && styles.activeStoryRing
         ]}>
-          <Image 
-            source={{ uri: item.user.profile_picture }} 
-            style={styles.avatarInRing} 
-          />
+          {item.user.profile_picture ? (
+            <Image 
+              source={{ uri: item.user.profile_picture }} 
+              style={styles.avatarInRing} 
+              defaultSource={require('../assets/default-avatar.png')}
+            />
+          ) : (
+            <View style={[styles.avatarInRing, { backgroundColor: themeColors.primary }]}>
+              <Text style={styles.avatarText}>
+                {isCurrentUser ? 'Y' : item.user.name?.charAt(0)?.toUpperCase()}
+              </Text>
+            </View>
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -300,7 +331,7 @@ const StoriesScreen = ({ navigation }) => {
         <MainHeader title="Stories" />
         <FlatList
           data={[
-            { id: 'add-story', isAddStory: true },
+            { id: 'add-story', isAddStory: true } as const,
             ...groupStoriesByUser(userStories),
             ...groupStoriesByUser(otherStories)
           ]}

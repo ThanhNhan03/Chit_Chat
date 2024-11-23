@@ -15,7 +15,6 @@ import Login from './screen/Login';
 import SignUp from './screen/SignUp';
 import ConfirmEmail from './screen/ConfirmEmail';
 import Chats from './screen/Chats';
-import SettingTemp from './screen/SettingTemp';
 import Chat from './screen/Chat';
 import SelectUserScreen from './screen/SelectUserScreen';
 import NewGroupScreen from './screen/NewGroupScreen';
