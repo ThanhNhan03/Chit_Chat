@@ -21,6 +21,8 @@ import NewGroupScreen from './screen/NewGroupScreen';
 import NewUserScreen from './screen/NewUserScreen';
 import FriendRequestsScreen from './screen/FriendRequestsScreen';
 import StoriesScreen from './screen/StoriesScreen';
+import ForgotPassword from './screen/ForgotPassword';
+
 
 // Contexts and Config
 import { AuthenticatedUserContext } from './contexts/AuthContext';
@@ -33,6 +35,7 @@ import Profile from './screen/Profile';
 import AddStoryScreen from './screen/AddStoryScreen';
 import EditStoryScreen from './screen/EditStoryScreen';
 import ViewStoryScreen from './screen/ViewStoryScreen';
+import ResetPassword from './screen/ ResetPassword';
 
 Amplify.configure(config);
 const Stack = createNativeStackNavigator();
@@ -265,6 +268,16 @@ const App: React.FC = () => {
                   name="ConfirmEmail"
                   component={ConfirmEmail}
                   options={{ title: 'Confirm Email' }}
+                />
+                <Stack.Screen
+                  name="ForgotPassword"
+                  component={ForgotPassword}
+                  options={{ title: 'Forgot Password', headerShown: false }}
+                />
+                <Stack.Screen
+                  name="ResetPassword"
+                  component={ResetPassword}
+                  options={{ title: 'Reset Password', headerShown: false }}
                 />
               </>
             )}
