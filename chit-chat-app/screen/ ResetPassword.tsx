@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,7 +8,8 @@ import {
   Alert,
   SafeAreaView,
 } from 'react-native';
-import { confirmResetPassword } from 'aws-amplify/auth';
+import { confirmResetPassword, updatePassword } from 'aws-amplify/auth';
+import { AuthenticatedUserContext } from '../contexts/AuthContext';
 
 interface ResetPasswordProps {
   route: any;
@@ -16,16 +17,27 @@ interface ResetPasswordProps {
 }
 
 const ResetPassword: React.FC<ResetPasswordProps> = ({ route, navigation }) => {
-  const { email } = route.params;
+  const { user } = useContext(AuthenticatedUserContext);
+  const { email } = route.params || {};
   const [code, setCode] = useState('');
+  const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleResetPassword = async () => {
-    if (!code || !newPassword || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
+    if (user) {
+      // For logged in users
+      if (!oldPassword || !newPassword || !confirmPassword) {
+        Alert.alert('Error', 'Please fill in all fields');
+        return;
+      }
+    } else {
+      // For non-logged in users
+      if (!code || !newPassword || !confirmPassword) {
+        Alert.alert('Error', 'Please fill in all fields');
+        return;
+      }
     }
 
     if (newPassword !== confirmPassword) {
@@ -35,24 +47,40 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ route, navigation }) => {
 
     try {
       setLoading(true);
-      await confirmResetPassword({
-        username: email,
-        confirmationCode: code,
-        newPassword,
-      });
+      
+      if (user) {
+        // Change password for logged in user
+        await updatePassword({
+          oldPassword,
+          newPassword
+        });
+      } else {
+        // Reset password for non-logged in user
+        await confirmResetPassword({
+          username: email,
+          confirmationCode: code,
+          newPassword,
+        });
+      }
       
       Alert.alert(
         'Success',
-        'Password has been reset successfully',
+        'Password has been changed successfully',
         [
           {
             text: 'OK',
-            onPress: () => navigation.navigate('Login'),
+            onPress: () => {
+              if (!user) {
+                navigation.navigate('Login');
+              } else {
+                navigation.goBack();
+              }
+            },
           },
         ]
       );
     } catch (error: any) {
-      console.error('Error in reset password:', error);
+      console.error('Error in password change:', error);
       Alert.alert('Error', error.message);
     } finally {
       setLoading(false);
@@ -62,16 +90,32 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ route, navigation }) => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.form}>
-        <Text style={styles.title}>Reset Password</Text>
-        <Text style={styles.subtitle}>Enter the code sent to your email</Text>
+        <Text style={styles.title}>
+          {user ? 'Change Password' : 'Reset Password'}
+        </Text>
+        {!user && (
+          <Text style={styles.subtitle}>Enter the code sent to your email</Text>
+        )}
 
-        <TextInput
-          style={styles.input}
-          placeholder="Verification Code"
-          value={code}
-          onChangeText={setCode}
-          keyboardType="number-pad"
-        />
+        {!user && (
+          <TextInput
+            style={styles.input}
+            placeholder="Verification Code"
+            value={code}
+            onChangeText={setCode}
+            keyboardType="number-pad"
+          />
+        )}
+
+        {user && (
+          <TextInput
+            style={styles.input}
+            placeholder="Current Password"
+            secureTextEntry
+            value={oldPassword}
+            onChangeText={setOldPassword}
+          />
+        )}
 
         <TextInput
           style={styles.input}
@@ -95,16 +139,18 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ route, navigation }) => {
           disabled={loading}
         >
           <Text style={styles.buttonText}>
-            {loading ? 'Resetting...' : 'Reset Password'}
+            {loading ? 'Processing...' : (user ? 'Change Password' : 'Reset Password')}
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.resendButton}
-          onPress={() => navigation.replace('ForgotPassword')}
-        >
-          <Text style={styles.resendButtonText}>Resend Code</Text>
-        </TouchableOpacity>
+        {!user && (
+          <TouchableOpacity 
+            style={styles.resendButton}
+            onPress={() => navigation.replace('ForgotPassword')}
+          >
+            <Text style={styles.resendButtonText}>Resend Code</Text>
+          </TouchableOpacity>
+        )}
       </SafeAreaView>
     </View>
   );

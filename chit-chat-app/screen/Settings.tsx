@@ -67,6 +67,10 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
     }
   };
 
+  const handleChangePassword = () => {
+    navigation.navigate('ResetPassword');
+  };
+
   const getInitials = (email: string) => {
     return email?.substring(0, 2).toUpperCase() || 'U';
   };
@@ -147,6 +151,19 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
                   <Ionicons name="person-outline" size={22} color="#2196F3" />
                 </View>
                 <Text style={styles.optionText}>Account</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={themeColors.textSecondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.option}
+              onPress={handleChangePassword}
+            >
+              <View style={styles.optionLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: '#FFF3E0' }]}>
+                  <Ionicons name="key-outline" size={22} color="#FF9800" />
+                </View>
+                <Text style={styles.optionText}>Change Password</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={themeColors.textSecondary} />
             </TouchableOpacity>
