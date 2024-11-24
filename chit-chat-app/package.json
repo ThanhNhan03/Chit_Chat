@@ -27,7 +27,6 @@
     "expo-device": "~6.0.2",
     "expo-font": "~12.0.10",
     "expo-image-crop": "^1.0.4",
-    "expo-image-manipulator": "^13.0.5",
     "expo-image-picker": "^15.0.7",
     "expo-media-library": "~16.0.5",
     "expo-notifications": "~0.28.19",
