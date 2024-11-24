@@ -57,11 +57,12 @@ type FriendRequests @model @auth(rules: [{allow: public}]) {
 type User @model @auth(rules: [{allow: public}]) {
   id: ID!
   name: String
-  email: String! @index(name: "usersByEmail") # Sử dụng @index cho email
+  email: String! @index(name: "usersByEmail")
   password: String!
   profile_picture: String
   status: String
   last_seen: AWSDateTime
+  push_token: String
   FriendChats: [UserFriendChat] @hasMany(indexName: "byUser", fields: ["id"])
   GroupChats: [UserGroupChat] @hasMany(indexName: "byUser", fields: ["id"])
   Contacts: [Contact] @hasMany(indexName: "contactsByUser", fields: ["id"])

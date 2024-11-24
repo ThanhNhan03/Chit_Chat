@@ -576,6 +576,7 @@ export const getUser = /* GraphQL */ `query GetUser($id: ID!) {
     profile_picture
     status
     last_seen
+    push_token
     FriendChats {
       nextToken
       __typename
@@ -628,6 +629,7 @@ export const listUsers = /* GraphQL */ `query ListUsers(
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -659,6 +661,7 @@ export const usersByEmail = /* GraphQL */ `query UsersByEmail(
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -684,6 +687,7 @@ export const getUserGroupChat = /* GraphQL */ `query GetUserGroupChat($id: ID!) 
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -805,6 +809,7 @@ export const getUserFriendChat = /* GraphQL */ `query GetUserFriendChat($id: ID!
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -964,6 +969,7 @@ export const getStory = /* GraphQL */ `query GetStory($id: ID!) {
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -1126,6 +1132,7 @@ export const getStoryView = /* GraphQL */ `query GetStoryView($id: ID!) {
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename

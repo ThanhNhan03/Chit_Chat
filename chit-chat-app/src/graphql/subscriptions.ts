@@ -368,6 +368,7 @@ export const onCreateUser = /* GraphQL */ `subscription OnCreateUser($filter: Mo
     profile_picture
     status
     last_seen
+    push_token
     FriendChats {
       nextToken
       __typename
@@ -418,6 +419,7 @@ export const onUpdateUser = /* GraphQL */ `subscription OnUpdateUser($filter: Mo
     profile_picture
     status
     last_seen
+    push_token
     FriendChats {
       nextToken
       __typename
@@ -468,6 +470,7 @@ export const onDeleteUser = /* GraphQL */ `subscription OnDeleteUser($filter: Mo
     profile_picture
     status
     last_seen
+    push_token
     FriendChats {
       nextToken
       __typename
@@ -524,6 +527,7 @@ export const onCreateUserGroupChat = /* GraphQL */ `subscription OnCreateUserGro
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -565,6 +569,7 @@ export const onUpdateUserGroupChat = /* GraphQL */ `subscription OnUpdateUserGro
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -606,6 +611,7 @@ export const onDeleteUserGroupChat = /* GraphQL */ `subscription OnDeleteUserGro
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -647,6 +653,7 @@ export const onCreateUserFriendChat = /* GraphQL */ `subscription OnCreateUserFr
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -685,6 +692,7 @@ export const onUpdateUserFriendChat = /* GraphQL */ `subscription OnUpdateUserFr
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -723,6 +731,7 @@ export const onDeleteUserFriendChat = /* GraphQL */ `subscription OnDeleteUserFr
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -824,6 +833,7 @@ export const onCreateStory = /* GraphQL */ `subscription OnCreateStory($filter: 
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -876,6 +886,7 @@ export const onUpdateStory = /* GraphQL */ `subscription OnUpdateStory($filter: 
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -928,6 +939,7 @@ export const onDeleteStory = /* GraphQL */ `subscription OnDeleteStory($filter: 
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -981,6 +993,7 @@ export const onCreateStoryView = /* GraphQL */ `subscription OnCreateStoryView($
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -1026,6 +1039,7 @@ export const onUpdateStoryView = /* GraphQL */ `subscription OnUpdateStoryView($
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -1071,6 +1085,7 @@ export const onDeleteStoryView = /* GraphQL */ `subscription OnDeleteStoryView($
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename

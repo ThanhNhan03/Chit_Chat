@@ -413,6 +413,7 @@ export const createUser = /* GraphQL */ `mutation CreateUser(
     profile_picture
     status
     last_seen
+    push_token
     FriendChats {
       nextToken
       __typename
@@ -466,6 +467,7 @@ export const updateUser = /* GraphQL */ `mutation UpdateUser(
     profile_picture
     status
     last_seen
+    push_token
     FriendChats {
       nextToken
       __typename
@@ -519,6 +521,7 @@ export const deleteUser = /* GraphQL */ `mutation DeleteUser(
     profile_picture
     status
     last_seen
+    push_token
     FriendChats {
       nextToken
       __typename
@@ -576,6 +579,7 @@ export const createUserGroupChat = /* GraphQL */ `mutation CreateUserGroupChat(
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -618,6 +622,7 @@ export const updateUserGroupChat = /* GraphQL */ `mutation UpdateUserGroupChat(
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -660,6 +665,7 @@ export const deleteUserGroupChat = /* GraphQL */ `mutation DeleteUserGroupChat(
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -702,6 +708,7 @@ export const createUserFriendChat = /* GraphQL */ `mutation CreateUserFriendChat
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -741,6 +748,7 @@ export const updateUserFriendChat = /* GraphQL */ `mutation UpdateUserFriendChat
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -780,6 +788,7 @@ export const deleteUserFriendChat = /* GraphQL */ `mutation DeleteUserFriendChat
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -893,6 +902,7 @@ export const createStory = /* GraphQL */ `mutation CreateStory(
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -948,6 +958,7 @@ export const updateStory = /* GraphQL */ `mutation UpdateStory(
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -1003,6 +1014,7 @@ export const deleteStory = /* GraphQL */ `mutation DeleteStory(
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -1059,6 +1071,7 @@ export const createStoryView = /* GraphQL */ `mutation CreateStoryView(
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -1107,6 +1120,7 @@ export const updateStoryView = /* GraphQL */ `mutation UpdateStoryView(
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
@@ -1155,6 +1169,7 @@ export const deleteStoryView = /* GraphQL */ `mutation DeleteStoryView(
       profile_picture
       status
       last_seen
+      push_token
       createdAt
       updatedAt
       __typename
