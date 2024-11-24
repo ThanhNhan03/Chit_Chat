@@ -37,6 +37,7 @@ import EditStoryScreen from './screen/EditStoryScreen';
 import ViewStoryScreen from './screen/ViewStoryScreen';
 import ResetPassword from './screen/ ResetPassword';
 
+
 Amplify.configure(config);
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -250,6 +251,14 @@ const App: React.FC = () => {
                   name="ViewStory"
                   component={ViewStoryScreen}
                   options={{ title: 'View Story', headerShown: false, gestureEnabled: false }}
+                />
+                <Stack.Screen
+                  name="ResetPassword"
+                  component={ResetPassword}
+                  options={{ 
+                    headerShown: false,
+                    gestureEnabled: true 
+                  }}
                 />
               </>
             ) : (
