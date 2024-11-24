@@ -10,7 +10,10 @@ import {
 } from 'react-native';
 import { confirmResetPassword, updatePassword } from 'aws-amplify/auth';
 import { AuthenticatedUserContext } from '../contexts/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
+import { Dimensions } from 'react-native';
 
+const { width, height } = Dimensions.get('window');
 interface ResetPasswordProps {
   route: any;
   navigation: any;
@@ -90,67 +93,79 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ route, navigation }) => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.form}>
-        <Text style={styles.title}>
-          {user ? 'Change Password' : 'Reset Password'}
-        </Text>
-        {!user && (
-          <Text style={styles.subtitle}>Enter the code sent to your email</Text>
-        )}
-
-        {!user && (
-          <TextInput
-            style={styles.input}
-            placeholder="Verification Code"
-            value={code}
-            onChangeText={setCode}
-            keyboardType="number-pad"
-          />
-        )}
-
-        {user && (
-          <TextInput
-            style={styles.input}
-            placeholder="Current Password"
-            secureTextEntry
-            value={oldPassword}
-            onChangeText={setOldPassword}
-          />
-        )}
-
-        <TextInput
-          style={styles.input}
-          placeholder="New Password"
-          secureTextEntry
-          value={newPassword}
-          onChangeText={setNewPassword}
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Confirm New Password"
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-        />
-
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={handleResetPassword}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? 'Processing...' : (user ? 'Change Password' : 'Reset Password')}
-          </Text>
-        </TouchableOpacity>
-
-        {!user && (
+        <View style={styles.header}>
           <TouchableOpacity 
-            style={styles.resendButton}
-            onPress={() => navigation.replace('ForgotPassword')}
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
           >
-            <Text style={styles.resendButtonText}>Resend Code</Text>
+            <Ionicons name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
-        )}
+          <Text style={styles.headerTitle}>
+            {user ? 'Change Password' : 'Reset Password'}
+          </Text>
+          <View style={{ width: 40 }} />
+        </View>
+
+        <View style={styles.content}>
+          {!user && (
+            <Text style={styles.subtitle}>Enter the code sent to your email</Text>
+          )}
+
+          {!user && (
+            <TextInput
+              style={styles.input}
+              placeholder="Verification Code"
+              value={code}
+              onChangeText={setCode}
+              keyboardType="number-pad"
+            />
+          )}
+
+          {user && (
+            <TextInput
+              style={styles.input}
+              placeholder="Current Password"
+              secureTextEntry
+              value={oldPassword}
+              onChangeText={setOldPassword}
+            />
+          )}
+
+          <TextInput
+            style={styles.input}
+            placeholder="New Password"
+            secureTextEntry
+            value={newPassword}
+            onChangeText={setNewPassword}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm New Password"
+            secureTextEntry
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+          />
+
+          <TouchableOpacity 
+            style={styles.button}
+            onPress={handleResetPassword}
+            disabled={loading}
+          >
+            <Text style={styles.buttonText}>
+              {loading ? 'Processing...' : (user ? 'Change Password' : 'Reset Password')}
+            </Text>
+          </TouchableOpacity>
+
+          {!user && (
+            <TouchableOpacity 
+              style={styles.resendButton}
+              onPress={() => navigation.replace('ForgotPassword')}
+            >
+              <Text style={styles.resendButtonText}>Resend Code</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -160,47 +175,80 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    padding: 20,
+    padding: width * 0.05,
   },
   form: {
     flex: 1,
+    justifyContent: 'center',
+    width: '100%',
+    maxWidth: 500,
+    alignSelf: 'center',
   },
   resendButton: {
-    marginTop: 16,
+    marginTop: height * 0.02,
     alignItems: 'center',
   },
   resendButtonText: {
     color: '#8c7ae6',
-    fontSize: 14,
+    fontSize: Math.min(width * 0.04, 16),
     fontWeight: '500',
   },
   button: {
     backgroundColor: '#8c7ae6',
-    padding: 15,
+    padding: height * 0.02,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: height * 0.03,
+    width: '100%',
   },
   buttonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: Math.min(width * 0.045, 18),
     fontWeight: '600',
   },
   input: {
     backgroundColor: '#f5f5f5',
-    padding: 12,
+    padding: height * 0.016,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: height * 0.02,
+    width: '100%',
+    fontSize: Math.min(width * 0.04, 16),
   },
   title: {
-    fontSize: 24,
+    fontSize: Math.min(width * 0.06, 24),
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: height * 0.01,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     color: '#666',
-    marginBottom: 24,
+    marginBottom: height * 0.03,
+    textAlign: 'center',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: width * 0.04,
+    height: height * 0.07,
+    width: '100%',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  headerTitle: {
+    fontSize: Math.min(width * 0.045, 18),
+    fontWeight: '600',
+    textAlign: 'center',
+    flex: 1,
+  },
+  backButton: {
+    padding: 8,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: width * 0.04,
+    paddingTop: height * 0.02,
   },
 });
 

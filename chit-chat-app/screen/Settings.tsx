@@ -23,6 +23,7 @@ interface SettingsProps {
 const Settings: React.FC<SettingsProps> = ({ navigation }) => {
   const { user, setUser } = useContext(AuthenticatedUserContext);
   const [userData, setUserData] = useState<GetUserQuery['getUser']>(null);
+  const [isAccountExpanded, setIsAccountExpanded] = useState(false);
 
   const fetchUserData = async () => {
     if (!user?.sub && !user?.userId) return;
@@ -142,9 +143,10 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
               <Ionicons name="chevron-forward" size={20} color={themeColors.textSecondary} />
             </TouchableOpacity>
 
+            {/* Account Dropdown */}
             <TouchableOpacity 
               style={styles.option}
-              onPress={() => navigation.navigate('Account')}
+              onPress={() => setIsAccountExpanded(!isAccountExpanded)}
             >
               <View style={styles.optionLeft}>
                 <View style={[styles.iconContainer, { backgroundColor: '#E3F2FD' }]}>
@@ -152,21 +154,41 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
                 </View>
                 <Text style={styles.optionText}>Account</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={themeColors.textSecondary} />
+              <Ionicons 
+                name={isAccountExpanded ? "chevron-down" : "chevron-forward"} 
+                size={20} 
+                color={themeColors.textSecondary} 
+              />
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.option}
-              onPress={handleChangePassword}
-            >
-              <View style={styles.optionLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: '#FFF3E0' }]}>
-                  <Ionicons name="key-outline" size={22} color="#FF9800" />
-                </View>
-                <Text style={styles.optionText}>Change Password</Text>
+            {/* Account Suboptions */}
+            {isAccountExpanded && (
+              <View style={styles.subOptions}>
+                <TouchableOpacity 
+                  style={styles.subOption}
+                  onPress={handleChangePassword}
+                >
+                  <View style={styles.optionLeft}>
+                    <View style={[styles.iconContainer, { backgroundColor: '#FFF3E0' }]}>
+                      <Ionicons name="key-outline" size={22} color="#FF9800" />
+                    </View>
+                    <Text style={styles.optionText}>Change Password</Text>
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={styles.subOption}
+                  onPress={() => navigation.navigate('BlockedUsers')}
+                >
+                  <View style={styles.optionLeft}>
+                    <View style={[styles.iconContainer, { backgroundColor: '#FCE4EC' }]}>
+                      <Ionicons name="person-remove-outline" size={22} color="#E91E63" />
+                    </View>
+                    <Text style={styles.optionText}>Blocked Users</Text>
+                  </View>
+                </TouchableOpacity>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={themeColors.textSecondary} />
-            </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -302,6 +324,20 @@ const styles = StyleSheet.create({
   backButton: {
     marginRight: 16,      
     padding: 4,           
+  },
+  subOptions: {
+    backgroundColor: '#f8f9fa',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  subOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    paddingLeft: 32,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
 
 });
