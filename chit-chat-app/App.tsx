@@ -15,7 +15,6 @@ import Login from './screen/Login';
 import SignUp from './screen/SignUp';
 import ConfirmEmail from './screen/ConfirmEmail';
 import Chats from './screen/Chats';
-import SettingTemp from './screen/SettingTemp';
 import Chat from './screen/Chat';
 import SelectUserScreen from './screen/SelectUserScreen';
 import NewGroupScreen from './screen/NewGroupScreen';
@@ -31,6 +30,9 @@ import GroupChat from './screen/GroupChat';
 import GroupChatSettings from './screen/GroupChatSettings';
 import Settings from './screen/Settings';
 import Profile from './screen/Profile';
+import AddStoryScreen from './screen/AddStoryScreen';
+import EditStoryScreen from './screen/EditStoryScreen';
+import ViewStoryScreen from './screen/ViewStoryScreen';
 
 Amplify.configure(config);
 const Stack = createNativeStackNavigator();
@@ -230,6 +232,21 @@ const App: React.FC = () => {
                   name="Profile"
                   component={Profile}
                   options={{ title: 'Profile', headerShown: false }}
+                />
+                <Stack.Screen
+                  name="AddStory"
+                  component={AddStoryScreen}
+                  options={{ title: 'Add Story', headerShown: false }}
+                />
+                <Stack.Screen
+                  name="EditStory"
+                  component={EditStoryScreen}
+                  options={{ title: 'Edit Story', headerShown: false }}
+                />
+                <Stack.Screen
+                  name="ViewStory"
+                  component={ViewStoryScreen}
+                  options={{ title: 'View Story', headerShown: false, gestureEnabled: false }}
                 />
               </>
             ) : (

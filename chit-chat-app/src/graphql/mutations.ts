@@ -437,6 +437,14 @@ export const createUser = /* GraphQL */ `mutation CreateUser(
       nextToken
       __typename
     }
+    Stories {
+      nextToken
+      __typename
+    }
+    StoryViews {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -482,6 +490,14 @@ export const updateUser = /* GraphQL */ `mutation UpdateUser(
       nextToken
       __typename
     }
+    Stories {
+      nextToken
+      __typename
+    }
+    StoryViews {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -524,6 +540,14 @@ export const deleteUser = /* GraphQL */ `mutation DeleteUser(
       __typename
     }
     Reactions {
+      nextToken
+      __typename
+    }
+    Stories {
+      nextToken
+      __typename
+    }
+    StoryViews {
       nextToken
       __typename
     }
@@ -778,4 +802,388 @@ export const deleteUserFriendChat = /* GraphQL */ `mutation DeleteUserFriendChat
 ` as GeneratedMutation<
   APITypes.DeleteUserFriendChatMutationVariables,
   APITypes.DeleteUserFriendChatMutation
+>;
+export const createMusic = /* GraphQL */ `mutation CreateMusic(
+  $input: CreateMusicInput!
+  $condition: ModelMusicConditionInput
+) {
+  createMusic(input: $input, condition: $condition) {
+    id
+    title
+    artist
+    url
+    duration
+    cover_image
+    created_at
+    Stories {
+      nextToken
+      __typename
+    }
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.CreateMusicMutationVariables,
+  APITypes.CreateMusicMutation
+>;
+export const updateMusic = /* GraphQL */ `mutation UpdateMusic(
+  $input: UpdateMusicInput!
+  $condition: ModelMusicConditionInput
+) {
+  updateMusic(input: $input, condition: $condition) {
+    id
+    title
+    artist
+    url
+    duration
+    cover_image
+    created_at
+    Stories {
+      nextToken
+      __typename
+    }
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UpdateMusicMutationVariables,
+  APITypes.UpdateMusicMutation
+>;
+export const deleteMusic = /* GraphQL */ `mutation DeleteMusic(
+  $input: DeleteMusicInput!
+  $condition: ModelMusicConditionInput
+) {
+  deleteMusic(input: $input, condition: $condition) {
+    id
+    title
+    artist
+    url
+    duration
+    cover_image
+    created_at
+    Stories {
+      nextToken
+      __typename
+    }
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.DeleteMusicMutationVariables,
+  APITypes.DeleteMusicMutation
+>;
+export const createStory = /* GraphQL */ `mutation CreateStory(
+  $input: CreateStoryInput!
+  $condition: ModelStoryConditionInput
+) {
+  createStory(input: $input, condition: $condition) {
+    id
+    user_id
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      createdAt
+      updatedAt
+      __typename
+    }
+    type
+    media_url
+    text_content
+    background_color
+    thumbnail_url
+    duration
+    music_id
+    music {
+      id
+      title
+      artist
+      url
+      duration
+      cover_image
+      created_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    views {
+      nextToken
+      __typename
+    }
+    created_at
+    expires_at
+    music_start_time
+    music_end_time
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.CreateStoryMutationVariables,
+  APITypes.CreateStoryMutation
+>;
+export const updateStory = /* GraphQL */ `mutation UpdateStory(
+  $input: UpdateStoryInput!
+  $condition: ModelStoryConditionInput
+) {
+  updateStory(input: $input, condition: $condition) {
+    id
+    user_id
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      createdAt
+      updatedAt
+      __typename
+    }
+    type
+    media_url
+    text_content
+    background_color
+    thumbnail_url
+    duration
+    music_id
+    music {
+      id
+      title
+      artist
+      url
+      duration
+      cover_image
+      created_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    views {
+      nextToken
+      __typename
+    }
+    created_at
+    expires_at
+    music_start_time
+    music_end_time
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UpdateStoryMutationVariables,
+  APITypes.UpdateStoryMutation
+>;
+export const deleteStory = /* GraphQL */ `mutation DeleteStory(
+  $input: DeleteStoryInput!
+  $condition: ModelStoryConditionInput
+) {
+  deleteStory(input: $input, condition: $condition) {
+    id
+    user_id
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      createdAt
+      updatedAt
+      __typename
+    }
+    type
+    media_url
+    text_content
+    background_color
+    thumbnail_url
+    duration
+    music_id
+    music {
+      id
+      title
+      artist
+      url
+      duration
+      cover_image
+      created_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    views {
+      nextToken
+      __typename
+    }
+    created_at
+    expires_at
+    music_start_time
+    music_end_time
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.DeleteStoryMutationVariables,
+  APITypes.DeleteStoryMutation
+>;
+export const createStoryView = /* GraphQL */ `mutation CreateStoryView(
+  $input: CreateStoryViewInput!
+  $condition: ModelStoryViewConditionInput
+) {
+  createStoryView(input: $input, condition: $condition) {
+    id
+    story_id
+    user_id
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      createdAt
+      updatedAt
+      __typename
+    }
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    viewed_at
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.CreateStoryViewMutationVariables,
+  APITypes.CreateStoryViewMutation
+>;
+export const updateStoryView = /* GraphQL */ `mutation UpdateStoryView(
+  $input: UpdateStoryViewInput!
+  $condition: ModelStoryViewConditionInput
+) {
+  updateStoryView(input: $input, condition: $condition) {
+    id
+    story_id
+    user_id
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      createdAt
+      updatedAt
+      __typename
+    }
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    viewed_at
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UpdateStoryViewMutationVariables,
+  APITypes.UpdateStoryViewMutation
+>;
+export const deleteStoryView = /* GraphQL */ `mutation DeleteStoryView(
+  $input: DeleteStoryViewInput!
+  $condition: ModelStoryViewConditionInput
+) {
+  deleteStoryView(input: $input, condition: $condition) {
+    id
+    story_id
+    user_id
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      createdAt
+      updatedAt
+      __typename
+    }
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    viewed_at
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.DeleteStoryViewMutationVariables,
+  APITypes.DeleteStoryViewMutation
 >;

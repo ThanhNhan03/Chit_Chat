@@ -600,6 +600,14 @@ export const getUser = /* GraphQL */ `query GetUser($id: ID!) {
       nextToken
       __typename
     }
+    Stories {
+      nextToken
+      __typename
+    }
+    StoryViews {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -901,4 +909,337 @@ export const userFriendChatsByFriend_chat_id = /* GraphQL */ `query UserFriendCh
 ` as GeneratedQuery<
   APITypes.UserFriendChatsByFriend_chat_idQueryVariables,
   APITypes.UserFriendChatsByFriend_chat_idQuery
+>;
+export const getMusic = /* GraphQL */ `query GetMusic($id: ID!) {
+  getMusic(id: $id) {
+    id
+    title
+    artist
+    url
+    duration
+    cover_image
+    created_at
+    Stories {
+      nextToken
+      __typename
+    }
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedQuery<APITypes.GetMusicQueryVariables, APITypes.GetMusicQuery>;
+export const listMusic = /* GraphQL */ `query ListMusic(
+  $filter: ModelMusicFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  listMusic(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    items {
+      id
+      title
+      artist
+      url
+      duration
+      cover_image
+      created_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<APITypes.ListMusicQueryVariables, APITypes.ListMusicQuery>;
+export const getStory = /* GraphQL */ `query GetStory($id: ID!) {
+  getStory(id: $id) {
+    id
+    user_id
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      createdAt
+      updatedAt
+      __typename
+    }
+    type
+    media_url
+    text_content
+    background_color
+    thumbnail_url
+    duration
+    music_id
+    music {
+      id
+      title
+      artist
+      url
+      duration
+      cover_image
+      created_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    views {
+      nextToken
+      __typename
+    }
+    created_at
+    expires_at
+    music_start_time
+    music_end_time
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedQuery<APITypes.GetStoryQueryVariables, APITypes.GetStoryQuery>;
+export const listStories = /* GraphQL */ `query ListStories(
+  $filter: ModelStoryFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  listStories(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    items {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.ListStoriesQueryVariables,
+  APITypes.ListStoriesQuery
+>;
+export const storiesByUser_id = /* GraphQL */ `query StoriesByUser_id(
+  $user_id: ID!
+  $sortDirection: ModelSortDirection
+  $filter: ModelStoryFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  storiesByUser_id(
+    user_id: $user_id
+    sortDirection: $sortDirection
+    filter: $filter
+    limit: $limit
+    nextToken: $nextToken
+  ) {
+    items {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.StoriesByUser_idQueryVariables,
+  APITypes.StoriesByUser_idQuery
+>;
+export const storiesByMusic_id = /* GraphQL */ `query StoriesByMusic_id(
+  $music_id: ID!
+  $sortDirection: ModelSortDirection
+  $filter: ModelStoryFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  storiesByMusic_id(
+    music_id: $music_id
+    sortDirection: $sortDirection
+    filter: $filter
+    limit: $limit
+    nextToken: $nextToken
+  ) {
+    items {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.StoriesByMusic_idQueryVariables,
+  APITypes.StoriesByMusic_idQuery
+>;
+export const getStoryView = /* GraphQL */ `query GetStoryView($id: ID!) {
+  getStoryView(id: $id) {
+    id
+    story_id
+    user_id
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      createdAt
+      updatedAt
+      __typename
+    }
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    viewed_at
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.GetStoryViewQueryVariables,
+  APITypes.GetStoryViewQuery
+>;
+export const listStoryViews = /* GraphQL */ `query ListStoryViews(
+  $filter: ModelStoryViewFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  listStoryViews(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    items {
+      id
+      story_id
+      user_id
+      viewed_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.ListStoryViewsQueryVariables,
+  APITypes.ListStoryViewsQuery
+>;
+export const storyViewsByStory_id = /* GraphQL */ `query StoryViewsByStory_id(
+  $story_id: ID!
+  $sortDirection: ModelSortDirection
+  $filter: ModelStoryViewFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  storyViewsByStory_id(
+    story_id: $story_id
+    sortDirection: $sortDirection
+    filter: $filter
+    limit: $limit
+    nextToken: $nextToken
+  ) {
+    items {
+      id
+      story_id
+      user_id
+      viewed_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.StoryViewsByStory_idQueryVariables,
+  APITypes.StoryViewsByStory_idQuery
+>;
+export const storyViewsByUser_id = /* GraphQL */ `query StoryViewsByUser_id(
+  $user_id: ID!
+  $sortDirection: ModelSortDirection
+  $filter: ModelStoryViewFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  storyViewsByUser_id(
+    user_id: $user_id
+    sortDirection: $sortDirection
+    filter: $filter
+    limit: $limit
+    nextToken: $nextToken
+  ) {
+    items {
+      id
+      story_id
+      user_id
+      viewed_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.StoryViewsByUser_idQueryVariables,
+  APITypes.StoryViewsByUser_idQuery
 >;

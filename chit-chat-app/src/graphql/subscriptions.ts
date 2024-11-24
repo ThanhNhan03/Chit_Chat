@@ -392,6 +392,14 @@ export const onCreateUser = /* GraphQL */ `subscription OnCreateUser($filter: Mo
       nextToken
       __typename
     }
+    Stories {
+      nextToken
+      __typename
+    }
+    StoryViews {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -434,6 +442,14 @@ export const onUpdateUser = /* GraphQL */ `subscription OnUpdateUser($filter: Mo
       nextToken
       __typename
     }
+    Stories {
+      nextToken
+      __typename
+    }
+    StoryViews {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -473,6 +489,14 @@ export const onDeleteUser = /* GraphQL */ `subscription OnDeleteUser($filter: Mo
       __typename
     }
     Reactions {
+      nextToken
+      __typename
+    }
+    Stories {
+      nextToken
+      __typename
+    }
+    StoryViews {
       nextToken
       __typename
     }
@@ -721,4 +745,361 @@ export const onDeleteUserFriendChat = /* GraphQL */ `subscription OnDeleteUserFr
 ` as GeneratedSubscription<
   APITypes.OnDeleteUserFriendChatSubscriptionVariables,
   APITypes.OnDeleteUserFriendChatSubscription
+>;
+export const onCreateMusic = /* GraphQL */ `subscription OnCreateMusic($filter: ModelSubscriptionMusicFilterInput) {
+  onCreateMusic(filter: $filter) {
+    id
+    title
+    artist
+    url
+    duration
+    cover_image
+    created_at
+    Stories {
+      nextToken
+      __typename
+    }
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnCreateMusicSubscriptionVariables,
+  APITypes.OnCreateMusicSubscription
+>;
+export const onUpdateMusic = /* GraphQL */ `subscription OnUpdateMusic($filter: ModelSubscriptionMusicFilterInput) {
+  onUpdateMusic(filter: $filter) {
+    id
+    title
+    artist
+    url
+    duration
+    cover_image
+    created_at
+    Stories {
+      nextToken
+      __typename
+    }
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnUpdateMusicSubscriptionVariables,
+  APITypes.OnUpdateMusicSubscription
+>;
+export const onDeleteMusic = /* GraphQL */ `subscription OnDeleteMusic($filter: ModelSubscriptionMusicFilterInput) {
+  onDeleteMusic(filter: $filter) {
+    id
+    title
+    artist
+    url
+    duration
+    cover_image
+    created_at
+    Stories {
+      nextToken
+      __typename
+    }
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnDeleteMusicSubscriptionVariables,
+  APITypes.OnDeleteMusicSubscription
+>;
+export const onCreateStory = /* GraphQL */ `subscription OnCreateStory($filter: ModelSubscriptionStoryFilterInput) {
+  onCreateStory(filter: $filter) {
+    id
+    user_id
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      createdAt
+      updatedAt
+      __typename
+    }
+    type
+    media_url
+    text_content
+    background_color
+    thumbnail_url
+    duration
+    music_id
+    music {
+      id
+      title
+      artist
+      url
+      duration
+      cover_image
+      created_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    views {
+      nextToken
+      __typename
+    }
+    created_at
+    expires_at
+    music_start_time
+    music_end_time
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnCreateStorySubscriptionVariables,
+  APITypes.OnCreateStorySubscription
+>;
+export const onUpdateStory = /* GraphQL */ `subscription OnUpdateStory($filter: ModelSubscriptionStoryFilterInput) {
+  onUpdateStory(filter: $filter) {
+    id
+    user_id
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      createdAt
+      updatedAt
+      __typename
+    }
+    type
+    media_url
+    text_content
+    background_color
+    thumbnail_url
+    duration
+    music_id
+    music {
+      id
+      title
+      artist
+      url
+      duration
+      cover_image
+      created_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    views {
+      nextToken
+      __typename
+    }
+    created_at
+    expires_at
+    music_start_time
+    music_end_time
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnUpdateStorySubscriptionVariables,
+  APITypes.OnUpdateStorySubscription
+>;
+export const onDeleteStory = /* GraphQL */ `subscription OnDeleteStory($filter: ModelSubscriptionStoryFilterInput) {
+  onDeleteStory(filter: $filter) {
+    id
+    user_id
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      createdAt
+      updatedAt
+      __typename
+    }
+    type
+    media_url
+    text_content
+    background_color
+    thumbnail_url
+    duration
+    music_id
+    music {
+      id
+      title
+      artist
+      url
+      duration
+      cover_image
+      created_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    views {
+      nextToken
+      __typename
+    }
+    created_at
+    expires_at
+    music_start_time
+    music_end_time
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnDeleteStorySubscriptionVariables,
+  APITypes.OnDeleteStorySubscription
+>;
+export const onCreateStoryView = /* GraphQL */ `subscription OnCreateStoryView($filter: ModelSubscriptionStoryViewFilterInput) {
+  onCreateStoryView(filter: $filter) {
+    id
+    story_id
+    user_id
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      createdAt
+      updatedAt
+      __typename
+    }
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    viewed_at
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnCreateStoryViewSubscriptionVariables,
+  APITypes.OnCreateStoryViewSubscription
+>;
+export const onUpdateStoryView = /* GraphQL */ `subscription OnUpdateStoryView($filter: ModelSubscriptionStoryViewFilterInput) {
+  onUpdateStoryView(filter: $filter) {
+    id
+    story_id
+    user_id
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      createdAt
+      updatedAt
+      __typename
+    }
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    viewed_at
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnUpdateStoryViewSubscriptionVariables,
+  APITypes.OnUpdateStoryViewSubscription
+>;
+export const onDeleteStoryView = /* GraphQL */ `subscription OnDeleteStoryView($filter: ModelSubscriptionStoryViewFilterInput) {
+  onDeleteStoryView(filter: $filter) {
+    id
+    story_id
+    user_id
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      createdAt
+      updatedAt
+      __typename
+    }
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    viewed_at
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnDeleteStoryViewSubscriptionVariables,
+  APITypes.OnDeleteStoryViewSubscription
 >;
