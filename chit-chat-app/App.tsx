@@ -9,6 +9,8 @@ import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { themeColors } from "./config/themeColor";
+import * as Device from 'expo-device';
+import { Platform } from 'react-native';
 
 // Screens
 import Login from './screen/Login';
@@ -128,68 +130,88 @@ const App: React.FC = () => {
 
   const setupApp = async () => {
     try {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-
-      await initializeNotifications();
-      const hasPermission = await requestNotificationPermissions();
-      console.log('Notification permission:', hasPermission);
-      
-      if (hasPermission) {
-        const token = await getExpoPushToken();
-        console.log('Got push token:', token);
-
-        if (token && currentUser?.userId) {
-          await client.graphql({
-            query: updateUser,
-            variables: {
-              input: {
-                id: currentUser.userId,
-                push_token: token
-              }
-            }
-          });
-          console.log('Saved token to database');
+        // Yêu cầu quyền notification ngay khi app khởi động
+        if (Platform.OS === 'android') {
+            const hasPermission = await requestNotificationPermissions();
+            console.log('Initial notification permission status:', hasPermission);
         }
 
-        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-          // console.log('Received notification:', notification);
-        });
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
 
-        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-          const data = response.notification.request.content.data;
+        if (!Device.isDevice) {
+            console.log('Must use physical device for Push Notifications');
+            return;
+        }
 
-          if (data.type === 'message') {
-            navigationRef.current?.navigate('Chat', {
-              chatId: data.chatId,
-              userId: data.userId,
-              name: data.name
+        try {
+            await initializeNotifications();
+            console.log('Notifications initialized');
+
+            // Chỉ lấy token và thiết lập notification khi đã có quyền
+            const token = await getExpoPushToken();
+            console.log('Push token received:', token);
+
+            if (token && currentUser?.userId) {
+                await client.graphql({
+                    query: updateUser,
+                    variables: {
+                        input: {
+                            id: currentUser.userId,
+                            push_token: token
+                        }
+                    }
+                });
+                console.log('Token successfully saved to database');
+            }
+
+            // Setup listeners
+            notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+                console.log('Received notification:', notification);
             });
-          } else if (data.type === 'friend_request') {
-            navigationRef.current?.navigate('FriendRequests');
-          } else if (data.type === 'new_story') {
-            // Xử lý khi user click vào thông báo story mới
-            navigationRef.current?.navigate('ViewStory', {
-              storyId: data.storyId,
-              userId: data.userId,
-              initialStoryIndex: 0
+
+            responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+                try {
+                    const data = response.notification.request.content.data;
+                    console.log('Notification response data:', data);
+
+                    if (data.type === 'message') {
+                        navigationRef.current?.navigate('Chat', {
+                            chatId: data.chatId,
+                            userId: data.userId,
+                            name: data.name
+                        });
+                    } else if (data.type === 'friend_request') {
+                        navigationRef.current?.navigate('FriendRequests');
+                    } else if (data.type === 'new_story') {
+                        navigationRef.current?.navigate('ViewStory', {
+                            storyId: data.storyId,
+                            userId: data.userId,
+                            initialStoryIndex: 0
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error handling notification response:', error);
+                }
             });
-          }
-        });
-      }
+
+        } catch (error) {
+            console.error('Error in notification setup:', error);
+        }
     } catch (error) {
-      console.error('Error in setupApp:', error);
-      setUser(null);
+        console.error('Error in setupApp:', error);
+        setUser(null);
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (user?.userId) {
-      const updatePushToken = async () => {
+    const checkAndUpdateToken = async () => {
+      if (user?.userId) {
         try {
           const token = await getExpoPushToken();
+          console.log('Checking token on foreground:', token);
           if (token) {
             await client.graphql({
               query: updateUser,
@@ -200,14 +222,23 @@ const App: React.FC = () => {
                 }
               }
             });
+            console.log('Token updated on foreground');
           }
         } catch (error) {
-          console.error('Error updating push token:', error);
+          console.error('Error updating token on foreground:', error);
         }
-      };
+      }
+    };
 
-      updatePushToken();
-    }
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Notification response received:', response);
+    });
+
+    checkAndUpdateToken();
+
+    return () => {
+      subscription.remove();
+    };
   }, [user?.userId]);
 
   if (isLoading) {

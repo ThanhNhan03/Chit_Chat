@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import * as Device from 'expo-device';
 
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -11,15 +12,34 @@ Notifications.setNotificationHandler({
 });
 
 export const requestNotificationPermissions = async () => {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    
-    if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
+    if (Platform.OS === 'android') {
+        // Kiểm tra version Android
+        const androidVersion = Device.platformApiLevel || 0;
+        
+        if (androidVersion >= 33) { // Android 13 trở lên
+            const { status: existingStatus } = await Notifications.getPermissionsAsync();
+            let finalStatus = existingStatus;
+            
+            if (existingStatus !== 'granted') {
+                const { status } = await Notifications.requestPermissionsAsync({
+                    android: {
+                        allowAlert: true,
+                        allowBadge: true,
+                        allowSound: true,
+                    }
+                });
+                finalStatus = status;
+            }
+            
+            if (finalStatus !== 'granted') {
+                console.log('Failed to get push token for push notification!');
+                return false;
+            }
+            return true;
+        }
     }
     
-    return finalStatus === 'granted';
+    return true; 
 };
 
 export const initializeNotifications = async () => {
