@@ -77,9 +77,20 @@ export const initializeNotifications = async () => {
 
 export const getExpoPushToken = async () => {
     try {
+        const { status } = await Notifications.getPermissionsAsync();
+        console.log('Current permission status:', status);
+
+        if (status !== 'granted') {
+            const { status: newStatus } = await Notifications.requestPermissionsAsync();
+            console.log('New permission status:', newStatus);
+            if (newStatus !== 'granted') return null;
+        }
+
+        console.log('Getting push token...');
         const token = await Notifications.getExpoPushTokenAsync({
             projectId: "0b168073-1ccb-4f36-aced-64caa2a241e7"
         });
+        console.log('Generated token:', token.data);
         return token.data;
     } catch (error) {
         console.error('Error getting push token:', error);
@@ -155,7 +166,7 @@ export const sendPushNotifications = async ({
             chunks.push(messages.slice(i, i + chunkSize));
         }
 
-        // Gửi từng chunk để tránh giới hạn request
+
         const responses = await Promise.all(
             chunks.map(chunk =>
                 fetch('https://exp.host/--/api/v2/push/send', {

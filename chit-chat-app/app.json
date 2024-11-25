@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "chit-chat-app",
+    "name": "Chit Chat",
     "slug": "chit-chat-app",
     "version": "1.0.5",
     "orientation": "portrait",
@@ -15,7 +15,7 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.chitchat.app",
+      "package": "com.fpt.chitchat",
       "useNextNotificationsApi": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -26,7 +26,8 @@
         "POST_NOTIFICATIONS",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE"
-      ]
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -36,7 +37,8 @@
       "color": "#ffffff",
       "iosDisplayInForeground": true,
       "androidMode": "default",
-      "androidCollapsedTitle": "New Message"
+      "androidCollapsedTitle": "New Message",
+      "fcmApiKey": "294629992502"
     },
     "plugins": [
       [

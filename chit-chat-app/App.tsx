@@ -130,7 +130,6 @@ const App: React.FC = () => {
 
   const setupApp = async () => {
     try {
-        // Yêu cầu quyền notification ngay khi app khởi động
         if (Platform.OS === 'android') {
             const hasPermission = await requestNotificationPermissions();
             console.log('Initial notification permission status:', hasPermission);
@@ -148,7 +147,6 @@ const App: React.FC = () => {
             await initializeNotifications();
             console.log('Notifications initialized');
 
-            // Chỉ lấy token và thiết lập notification khi đã có quyền
             const token = await getExpoPushToken();
             console.log('Push token received:', token);
 
