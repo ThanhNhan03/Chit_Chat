@@ -133,10 +133,12 @@ const App: React.FC = () => {
 
       await initializeNotifications();
       const hasPermission = await requestNotificationPermissions();
+      console.log('Notification permission:', hasPermission);
       
       if (hasPermission) {
-        // Lưu push token
         const token = await getExpoPushToken();
+        console.log('Got push token:', token);
+
         if (token && currentUser?.userId) {
           await client.graphql({
             query: updateUser,
@@ -147,6 +149,7 @@ const App: React.FC = () => {
               }
             }
           });
+          console.log('Saved token to database');
         }
 
         notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
@@ -175,7 +178,7 @@ const App: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Error setting up app:', error);
+      console.error('Error in setupApp:', error);
       setUser(null);
     } finally {
       setIsLoading(false);
