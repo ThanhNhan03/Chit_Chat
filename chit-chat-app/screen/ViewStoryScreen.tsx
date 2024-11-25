@@ -20,6 +20,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { BackHandler } from 'react-native';
 import { AuthenticatedUserContext } from '../contexts/AuthContext';
 import { deleteStory } from '../src/graphql/mutations';
+import StoryViewers from '../components/StoryViewers';
+import ViewsCounter from '../components/ViewsCounter';
 
 const client = generateClient();
 
@@ -96,6 +98,24 @@ const GET_STORY_WITH_MUSIC = `
   }
 `;
 
+const CREATE_STORY_VIEW = `
+  mutation CreateStoryView(
+    $input: CreateStoryViewInput!
+  ) {
+    createStoryView(input: $input) {
+      id
+      story_id
+      user_id
+      viewed_at
+      user {
+        id
+        name
+        profile_picture
+      }
+    }
+  }
+`;
+
 const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -115,6 +135,20 @@ const formatTimeAgo = (dateString: string) => {
     }
 };
 
+interface StoryViewsResponse {
+    listStoryViews: {
+        items: Array<{
+            id: string;
+            viewed_at: string;
+            user?: {
+                id: string;
+                name: string;
+                profile_picture?: string;
+            };
+        }>;
+    };
+}
+
 const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
     const { user } = useContext(AuthenticatedUserContext);
     const { 
@@ -126,23 +160,133 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
         isCurrentUser 
     } = route.params;
     
-    // Thay đổi từ useState readonly sang useState có thể update
     const [stories, setStories] = useState(() => 
         [...originalStories].sort((a, b) => 
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         )
     );
     const [currentIndex, setCurrentIndex] = useState(() => {
-        // If initialStoryIndex is provided, find the corresponding index in sorted array
         if (initialStoryIndex === 0) return 0;
         const targetStory = originalStories[initialStoryIndex];
         return stories.findIndex(story => story.id === targetStory.id);
     });
+
+    // Di chuyển khai báo currentStory lên đây
+    const currentStory = stories[currentIndex];
+
     const [progress] = useState(new Animated.Value(0));
     const [sound, setSound] = useState<Audio.Sound | null>(null);
     const [isPlaying, setIsPlaying] = useState(true);
+    const [storyViews, setStoryViews] = useState<Array<{
+        id: string;
+        viewed_at: string;
+        user?: {
+            id: string;
+            name: string;
+            profile_picture?: string;
+        };
+    }>>([]);
+    const [showViewers, setShowViewers] = useState(false);
     const soundRef = useRef<Audio.Sound | null>(null);
     const isMountedRef = useRef(true);
+
+    const createStoryView = async () => {
+        if (!user?.userId || isCurrentUser) return;
+
+        try {
+        
+            const checkResponse = await client.graphql({
+                query: GET_STORY_VIEWS,
+                variables: { 
+                    story_id: currentStory.id 
+                },
+                authMode: 'apiKey'
+            }) as GraphQLResult<StoryViewsResponse>;
+
+            const existingView = checkResponse.data?.listStoryViews?.items.find(
+                view => view.user?.id === user.userId
+            );
+
+            if (!existingView) {
+                const input = {
+                    story_id: currentStory.id,
+                    user_id: user.userId,
+                    viewed_at: new Date().toISOString()
+                };
+
+                await client.graphql({
+                    query: CREATE_STORY_VIEW,
+                    variables: { input },
+                    authMode: 'apiKey'
+                });
+            } else {
+                
+            }
+
+        } catch (error) {
+            console.error('Error handling story view:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (currentStory?.id) {
+            createStoryView();
+        }
+    }, [currentStory?.id]);
+
+    // Thêm query để lấy story views
+    const GET_STORY_VIEWS = `
+        query GetStoryViews($story_id: ID!) {
+            listStoryViews(
+                filter: {story_id: {eq: $story_id}}
+                limit: 1000  # Tăng limit nếu cần
+            ) {
+                items {
+                    id
+                    viewed_at
+                    user {
+                        id
+                        name
+                        profile_picture
+                    }
+                }
+            }
+        }
+    `;
+
+    // Thêm function để fetch story views với type annotation
+    const fetchStoryViews = async () => {
+        if (!isCurrentUser) return;
+        
+        try {
+            const response = await client.graphql({
+                query: GET_STORY_VIEWS,
+                variables: { 
+                    story_id: currentStory.id 
+                },
+                authMode: 'apiKey'
+            }) as GraphQLResult<StoryViewsResponse>;
+            
+            if (response.data?.listStoryViews?.items) {
+                const sortedViews = response.data.listStoryViews.items.sort((a, b) => 
+                    new Date(b.viewed_at).getTime() - new Date(a.viewed_at).getTime()
+                );
+                setStoryViews(sortedViews);
+            }
+        } catch (error) {
+            console.error('Error fetching story views:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (isCurrentUser && currentStory?.id) {
+            fetchStoryViews();
+        }
+    }, [currentStory?.id, isCurrentUser]);
+
+    const toggleViewers = () => {
+        setShowViewers(!showViewers);
+    };
 
     const handleNext = async () => {
         if (currentIndex < stories.length - 1) {
@@ -309,8 +453,6 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
             navigation.goBack();
         }
     };
-
-    const currentStory = stories[currentIndex];
 
     const toggleSound = async () => {
         if (sound) {
@@ -528,6 +670,22 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
                     </View>
                 </View>
             )}
+
+            {/* Story Views Counter */}
+            {isCurrentUser && (
+                <ViewsCounter 
+                    count={storyViews.length}
+                    onPress={toggleViewers}
+                />
+            )}
+
+            {/* Story Viewers Modal */}
+            <StoryViewers 
+                isVisible={showViewers}
+                viewers={storyViews}
+                onClose={toggleViewers}
+                formatTimeAgo={formatTimeAgo}
+            />
         </SafeAreaView>
     );
 };

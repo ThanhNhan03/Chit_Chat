@@ -25,6 +25,9 @@ import { AppState } from 'react-native';
 import { uploadData } from 'aws-amplify/storage';
 import { createStory } from '../src/graphql/mutations';
 import { getCurrentUser } from 'aws-amplify/auth';
+import { getFriendPushTokens } from '../utils/friendUtils';
+import { sendNewStoryNotification } from '../utils/notificationHelper';
+import { getUser } from '../src/graphql/queries';
 
 Audio.setAudioModeAsync({
     allowsRecordingIOS: false,
@@ -77,6 +80,7 @@ const EditStoryScreen = ({ route, navigation }: EditStoryScreenProps) => {
     const [isPlayingOnStory, setIsPlayingOnStory] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [userData, setUserData] = useState<{ name: string }>({ name: '' });
 
     useEffect(() => {
         fetchCurrentUser();
@@ -86,6 +90,15 @@ const EditStoryScreen = ({ route, navigation }: EditStoryScreenProps) => {
         try {
             const user = await getCurrentUser();
             setCurrentUserId(user.userId);
+            
+            // Fetch user data để lấy tên
+            const userData = await client.graphql({
+                query: getUser,
+                variables: { id: user.userId }
+            });
+            setUserData({
+                name: userData.data.getUser.name
+            });
         } catch (error) {
             console.error('Error fetching current user:', error);
         }
@@ -118,7 +131,7 @@ const EditStoryScreen = ({ route, navigation }: EditStoryScreenProps) => {
                 mediaUrl = `${CLOUDFRONT_URL}/public/${filename}`;
             }
 
-            // Create story object với duration 15s
+            // Create story object
             const storyInput = {
                 user_id: currentUserId,
                 type: mode || 'image',
@@ -126,19 +139,32 @@ const EditStoryScreen = ({ route, navigation }: EditStoryScreenProps) => {
                 text_content: text || null,
                 background_color: mode === 'text' ? currentBgColor : null,
                 thumbnail_url: mode === 'text' ? null : mediaUrl,
-                duration: STORY_DURATION, // Thêm duration 15s
+                duration: STORY_DURATION,
                 music_id: selectedMusic?.id || null,
                 created_at: new Date().toISOString(),
                 expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
                 music_start_time: 0,
-                music_end_time: selectedMusic ? Math.min(selectedMusic.duration || 0, STORY_DURATION) : 0 // Giới hạn music end time không vượt quá 15s
+                music_end_time: selectedMusic ? Math.min(selectedMusic.duration || 0, STORY_DURATION) : 0
             };
 
             // Create story in database
-            await client.graphql({
+            const result = await client.graphql({
                 query: createStory,
                 variables: { input: storyInput }
             });
+
+            // Lấy danh sách push tokens của bạn bè
+            const friendTokens = await getFriendPushTokens(currentUserId);
+            
+            // Gửi thông báo nếu có tokens
+            if (friendTokens.length > 0) {
+                await sendNewStoryNotification({
+                    expoPushTokens: friendTokens,
+                    userName: userData.name,
+                    storyId: result.data.createStory.id,
+                    userId: currentUserId
+                });
+            }
 
             navigation.goBack();
         } catch (error) {

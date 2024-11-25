@@ -9,6 +9,8 @@ import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { themeColors } from "./config/themeColor";
+import * as Device from 'expo-device';
+import { Platform } from 'react-native';
 
 // Screens
 import Login from './screen/Login';
@@ -27,7 +29,7 @@ import ForgotPassword from './screen/ForgotPassword';
 // Contexts and Config
 import { AuthenticatedUserContext } from './contexts/AuthContext';
 import config from './aws-exports';
-import { initializeNotifications, requestNotificationPermissions } from './utils/notificationHelper';
+import { getExpoPushToken, initializeNotifications, requestNotificationPermissions } from './utils/notificationHelper';
 import GroupChat from './screen/GroupChat';
 import GroupChatSettings from './screen/GroupChatSettings';
 import Settings from './screen/Settings';
@@ -36,6 +38,11 @@ import AddStoryScreen from './screen/AddStoryScreen';
 import EditStoryScreen from './screen/EditStoryScreen';
 import ViewStoryScreen from './screen/ViewStoryScreen';
 import ResetPassword from './screen/ ResetPassword';
+import { updateUser } from './src/graphql/mutations';
+import { generateClient } from 'aws-amplify/api';
+
+
+const client = generateClient();
 
 
 Amplify.configure(config);
@@ -123,38 +130,114 @@ const App: React.FC = () => {
 
   const setupApp = async () => {
     try {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
+        if (Platform.OS === 'android') {
+            const hasPermission = await requestNotificationPermissions();
+            console.log('Initial notification permission status:', hasPermission);
+        }
 
-      await initializeNotifications();
-      const hasPermission = await requestNotificationPermissions();
-      
-      if (hasPermission) {
-        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-          // console.log('Received notification:', notification);
-        });
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
 
-        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-          const data = response.notification.request.content.data;
+        if (!Device.isDevice) {
+            console.log('Must use physical device for Push Notifications');
+            return;
+        }
 
-          if (data.type === 'message') {
-            navigationRef.current?.navigate('Chat', {
-              chatId: data.chatId,
-              userId: data.userId,
-              name: data.name
+        try {
+            await initializeNotifications();
+            console.log('Notifications initialized');
+
+            const token = await getExpoPushToken();
+            console.log('Push token received:', token);
+
+            if (token && currentUser?.userId) {
+                await client.graphql({
+                    query: updateUser,
+                    variables: {
+                        input: {
+                            id: currentUser.userId,
+                            push_token: token
+                        }
+                    }
+                });
+                console.log('Token successfully saved to database');
+            }
+
+            // Setup listeners
+            notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+                console.log('Received notification:', notification);
             });
-          } else if (data.type === 'friend_request') {
-            navigationRef.current?.navigate('FriendRequests');
-          }
-        });
-      }
+
+            responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+                try {
+                    const data = response.notification.request.content.data;
+                    console.log('Notification response data:', data);
+
+                    if (data.type === 'message') {
+                        navigationRef.current?.navigate('Chat', {
+                            chatId: data.chatId,
+                            userId: data.userId,
+                            name: data.name
+                        });
+                    } else if (data.type === 'friend_request') {
+                        navigationRef.current?.navigate('FriendRequests');
+                    } else if (data.type === 'new_story') {
+                        navigationRef.current?.navigate('ViewStory', {
+                            storyId: data.storyId,
+                            userId: data.userId,
+                            initialStoryIndex: 0
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error handling notification response:', error);
+                }
+            });
+
+        } catch (error) {
+            console.error('Error in notification setup:', error);
+        }
     } catch (error) {
-      console.error('Error setting up app:', error);
-      setUser(null);
+        console.error('Error in setupApp:', error);
+        setUser(null);
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const checkAndUpdateToken = async () => {
+      if (user?.userId) {
+        try {
+          const token = await getExpoPushToken();
+          console.log('Checking token on foreground:', token);
+          if (token) {
+            await client.graphql({
+              query: updateUser,
+              variables: {
+                input: {
+                  id: user.userId,
+                  push_token: token
+                }
+              }
+            });
+            console.log('Token updated on foreground');
+          }
+        } catch (error) {
+          console.error('Error updating token on foreground:', error);
+        }
+      }
+    };
+
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Notification response received:', response);
+    });
+
+    checkAndUpdateToken();
+
+    return () => {
+      subscription.remove();
+    };
+  }, [user?.userId]);
 
   if (isLoading) {
     return <ActivityIndicator/>;
