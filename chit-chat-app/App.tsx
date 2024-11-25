@@ -27,7 +27,7 @@ import ForgotPassword from './screen/ForgotPassword';
 // Contexts and Config
 import { AuthenticatedUserContext } from './contexts/AuthContext';
 import config from './aws-exports';
-import { initializeNotifications, requestNotificationPermissions } from './utils/notificationHelper';
+import { getExpoPushToken, initializeNotifications, requestNotificationPermissions } from './utils/notificationHelper';
 import GroupChat from './screen/GroupChat';
 import GroupChatSettings from './screen/GroupChatSettings';
 import Settings from './screen/Settings';
@@ -36,6 +36,11 @@ import AddStoryScreen from './screen/AddStoryScreen';
 import EditStoryScreen from './screen/EditStoryScreen';
 import ViewStoryScreen from './screen/ViewStoryScreen';
 import ResetPassword from './screen/ ResetPassword';
+import { updateUser } from './src/graphql/mutations';
+import { generateClient } from 'aws-amplify/api';
+
+
+const client = generateClient();
 
 
 Amplify.configure(config);
@@ -130,6 +135,20 @@ const App: React.FC = () => {
       const hasPermission = await requestNotificationPermissions();
       
       if (hasPermission) {
+        // Lưu push token
+        const token = await getExpoPushToken();
+        if (token && currentUser?.userId) {
+          await client.graphql({
+            query: updateUser,
+            variables: {
+              input: {
+                id: currentUser.userId,
+                push_token: token
+              }
+            }
+          });
+        }
+
         notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
           // console.log('Received notification:', notification);
         });
@@ -145,6 +164,13 @@ const App: React.FC = () => {
             });
           } else if (data.type === 'friend_request') {
             navigationRef.current?.navigate('FriendRequests');
+          } else if (data.type === 'new_story') {
+            // Xử lý khi user click vào thông báo story mới
+            navigationRef.current?.navigate('ViewStory', {
+              storyId: data.storyId,
+              userId: data.userId,
+              initialStoryIndex: 0
+            });
           }
         });
       }
@@ -155,6 +181,31 @@ const App: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user?.userId) {
+      const updatePushToken = async () => {
+        try {
+          const token = await getExpoPushToken();
+          if (token) {
+            await client.graphql({
+              query: updateUser,
+              variables: {
+                input: {
+                  id: user.userId,
+                  push_token: token
+                }
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error updating push token:', error);
+        }
+      };
+
+      updatePushToken();
+    }
+  }, [user?.userId]);
 
   if (isLoading) {
     return <ActivityIndicator/>;
