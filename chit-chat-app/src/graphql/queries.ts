@@ -22,6 +22,10 @@ export const getGroupChat = /* GraphQL */ `query GetGroupChat($id: ID!) {
     updated_at
     group_picture
     description
+    messages {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -104,6 +108,10 @@ export const getFriendChat = /* GraphQL */ `query GetFriendChat($id: ID!) {
     created_at
     last_message
     updated_at
+    messages {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -147,8 +155,63 @@ export const getMessages = /* GraphQL */ `query GetMessages($id: ID!) {
     timestamp
     status
     attachments
-    reactions {
+    message_reactions {
       nextToken
+      __typename
+    }
+    sender {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    reply_to_message_id
+    reply_to_message {
+      id
+      chat_type
+      chat_id
+      sender_id
+      content
+      timestamp
+      status
+      attachments
+      reply_to_message_id
+      createdAt
+      updatedAt
+      __typename
+    }
+    replied_messages {
+      nextToken
+      __typename
+    }
+    group_chat {
+      id
+      group_name
+      created_by
+      created_at
+      last_message
+      updated_at
+      group_picture
+      description
+      createdAt
+      updatedAt
+      __typename
+    }
+    friend_chat {
+      id
+      chat_id
+      created_at
+      last_message
+      updated_at
+      createdAt
+      updatedAt
       __typename
     }
     createdAt
@@ -175,6 +238,7 @@ export const listMessages = /* GraphQL */ `query ListMessages(
       timestamp
       status
       attachments
+      reply_to_message_id
       createdAt
       updatedAt
       __typename
@@ -212,6 +276,7 @@ export const messagesByChat_idAndTimestamp = /* GraphQL */ `query MessagesByChat
       timestamp
       status
       attachments
+      reply_to_message_id
       createdAt
       updatedAt
       __typename
@@ -247,6 +312,7 @@ export const messagesBySender_id = /* GraphQL */ `query MessagesBySender_id(
       timestamp
       status
       attachments
+      reply_to_message_id
       createdAt
       updatedAt
       __typename
@@ -259,28 +325,91 @@ export const messagesBySender_id = /* GraphQL */ `query MessagesBySender_id(
   APITypes.MessagesBySender_idQueryVariables,
   APITypes.MessagesBySender_idQuery
 >;
-export const getReactions = /* GraphQL */ `query GetReactions($id: ID!) {
-  getReactions(id: $id) {
+export const messagesByReply_to_message_id = /* GraphQL */ `query MessagesByReply_to_message_id(
+  $reply_to_message_id: ID!
+  $sortDirection: ModelSortDirection
+  $filter: ModelMessagesFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  messagesByReply_to_message_id(
+    reply_to_message_id: $reply_to_message_id
+    sortDirection: $sortDirection
+    filter: $filter
+    limit: $limit
+    nextToken: $nextToken
+  ) {
+    items {
+      id
+      chat_type
+      chat_id
+      sender_id
+      content
+      timestamp
+      status
+      attachments
+      reply_to_message_id
+      createdAt
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.MessagesByReply_to_message_idQueryVariables,
+  APITypes.MessagesByReply_to_message_idQuery
+>;
+export const getMessageReaction = /* GraphQL */ `query GetMessageReaction($id: ID!) {
+  getMessageReaction(id: $id) {
     id
     message_id
     user_id
     icon
     created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    message {
+      id
+      chat_type
+      chat_id
+      sender_id
+      content
+      timestamp
+      status
+      attachments
+      reply_to_message_id
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
   }
 }
 ` as GeneratedQuery<
-  APITypes.GetReactionsQueryVariables,
-  APITypes.GetReactionsQuery
+  APITypes.GetMessageReactionQueryVariables,
+  APITypes.GetMessageReactionQuery
 >;
-export const listReactions = /* GraphQL */ `query ListReactions(
-  $filter: ModelReactionsFilterInput
+export const listMessageReactions = /* GraphQL */ `query ListMessageReactions(
+  $filter: ModelMessageReactionFilterInput
   $limit: Int
   $nextToken: String
 ) {
-  listReactions(filter: $filter, limit: $limit, nextToken: $nextToken) {
+  listMessageReactions(filter: $filter, limit: $limit, nextToken: $nextToken) {
     items {
       id
       message_id
@@ -296,17 +425,17 @@ export const listReactions = /* GraphQL */ `query ListReactions(
   }
 }
 ` as GeneratedQuery<
-  APITypes.ListReactionsQueryVariables,
-  APITypes.ListReactionsQuery
+  APITypes.ListMessageReactionsQueryVariables,
+  APITypes.ListMessageReactionsQuery
 >;
-export const reactionsByMessage_id = /* GraphQL */ `query ReactionsByMessage_id(
+export const messageReactionsByMessage_id = /* GraphQL */ `query MessageReactionsByMessage_id(
   $message_id: ID!
   $sortDirection: ModelSortDirection
-  $filter: ModelReactionsFilterInput
+  $filter: ModelMessageReactionFilterInput
   $limit: Int
   $nextToken: String
 ) {
-  reactionsByMessage_id(
+  messageReactionsByMessage_id(
     message_id: $message_id
     sortDirection: $sortDirection
     filter: $filter
@@ -328,17 +457,17 @@ export const reactionsByMessage_id = /* GraphQL */ `query ReactionsByMessage_id(
   }
 }
 ` as GeneratedQuery<
-  APITypes.ReactionsByMessage_idQueryVariables,
-  APITypes.ReactionsByMessage_idQuery
+  APITypes.MessageReactionsByMessage_idQueryVariables,
+  APITypes.MessageReactionsByMessage_idQuery
 >;
-export const reactionsByUser_id = /* GraphQL */ `query ReactionsByUser_id(
+export const messageReactionsByUser_id = /* GraphQL */ `query MessageReactionsByUser_id(
   $user_id: ID!
   $sortDirection: ModelSortDirection
-  $filter: ModelReactionsFilterInput
+  $filter: ModelMessageReactionFilterInput
   $limit: Int
   $nextToken: String
 ) {
-  reactionsByUser_id(
+  messageReactionsByUser_id(
     user_id: $user_id
     sortDirection: $sortDirection
     filter: $filter
@@ -360,8 +489,8 @@ export const reactionsByUser_id = /* GraphQL */ `query ReactionsByUser_id(
   }
 }
 ` as GeneratedQuery<
-  APITypes.ReactionsByUser_idQueryVariables,
-  APITypes.ReactionsByUser_idQuery
+  APITypes.MessageReactionsByUser_idQueryVariables,
+  APITypes.MessageReactionsByUser_idQuery
 >;
 export const getContact = /* GraphQL */ `query GetContact($id: ID!) {
   getContact(id: $id) {
@@ -369,6 +498,32 @@ export const getContact = /* GraphQL */ `query GetContact($id: ID!) {
     user_id
     contact_user_id
     created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    contact_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -470,6 +625,32 @@ export const getFriendRequests = /* GraphQL */ `query GetFriendRequests($id: ID!
     to_user_id
     status
     created_at
+    from_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    to_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -597,7 +778,11 @@ export const getUser = /* GraphQL */ `query GetUser($id: ID!) {
       nextToken
       __typename
     }
-    Reactions {
+    message_reactions {
+      nextToken
+      __typename
+    }
+    story_reactions {
       nextToken
       __typename
     }
@@ -606,6 +791,10 @@ export const getUser = /* GraphQL */ `query GetUser($id: ID!) {
       __typename
     }
     StoryViews {
+      nextToken
+      __typename
+    }
+    sent_messages {
       nextToken
       __typename
     }
@@ -997,6 +1186,10 @@ export const getStory = /* GraphQL */ `query GetStory($id: ID!) {
       nextToken
       __typename
     }
+    story_reactions {
+      nextToken
+      __typename
+    }
     created_at
     expires_at
     music_start_time
@@ -1249,4 +1442,139 @@ export const storyViewsByUser_id = /* GraphQL */ `query StoryViewsByUser_id(
 ` as GeneratedQuery<
   APITypes.StoryViewsByUser_idQueryVariables,
   APITypes.StoryViewsByUser_idQuery
+>;
+export const getStoryReaction = /* GraphQL */ `query GetStoryReaction($id: ID!) {
+  getStoryReaction(id: $id) {
+    id
+    story_id
+    user_id
+    icon
+    created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.GetStoryReactionQueryVariables,
+  APITypes.GetStoryReactionQuery
+>;
+export const listStoryReactions = /* GraphQL */ `query ListStoryReactions(
+  $filter: ModelStoryReactionFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  listStoryReactions(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    items {
+      id
+      story_id
+      user_id
+      icon
+      created_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.ListStoryReactionsQueryVariables,
+  APITypes.ListStoryReactionsQuery
+>;
+export const storyReactionsByStory_id = /* GraphQL */ `query StoryReactionsByStory_id(
+  $story_id: ID!
+  $sortDirection: ModelSortDirection
+  $filter: ModelStoryReactionFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  storyReactionsByStory_id(
+    story_id: $story_id
+    sortDirection: $sortDirection
+    filter: $filter
+    limit: $limit
+    nextToken: $nextToken
+  ) {
+    items {
+      id
+      story_id
+      user_id
+      icon
+      created_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.StoryReactionsByStory_idQueryVariables,
+  APITypes.StoryReactionsByStory_idQuery
+>;
+export const storyReactionsByUser_id = /* GraphQL */ `query StoryReactionsByUser_id(
+  $user_id: ID!
+  $sortDirection: ModelSortDirection
+  $filter: ModelStoryReactionFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  storyReactionsByUser_id(
+    user_id: $user_id
+    sortDirection: $sortDirection
+    filter: $filter
+    limit: $limit
+    nextToken: $nextToken
+  ) {
+    items {
+      id
+      story_id
+      user_id
+      icon
+      created_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.StoryReactionsByUser_idQueryVariables,
+  APITypes.StoryReactionsByUser_idQuery
 >;
