@@ -4,11 +4,12 @@ import { themeColors } from '../config/themeColor';
 
 interface Props {
     timestamp: string;
+    style?: object;
 }
 
-const MessageTimestamp: React.FC<Props> = ({ timestamp }) => (
+const MessageTimestamp: React.FC<Props> = ({ timestamp, style }) => (
     <View style={styles.container}>
-        <Text style={styles.text}>{timestamp}</Text>
+        <Text style={style}>{timestamp}</Text>
     </View>
 );
 

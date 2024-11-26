@@ -27,6 +27,7 @@ import {
 } from '../src/graphql/queries';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
+import { useTheme } from '../contexts/ThemeContext';
 
 const client = generateClient();
 
@@ -35,7 +36,6 @@ interface GroupMember {
     name: string;
     profile_picture?: string;
 }
-
 const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
     const { chatId, initialGroupName } = route.params;
     const [groupName, setGroupName] = useState(initialGroupName);
@@ -45,6 +45,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
     const [isCreator, setIsCreator] = useState(false);
     const [contacts, setContacts] = useState<GroupMember[]>([]);
     const [showAddMember, setShowAddMember] = useState(false);
+    const { theme } = useTheme();
 
     useEffect(() => {
         // Tải dữ liệu song song
@@ -325,15 +326,15 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
     );
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
             <Header 
                 title="Group Settings" 
                 onBackPress={() => navigation.goBack()} 
             />
             
-            <View style={styles.content}>
+            <View style={[styles.content, { backgroundColor: theme.cardBackground }]}>
                 {/* Group Name Section */}
-                <View style={styles.section}>
+                <View style={[styles.section, { backgroundColor: theme.group }]}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Group Name</Text>
                         <TouchableOpacity onPress={() => setIsEditingName(true)}>
@@ -361,7 +362,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                 </View>
 
                 {/* Members Section */}
-                <View style={styles.section}>
+                <View style={[styles.section, { backgroundColor: theme.group }]}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>
                             Members ({members.length})
@@ -407,7 +408,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                 onRequestClose={() => setShowAddMember(false)}
             >
                 <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
                         <Text style={styles.modalTitle}>Add Members</Text>
                         <FlatList
                             data={contacts}
@@ -449,7 +450,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor:'black',
     },
     loadingContainer: {
         flex: 1,
