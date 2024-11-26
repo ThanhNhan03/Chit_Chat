@@ -243,7 +243,7 @@ export default function NewGroupScreen({ navigation }) {
           <TextInput
             style={[styles.groupNameInput, { color: theme.textColor }]}
             placeholder="Group Name"
-            placeholderTextColor={theme.textInput}
+            placeholderTextColor={ theme.textColor}
             value={groupName}
             onChangeText={setGroupName}
           />

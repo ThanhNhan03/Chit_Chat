@@ -13,6 +13,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import Icon from '@expo/vector-icons/Ionicons';
+import { useTheme } from '../contexts/ThemeContext';
 import { themeColors } from '../config/themeColor';
 
 
@@ -32,6 +33,7 @@ interface Album {
   }
 
 const AddStoryScreen = ({ navigation }) => {
+    const { theme } = useTheme();
     const [recentPhotos, setRecentPhotos] = useState<MediaLibrary.Asset[]>([]);
     const [hasMore, setHasMore] = useState(true);
     const [endCursor, setEndCursor] = useState<string | undefined>(undefined);
@@ -121,7 +123,7 @@ const AddStoryScreen = ({ navigation }) => {
     const handleTextStory = () => {
         navigation.navigate('EditStory', { 
             mode: 'text', 
-            backgroundColor: themeColors.primary
+            backgroundColor: theme.backgroundColor
         });
     };
 
@@ -157,7 +159,7 @@ const AddStoryScreen = ({ navigation }) => {
         <TouchableOpacity
             style={[
                 styles.albumItem,
-                { backgroundColor: selectedAlbum === item.id ? themeColors.primary : 'transparent' }
+                { backgroundColor: selectedAlbum === item.id ? theme.backgroundColor : 'transparent' }
             ]}
             onPress={() => {
                 resetPhotoState();
@@ -175,7 +177,7 @@ const AddStoryScreen = ({ navigation }) => {
             style={[
                 styles.albumItem, 
                 styles.allPhotosItem,
-                { backgroundColor: selectedAlbum === null ? themeColors.primary : 'transparent' }
+                { backgroundColor: selectedAlbum === null ? theme.backgroundColor : 'transparent' }
             ]}
             onPress={() => {
                 resetPhotoState();
@@ -198,12 +200,12 @@ const AddStoryScreen = ({ navigation }) => {
     }, [isLoading, hasMore]);
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Icon name="arrow-back" size={24} color={themeColors.primary} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Add to story</Text>
+                <Text style={[styles.headerTitle, { color: themeColors.primary }]}>Add to story</Text>
                 <View style={styles.headerRight}>
                     <TouchableOpacity 
                         style={styles.headerIcon}
@@ -222,14 +224,14 @@ const AddStoryScreen = ({ navigation }) => {
                     <View style={styles.optionIconContainer}>
                         <Icon name="camera" size={32} color="#fff" />
                     </View>
-                    <Text style={styles.optionText}>Camera</Text>
+                    <Text style={[styles.optionText, { color: theme.textColor }]}>Camera</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.optionButton} onPress={handleTextStory}>
                     <View style={styles.optionIconContainer}>
-                        <Text style={styles.textIcon}>Aa</Text>
+                        <Text style={[styles.textIcon, { color: '#fff' }]} >Aa</Text>
                     </View>
-                    <Text style={styles.optionText}>Text</Text>
+                    <Text style={[styles.optionText, { color: theme.textColor }]}>Text</Text>
                 </TouchableOpacity>
             </View>
 
@@ -266,7 +268,7 @@ const AddStoryScreen = ({ navigation }) => {
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Select Album</Text>
                             <TouchableOpacity onPress={() => setShowAlbumPicker(false)}>
-                                <Icon name="close" size={24} color={themeColors.text} />
+                                <Icon name="close" size={24} color={theme.textColor} />
                             </TouchableOpacity>
                         </View>
                         <FlatList
@@ -285,8 +287,6 @@ const AddStoryScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: themeColors.background,
-
     },
     header: {
         flexDirection: 'row',
@@ -300,7 +300,6 @@ const styles = StyleSheet.create({
         padding: 4,
     },
     headerTitle: {
-        color: themeColors.text,
         fontSize: 18,
         fontWeight: 'bold',
     },

@@ -15,6 +15,7 @@ import ImageViewer from '../components/ImageViewer';
 import { sendNotification } from '../utils/notificationHelper';
 import MessageTimestamp from '../components/MessageTimestamp';
 import { themeColors } from '../config/themeColor';
+import { useTheme } from '../contexts/ThemeContext';
 
 const client = generateClient();
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -96,6 +97,7 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
     const isInitialLoad = useRef(true);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
+    const { theme } = useTheme();
 
     useEffect(() => {
         fetchCurrentUser();
@@ -401,7 +403,10 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
     const renderItem = ({ item: group }: { item: GroupedMessages }) => (
         <View style={styles.messageGroup}>
             {group.timestamp && (
-                <MessageTimestamp timestamp={group.timestamp} />
+                <MessageTimestamp 
+                    timestamp={group.timestamp} 
+                    style={{ color: theme.textColor }}
+                />
             )}
             <View style={styles.messagesWrapper}>
                 {group.messages.map((message, index) => (
@@ -440,20 +445,69 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
         contentHeight.current = height;
     };
 
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+        },
+        chatContainer: {
+            flex: 1,
+            flexDirection: 'column',
+        },
+        messagesContainer: {
+            flex: 1,
+        },
+        messagesContentContainer: {
+            padding: 16,
+            paddingBottom: 8,
+            flexGrow: 1,
+            
+        },
+        messageGroup: {
+            marginBottom: 12,
+            
+        },
+        messagesWrapper: {
+            flexDirection: 'column',
+            
+        },
+        emptyContainer: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            
+        },
+        emptyText: {
+            color: themeColors.textSecondary,
+            fontSize: 16,
+            textAlign: 'center',
+            marginHorizontal: 32,
+            
+        },
+        input: {
+            backgroundColor: theme.input,
+            color: theme.textColor,
+            borderRadius: 20,
+            padding: 10,
+        },
+    });
+
     return (
         <KeyboardAvoidingView 
-            style={styles.container}
+            style={[styles.container, { backgroundColor: theme.backgroundColor }]}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
             <Header title={name} onBackPress={() => navigation.goBack()} />
-            <View style={styles.chatContainer}>
+            <View style={[styles.chatContainer, { backgroundColor: theme.backgroundColor }]}>
                 <FlatList
                     ref={scrollViewRef}
-                    style={styles.messagesContainer}
+                    style={[styles.messagesContainer, { backgroundColor: theme.backgroundColor }]}
                     contentContainerStyle={[
                         styles.messagesContentContainer,
-                        messages.length === 0 && styles.emptyContainer
+                        messages.length === 0 && [
+                            styles.emptyContainer,
+                            { backgroundColor: theme.backgroundColor }
+                        ]
                     ]}
                     data={groupMessages(messages)}
                     renderItem={renderItem}
@@ -484,6 +538,7 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                     onImagePick={handleImagePick}
                     onEmojiToggle={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
                     showSendButton={!!inputText.trim()}
+                    
                 />
             </View>
             <Modal 
@@ -507,43 +562,5 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
         </KeyboardAvoidingView>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: themeColors.background,
-    },
-    chatContainer: {
-        flex: 1,
-        flexDirection: 'column',
-    },
-    messagesContainer: {
-        flex: 1,
-        backgroundColor: themeColors.background,
-    },
-    messagesContentContainer: {
-        padding: 16,
-        paddingBottom: 8,
-        flexGrow: 1,
-    },
-    messageGroup: {
-        marginBottom: 12,
-    },
-    messagesWrapper: {
-        flexDirection: 'column',
-    },
-    emptyContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: themeColors.background,
-    },
-    emptyText: {
-        color: themeColors.textSecondary,
-        fontSize: 16,
-        textAlign: 'center',
-        marginHorizontal: 32,
-    },
-});
 
 export default Chat;

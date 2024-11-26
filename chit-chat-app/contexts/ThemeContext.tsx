@@ -16,6 +16,7 @@ type Theme = {
   textInput: string;
   tabBar: string;
   selecUser: string;
+  group: string;
 };
 
 const lightTheme: Theme = {
@@ -27,6 +28,7 @@ const lightTheme: Theme = {
   textInput: '#000000',
   tabBar: '#5a3751',
   selecUser: '#a29bfe',
+  group: '#fff',
 };
 
 const darkTheme: Theme = {
@@ -38,6 +40,7 @@ const darkTheme: Theme = {
  textInput: '#000000', 
  tabBar: '#a794a3',
  selecUser: '#f2edf1',
+ group: '#fff',
  
 };
 

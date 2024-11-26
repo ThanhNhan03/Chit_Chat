@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../contexts/ThemeContext';
 import { themeColors } from '../config/themeColor';
 
 interface HeaderProps {
@@ -9,41 +10,45 @@ interface HeaderProps {
     rightComponent?: React.ReactNode;
 }
 
-const Header: React.FC<HeaderProps> = ({ title, onBackPress, rightComponent }) => (
-    <View style={styles.container}>
-        <View style={styles.header}>
-            <TouchableOpacity 
-                style={styles.backButton}
-                onPress={onBackPress}
-                activeOpacity={0.7}
-            >
-                <Ionicons 
-                    name="arrow-back" 
-                    size={24} 
-                    color={themeColors.primary} 
-                />
-            </TouchableOpacity>
-            
-            <View style={styles.headerTitle}>
-                <Text 
-                    style={styles.headerName}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
+const Header: React.FC<HeaderProps> = ({ title, onBackPress, rightComponent }) => {
+    const { theme } = useTheme();
+
+    return (
+        <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
+            <View style={styles.header}>
+                <TouchableOpacity 
+                    style={styles.backButton}
+                    onPress={onBackPress}
+                    activeOpacity={0.7}
                 >
-                    {title}
-                </Text>
-            </View>
-            
-            {rightComponent ? (
-                <View style={styles.rightComponent}>
-                    {rightComponent}
+                    <Ionicons 
+                        name="arrow-back" 
+                        size={24} 
+                        color={theme.textColor}
+                    />
+                </TouchableOpacity>
+                
+                <View style={styles.headerTitle}>
+                    <Text 
+                        style={[styles.headerName, { color: theme.textColor }]}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                    >
+                        {title}
+                    </Text>
                 </View>
-            ) : (
-                <View style={styles.placeholderRight} />
-            )}
+                
+                {rightComponent ? (
+                    <View style={styles.rightComponent}>
+                        {rightComponent}
+                    </View>
+                ) : (
+                    <View style={styles.placeholderRight} />
+                )}
+            </View>
         </View>
-    </View>
-);
+    );
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -69,7 +74,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 12,
-        backgroundColor: themeColors.surface,
+        
     },
     backButton: {
         width: 40,

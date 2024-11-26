@@ -22,6 +22,10 @@ export const onCreateGroupChat = /* GraphQL */ `subscription OnCreateGroupChat($
     updated_at
     group_picture
     description
+    messages {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -45,6 +49,10 @@ export const onUpdateGroupChat = /* GraphQL */ `subscription OnUpdateGroupChat($
     updated_at
     group_picture
     description
+    messages {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -68,6 +76,10 @@ export const onDeleteGroupChat = /* GraphQL */ `subscription OnDeleteGroupChat($
     updated_at
     group_picture
     description
+    messages {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -90,6 +102,10 @@ export const onCreateFriendChat = /* GraphQL */ `subscription OnCreateFriendChat
     created_at
     last_message
     updated_at
+    messages {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -112,6 +128,10 @@ export const onUpdateFriendChat = /* GraphQL */ `subscription OnUpdateFriendChat
     created_at
     last_message
     updated_at
+    messages {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -134,6 +154,10 @@ export const onDeleteFriendChat = /* GraphQL */ `subscription OnDeleteFriendChat
     created_at
     last_message
     updated_at
+    messages {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -153,8 +177,63 @@ export const onCreateMessages = /* GraphQL */ `subscription OnCreateMessages($fi
     timestamp
     status
     attachments
-    reactions {
+    message_reactions {
       nextToken
+      __typename
+    }
+    sender {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    reply_to_message_id
+    reply_to_message {
+      id
+      chat_type
+      chat_id
+      sender_id
+      content
+      timestamp
+      status
+      attachments
+      reply_to_message_id
+      createdAt
+      updatedAt
+      __typename
+    }
+    replied_messages {
+      nextToken
+      __typename
+    }
+    group_chat {
+      id
+      group_name
+      created_by
+      created_at
+      last_message
+      updated_at
+      group_picture
+      description
+      createdAt
+      updatedAt
+      __typename
+    }
+    friend_chat {
+      id
+      chat_id
+      created_at
+      last_message
+      updated_at
+      createdAt
+      updatedAt
       __typename
     }
     createdAt
@@ -176,8 +255,63 @@ export const onUpdateMessages = /* GraphQL */ `subscription OnUpdateMessages($fi
     timestamp
     status
     attachments
-    reactions {
+    message_reactions {
       nextToken
+      __typename
+    }
+    sender {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    reply_to_message_id
+    reply_to_message {
+      id
+      chat_type
+      chat_id
+      sender_id
+      content
+      timestamp
+      status
+      attachments
+      reply_to_message_id
+      createdAt
+      updatedAt
+      __typename
+    }
+    replied_messages {
+      nextToken
+      __typename
+    }
+    group_chat {
+      id
+      group_name
+      created_by
+      created_at
+      last_message
+      updated_at
+      group_picture
+      description
+      createdAt
+      updatedAt
+      __typename
+    }
+    friend_chat {
+      id
+      chat_id
+      created_at
+      last_message
+      updated_at
+      createdAt
+      updatedAt
       __typename
     }
     createdAt
@@ -199,8 +333,63 @@ export const onDeleteMessages = /* GraphQL */ `subscription OnDeleteMessages($fi
     timestamp
     status
     attachments
-    reactions {
+    message_reactions {
       nextToken
+      __typename
+    }
+    sender {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    reply_to_message_id
+    reply_to_message {
+      id
+      chat_type
+      chat_id
+      sender_id
+      content
+      timestamp
+      status
+      attachments
+      reply_to_message_id
+      createdAt
+      updatedAt
+      __typename
+    }
+    replied_messages {
+      nextToken
+      __typename
+    }
+    group_chat {
+      id
+      group_name
+      created_by
+      created_at
+      last_message
+      updated_at
+      group_picture
+      description
+      createdAt
+      updatedAt
+      __typename
+    }
+    friend_chat {
+      id
+      chat_id
+      created_at
+      last_message
+      updated_at
+      createdAt
+      updatedAt
       __typename
     }
     createdAt
@@ -212,53 +401,140 @@ export const onDeleteMessages = /* GraphQL */ `subscription OnDeleteMessages($fi
   APITypes.OnDeleteMessagesSubscriptionVariables,
   APITypes.OnDeleteMessagesSubscription
 >;
-export const onCreateReactions = /* GraphQL */ `subscription OnCreateReactions($filter: ModelSubscriptionReactionsFilterInput) {
-  onCreateReactions(filter: $filter) {
+export const onCreateMessageReaction = /* GraphQL */ `subscription OnCreateMessageReaction(
+  $filter: ModelSubscriptionMessageReactionFilterInput
+) {
+  onCreateMessageReaction(filter: $filter) {
     id
     message_id
     user_id
     icon
     created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    message {
+      id
+      chat_type
+      chat_id
+      sender_id
+      content
+      timestamp
+      status
+      attachments
+      reply_to_message_id
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
   }
 }
 ` as GeneratedSubscription<
-  APITypes.OnCreateReactionsSubscriptionVariables,
-  APITypes.OnCreateReactionsSubscription
+  APITypes.OnCreateMessageReactionSubscriptionVariables,
+  APITypes.OnCreateMessageReactionSubscription
 >;
-export const onUpdateReactions = /* GraphQL */ `subscription OnUpdateReactions($filter: ModelSubscriptionReactionsFilterInput) {
-  onUpdateReactions(filter: $filter) {
+export const onUpdateMessageReaction = /* GraphQL */ `subscription OnUpdateMessageReaction(
+  $filter: ModelSubscriptionMessageReactionFilterInput
+) {
+  onUpdateMessageReaction(filter: $filter) {
     id
     message_id
     user_id
     icon
     created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    message {
+      id
+      chat_type
+      chat_id
+      sender_id
+      content
+      timestamp
+      status
+      attachments
+      reply_to_message_id
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
   }
 }
 ` as GeneratedSubscription<
-  APITypes.OnUpdateReactionsSubscriptionVariables,
-  APITypes.OnUpdateReactionsSubscription
+  APITypes.OnUpdateMessageReactionSubscriptionVariables,
+  APITypes.OnUpdateMessageReactionSubscription
 >;
-export const onDeleteReactions = /* GraphQL */ `subscription OnDeleteReactions($filter: ModelSubscriptionReactionsFilterInput) {
-  onDeleteReactions(filter: $filter) {
+export const onDeleteMessageReaction = /* GraphQL */ `subscription OnDeleteMessageReaction(
+  $filter: ModelSubscriptionMessageReactionFilterInput
+) {
+  onDeleteMessageReaction(filter: $filter) {
     id
     message_id
     user_id
     icon
     created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    message {
+      id
+      chat_type
+      chat_id
+      sender_id
+      content
+      timestamp
+      status
+      attachments
+      reply_to_message_id
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
   }
 }
 ` as GeneratedSubscription<
-  APITypes.OnDeleteReactionsSubscriptionVariables,
-  APITypes.OnDeleteReactionsSubscription
+  APITypes.OnDeleteMessageReactionSubscriptionVariables,
+  APITypes.OnDeleteMessageReactionSubscription
 >;
 export const onCreateContact = /* GraphQL */ `subscription OnCreateContact($filter: ModelSubscriptionContactFilterInput) {
   onCreateContact(filter: $filter) {
@@ -266,6 +542,32 @@ export const onCreateContact = /* GraphQL */ `subscription OnCreateContact($filt
     user_id
     contact_user_id
     created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    contact_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -281,6 +583,32 @@ export const onUpdateContact = /* GraphQL */ `subscription OnUpdateContact($filt
     user_id
     contact_user_id
     created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    contact_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -296,6 +624,32 @@ export const onDeleteContact = /* GraphQL */ `subscription OnDeleteContact($filt
     user_id
     contact_user_id
     created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    contact_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -314,6 +668,32 @@ export const onCreateFriendRequests = /* GraphQL */ `subscription OnCreateFriend
     to_user_id
     status
     created_at
+    from_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    to_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -332,6 +712,32 @@ export const onUpdateFriendRequests = /* GraphQL */ `subscription OnUpdateFriend
     to_user_id
     status
     created_at
+    from_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    to_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -350,6 +756,32 @@ export const onDeleteFriendRequests = /* GraphQL */ `subscription OnDeleteFriend
     to_user_id
     status
     created_at
+    from_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    to_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -389,7 +821,11 @@ export const onCreateUser = /* GraphQL */ `subscription OnCreateUser($filter: Mo
       nextToken
       __typename
     }
-    Reactions {
+    message_reactions {
+      nextToken
+      __typename
+    }
+    story_reactions {
       nextToken
       __typename
     }
@@ -398,6 +834,10 @@ export const onCreateUser = /* GraphQL */ `subscription OnCreateUser($filter: Mo
       __typename
     }
     StoryViews {
+      nextToken
+      __typename
+    }
+    sent_messages {
       nextToken
       __typename
     }
@@ -440,7 +880,11 @@ export const onUpdateUser = /* GraphQL */ `subscription OnUpdateUser($filter: Mo
       nextToken
       __typename
     }
-    Reactions {
+    message_reactions {
+      nextToken
+      __typename
+    }
+    story_reactions {
       nextToken
       __typename
     }
@@ -449,6 +893,10 @@ export const onUpdateUser = /* GraphQL */ `subscription OnUpdateUser($filter: Mo
       __typename
     }
     StoryViews {
+      nextToken
+      __typename
+    }
+    sent_messages {
       nextToken
       __typename
     }
@@ -491,7 +939,11 @@ export const onDeleteUser = /* GraphQL */ `subscription OnDeleteUser($filter: Mo
       nextToken
       __typename
     }
-    Reactions {
+    message_reactions {
+      nextToken
+      __typename
+    }
+    story_reactions {
       nextToken
       __typename
     }
@@ -500,6 +952,10 @@ export const onDeleteUser = /* GraphQL */ `subscription OnDeleteUser($filter: Mo
       __typename
     }
     StoryViews {
+      nextToken
+      __typename
+    }
+    sent_messages {
       nextToken
       __typename
     }
@@ -861,6 +1317,10 @@ export const onCreateStory = /* GraphQL */ `subscription OnCreateStory($filter: 
       nextToken
       __typename
     }
+    story_reactions {
+      nextToken
+      __typename
+    }
     created_at
     expires_at
     music_start_time
@@ -914,6 +1374,10 @@ export const onUpdateStory = /* GraphQL */ `subscription OnUpdateStory($filter: 
       nextToken
       __typename
     }
+    story_reactions {
+      nextToken
+      __typename
+    }
     created_at
     expires_at
     music_start_time
@@ -964,6 +1428,10 @@ export const onDeleteStory = /* GraphQL */ `subscription OnDeleteStory($filter: 
       __typename
     }
     views {
+      nextToken
+      __typename
+    }
+    story_reactions {
       nextToken
       __typename
     }
@@ -1117,4 +1585,151 @@ export const onDeleteStoryView = /* GraphQL */ `subscription OnDeleteStoryView($
 ` as GeneratedSubscription<
   APITypes.OnDeleteStoryViewSubscriptionVariables,
   APITypes.OnDeleteStoryViewSubscription
+>;
+export const onCreateStoryReaction = /* GraphQL */ `subscription OnCreateStoryReaction(
+  $filter: ModelSubscriptionStoryReactionFilterInput
+) {
+  onCreateStoryReaction(filter: $filter) {
+    id
+    story_id
+    user_id
+    icon
+    created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnCreateStoryReactionSubscriptionVariables,
+  APITypes.OnCreateStoryReactionSubscription
+>;
+export const onUpdateStoryReaction = /* GraphQL */ `subscription OnUpdateStoryReaction(
+  $filter: ModelSubscriptionStoryReactionFilterInput
+) {
+  onUpdateStoryReaction(filter: $filter) {
+    id
+    story_id
+    user_id
+    icon
+    created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnUpdateStoryReactionSubscriptionVariables,
+  APITypes.OnUpdateStoryReactionSubscription
+>;
+export const onDeleteStoryReaction = /* GraphQL */ `subscription OnDeleteStoryReaction(
+  $filter: ModelSubscriptionStoryReactionFilterInput
+) {
+  onDeleteStoryReaction(filter: $filter) {
+    id
+    story_id
+    user_id
+    icon
+    created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnDeleteStoryReactionSubscriptionVariables,
+  APITypes.OnDeleteStoryReactionSubscription
 >;

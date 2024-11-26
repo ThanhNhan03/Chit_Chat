@@ -17,6 +17,7 @@ import {
     ModelUserGroupChatConnection
 } from '../src/API';
 import { themeColors } from '../config/themeColor';
+import { useTheme } from '../contexts/ThemeContext';
 
 const client = generateClient();
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -134,6 +135,7 @@ const formatTimestamp = (timestamp: string) => {
 import MainHeader from '../components/MainHeader';
 
 const Chats: React.FC<ChatsProps> = ({ navigation }) => {
+    const { theme } = useTheme();
     const [chats, setChats] = useState<Chat[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -584,9 +586,9 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                     <View style={styles.chatDetails}>
                         <View style={styles.chatHeader}>
                             <Text 
-                                style={[
-                                    styles.chatName, 
-                                    item.isNew && styles.newMessageText
+                                style={[styles.chatName, 
+                                    item.isNew && styles.newMessageText,
+                                    { color: theme.textColor }
                                 ]} 
                                 numberOfLines={1}
                             >
@@ -594,16 +596,17 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                             </Text>
                             <Text style={[
                                 styles.timestamp,
-                                item.isNew && styles.newMessageTimestamp
+                                item.isNew && styles.newMessageTimestamp,
+                                { color: theme.textColor }
                             ]}>
                                 {formatTimestamp(item.timestamp)}
                             </Text>
                         </View>
                         <View style={styles.lastMessageContainer}>
                             <Text 
-                                style={[
-                                    styles.lastMessage, 
-                                    item.isNew && styles.newMessageText
+                                style={[styles.lastMessage, 
+                                    item.isNew && styles.newMessageText,
+                                    
                                 ]} 
                                 numberOfLines={1}
                             >
@@ -632,7 +635,7 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
     );
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
             <MainHeader title="Chats" />
             {loading ? (
                 <ActivityIndicator size="large" style={styles.loadingContainer} color={themeColors.primary} />
@@ -665,8 +668,6 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: themeColors.background,
-        // paddingTop: screenHeight * 0.02,
     },
     // header: {
     //     fontSize: screenWidth * 0.06,
@@ -691,7 +692,7 @@ const styles = StyleSheet.create({
     },
     chatItem: {
         padding: 16,
-        backgroundColor: themeColors.surface,
+       
         // borderBottomWidth: 1,
         // borderBottomColor: '#eee',
     },
