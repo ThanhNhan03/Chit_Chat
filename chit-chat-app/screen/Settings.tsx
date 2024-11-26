@@ -11,6 +11,7 @@ import { GetUserQuery } from '../src/API';
 import { getUser } from '../src/graphql/queries';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { themeColors } from '../config/themeColor';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 const client = generateClient();
@@ -24,6 +25,7 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
   const { user, setUser } = useContext(AuthenticatedUserContext);
   const [userData, setUserData] = useState<GetUserQuery['getUser']>(null);
   const [isAccountExpanded, setIsAccountExpanded] = useState(false);
+  const { isDarkMode, toggleDarkMode, theme } = useTheme();
 
   const fetchUserData = async () => {
     if (!user?.sub && !user?.userId) return;
@@ -77,8 +79,8 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
+      <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
         <TouchableOpacity 
           onPress={() => navigation.goBack()}
           style={styles.backButton}
@@ -86,17 +88,17 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
           <Ionicons 
             name="arrow-back" 
             size={24} 
-            color={themeColors.primary} 
+            color={theme.textColor} 
           />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: theme.textColor }]}>Settings </Text>
       </View>
 
       <ScrollView style={styles.scrollContainer}>
         {/* Profile Section */}
         <View style={styles.section}>
           <TouchableOpacity 
-            style={styles.profileCard}
+            style={[styles.profileCard, { backgroundColor: theme.cardBackground }]}
             onPress={handleProfilePress}
             activeOpacity={0.7}
           >
@@ -113,23 +115,53 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
               </View>
             )}
             <View style={styles.userDetails}>
-              <Text style={styles.username}>
+              <Text style={[styles.username, { color: theme.textColor }]}>
                 {userData?.name || 'User Name'}
               </Text>
-              <Text style={styles.email}>
+              <Text style={[styles.email, { color: theme.textColor }]}>
                 {userData?.email || ''}
               </Text>
             </View>
             <View style={styles.editButton}>
-              <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+              <Ionicons name="chevron-forward" size={20} color={theme.textColor} />
             </View>
           </TouchableOpacity>
         </View>
 
         {/* Options Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>General</Text>
-          <View style={styles.optionsCard}>
+          <Text style={[styles.sectionTitle, { color: theme.textColor }]}>General</Text>
+          <View style={[styles.optionsCard, { backgroundColor: theme.cardBackground }]}>
+            {/* Dark Mode Toggle */}
+            <TouchableOpacity 
+              style={styles.option}
+              onPress={toggleDarkMode}
+            >
+              <View style={styles.optionLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: '#E8F2FF' }]}>
+                  <Ionicons 
+                    name={isDarkMode ? "moon" : "sunny"} 
+                    size={22} 
+                    color="#007AFF" 
+                  />
+                </View>
+                <Text style={[styles.optionText, { color: theme.textColor }]}>
+                  Dark Mode
+                </Text>
+              </View>
+              <View style={styles.darkModeSwitch}>
+                <View style={[
+                  styles.switchIndicator,
+                  { backgroundColor: isDarkMode ? themeColors.primary : '#E0E0E0' }
+                ]}>
+                  <View style={[
+                    styles.switchKnob,
+                    { transform: [{ translateX: isDarkMode ? 10 : 0 }] }
+                  ]} />
+                </View>
+              </View>
+            </TouchableOpacity>
+
             <TouchableOpacity 
               style={styles.option}
               onPress={() => navigation.navigate('Help')}
@@ -138,9 +170,9 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
                 <View style={[styles.iconContainer, { backgroundColor: '#E8F5E9' }]}>
                   <Ionicons name="information-circle-outline" size={22} color="#4CAF50" />
                 </View>
-                <Text style={styles.optionText}>Help</Text>
+                <Text style={[styles.optionText, { color: theme.textColor }]}>Help</Text> 
               </View>
-              <Ionicons name="chevron-forward" size={20} color={themeColors.textSecondary} />
+              <Ionicons name="chevron-forward" size={20} color={theme.textColor} />
             </TouchableOpacity>
 
             {/* Account Dropdown */}
@@ -152,39 +184,39 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
                 <View style={[styles.iconContainer, { backgroundColor: '#E3F2FD' }]}>
                   <Ionicons name="person-outline" size={22} color="#2196F3" />
                 </View>
-                <Text style={styles.optionText}>Account</Text>
+                <Text style={[styles.optionText, { color: theme.textColor }]}>Account</Text>
               </View>
               <Ionicons 
                 name={isAccountExpanded ? "chevron-down" : "chevron-forward"} 
                 size={20} 
-                color={themeColors.textSecondary} 
+                color={theme.textColor} 
               />
             </TouchableOpacity>
 
             {/* Account Suboptions */}
             {isAccountExpanded && (
-              <View style={styles.subOptions}>
+              <View style={[styles.subOptions, { backgroundColor: theme.backgroundColor }]}>
                 <TouchableOpacity 
-                  style={styles.subOption}
+                  style={[styles.subOption, { borderBottomColor: theme.borderColor }]}
                   onPress={handleChangePassword}
                 >
                   <View style={styles.optionLeft}>
                     <View style={[styles.iconContainer, { backgroundColor: '#FFF3E0' }]}>
                       <Ionicons name="key-outline" size={22} color="#FF9800" />
                     </View>
-                    <Text style={styles.optionText}>Change Password</Text>
+                    <Text style={[styles.optionText, { color: theme.textColor }]}>Change Password</Text>
                   </View>
                 </TouchableOpacity>
 
                 <TouchableOpacity 
-                  style={styles.subOption}
+                  style={[styles.subOption, { borderBottomColor: theme.borderColor }]}
                   onPress={() => navigation.navigate('BlockedUsers')}
                 >
                   <View style={styles.optionLeft}>
                     <View style={[styles.iconContainer, { backgroundColor: '#FCE4EC' }]}>
                       <Ionicons name="person-remove-outline" size={22} color="#E91E63" />
                     </View>
-                    <Text style={styles.optionText}>Blocked Users</Text>
+                    <Text style={[styles.optionText, { color: theme.textColor }]}>Blocked Users</Text>
                   </View>
                 </TouchableOpacity>
               </View>
@@ -242,7 +274,6 @@ const styles = StyleSheet.create({
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     padding: 16,
     borderRadius: 16,
     marginTop: 12,
@@ -267,12 +298,10 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 18,
     fontWeight: '600',
-    color: themeColors.text,
     marginBottom: 4,
   },
   email: {
     fontSize: 14,
-    color: themeColors.textSecondary,
   },
   editButton: {
     padding: 8,
@@ -338,6 +367,23 @@ const styles = StyleSheet.create({
     paddingLeft: 32,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+  },
+  darkModeSwitch: {
+    padding: 2,
+  },
+  switchIndicator: {
+    width: 48,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 4,
+  },
+  switchKnob: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#fff',
   },
 
 });

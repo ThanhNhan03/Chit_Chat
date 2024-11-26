@@ -12,6 +12,7 @@ import { confirmResetPassword, updatePassword } from 'aws-amplify/auth';
 import { AuthenticatedUserContext } from '../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Dimensions } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 interface ResetPasswordProps {
@@ -27,6 +28,7 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ route, navigation }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { theme } = useTheme();
 
   const handleResetPassword = async () => {
     if (user) {
@@ -91,16 +93,16 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ route, navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
       <SafeAreaView style={styles.form}>
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: theme.borderColor }]}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={24} color="#000" />
+            <Ionicons name="arrow-back" size={24} color={theme.textColor} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>
+          <Text style={[styles.headerTitle, { color: theme.textColor }]}>
             {user ? 'Change Password' : 'Reset Password'}
           </Text>
           <View style={{ width: 40 }} />
@@ -108,13 +110,19 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ route, navigation }) => {
 
         <View style={styles.content}>
           {!user && (
-            <Text style={styles.subtitle}>Enter the code sent to your email</Text>
+            <Text style={[styles.subtitle, { color: theme.textColor }]}>
+              Enter the code sent to your email
+            </Text>
           )}
 
           {!user && (
             <TextInput
-              style={styles.input}
+              style={[styles.input, { 
+                backgroundColor: theme.input,
+                color: theme.textInput
+              }]}
               placeholder="Verification Code"
+              placeholderTextColor={theme.textInput}
               value={code}
               onChangeText={setCode}
               keyboardType="number-pad"
@@ -123,8 +131,12 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ route, navigation }) => {
 
           {user && (
             <TextInput
-              style={styles.input}
+              style={[styles.input, { 
+                backgroundColor: theme.input,
+                color: theme.textInput
+              }]}
               placeholder="Current Password"
+              placeholderTextColor={theme.textInput}
               secureTextEntry
               value={oldPassword}
               onChangeText={setOldPassword}
@@ -132,16 +144,24 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ route, navigation }) => {
           )}
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { 
+              backgroundColor: theme.input,
+              color: theme.textInput
+            }]}
             placeholder="New Password"
+            placeholderTextColor={theme.textInput}
             secureTextEntry
             value={newPassword}
             onChangeText={setNewPassword}
           />
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { 
+              backgroundColor: theme.input,
+              color: theme.textInput
+            }]}
             placeholder="Confirm New Password"
+            placeholderTextColor={theme.textInput}
             secureTextEntry
             value={confirmPassword}
             onChangeText={setConfirmPassword}
@@ -174,7 +194,6 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     padding: width * 0.05,
   },
   form: {

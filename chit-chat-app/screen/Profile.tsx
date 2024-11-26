@@ -11,6 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { uploadData, getUrl } from 'aws-amplify/storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { themeColors } from '../config/themeColor';
+import { useTheme } from '../contexts/ThemeContext';
 const client = generateClient();
 
 // Thêm constant cho CloudFront URL
@@ -22,6 +23,7 @@ interface ProfileProps {
 
 const Profile: React.FC<ProfileProps> = ({ navigation }) => {
     const { user } = useContext(AuthenticatedUserContext);
+    const { theme } = useTheme();
     const [isEditing, setIsEditing] = useState(false);
     const [userData, setUserData] = useState({
         name: '',
@@ -135,20 +137,20 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
+        <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
+            <View style={[styles.header, { backgroundColor: theme.backgroundColor }]}>
                 <TouchableOpacity 
                     style={styles.backButton}
                     onPress={() => navigation.goBack()}
                 >
-                    <Ionicons name="arrow-back" size={24} color={themeColors.text} />
+                    <Ionicons name="arrow-back" size={24} color={theme.textColor} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Edit Profile</Text>
+                <Text style={[styles.headerTitle, { color: theme.textColor }]}>Edit Profile</Text>
                 <TouchableOpacity 
                     style={styles.saveButton}
                     onPress={() => isEditing ? handleSave() : setIsEditing(true)}
                 >
-                    <Text style={styles.saveButtonText}>
+                    <Text style={{ color: theme.textColor }}>
                         {isEditing ? 'Save' : 'Edit'}
                     </Text>
                 </TouchableOpacity>
@@ -186,17 +188,25 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
 
                 <View style={styles.formSection}>
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Full Name</Text>
+                        <Text style={[styles.label, { color: theme.textColor }]}>Full Name</Text>
                         <TextInput
                             style={[
                                 styles.input,
-                                !isEditing && styles.disabledInput
+                                { 
+                                    backgroundColor: theme.cardBackground,
+                                    borderColor: theme.borderColor,
+                                    color: theme.textColor 
+                                },
+                                !isEditing && [styles.disabledInput, { 
+                                    backgroundColor: theme.backgroundColor,
+                                    color: theme.textColor 
+                                }]
                             ]}
                             value={userData.name}
                             onChangeText={(text) => setUserData(prev => ({ ...prev, name: text }))}
                             editable={isEditing}
                             placeholder="Enter your name"
-                            placeholderTextColor={themeColors.textSecondary}
+                            placeholderTextColor={theme.textColor + '80'}
                         />
                     </View>
                 </View>
@@ -208,7 +218,6 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
     },
     header: {
         flexDirection: 'row',
@@ -217,7 +226,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingTop: 20,
         paddingBottom: 20,
-        backgroundColor: '#fff',
     },
     backButton: {
         padding: 4,
@@ -225,7 +233,6 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 20,
         fontWeight: '600',
-        color: themeColors.text,
     },
     saveButton: {
         paddingVertical: 8,
@@ -234,7 +241,6 @@ const styles = StyleSheet.create({
     saveButtonText: {
         fontSize: 16,
         fontWeight: '600',
-        color: themeColors.primary,
     },
     content: {
         flex: 1,
@@ -297,22 +303,15 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: '500',
-        color: themeColors.textSecondary,
-        marginBottom: 8,
     },
     input: {
         height: 52,
-        backgroundColor: '#fff',
         borderWidth: 1,
-        borderColor: themeColors.border,
         borderRadius: 12,
         paddingHorizontal: 16,
         fontSize: 16,
-        color: themeColors.text,
     },
     disabledInput: {
-        backgroundColor: themeColors.background,
-        color: themeColors.textSecondary,
     },
 });
 

@@ -5,12 +5,15 @@ import { listFriendRequests, listUsers, listContacts } from '../src/graphql/quer
 import { createFriendRequests, deleteFriendRequests } from '../src/graphql/mutations';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../contexts/ThemeContext';
 import { themeColors } from '../config/themeColor';
+
 
 // Tạo client GraphQL
 const client = generateClient();
 
 export default function NewUserScreen() {
+  const { theme } = useTheme();
   const [searchEmail, setSearchEmail] = useState('');
   const [pendingRequests, setPendingRequests] = useState<string[]>([]);
   const [foundUser, setFoundUser] = useState<any>(null);
@@ -208,19 +211,19 @@ export default function NewUserScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Add New Friend</Text>
-        <Text style={styles.headerSubtitle}>Find your friends by their email address</Text>
+        <Text style={[styles.headerTitle, { color: theme.textColor }]}>Add New Friend</Text>
+        <Text style={[styles.headerSubtitle, { color: theme.textColor }]}>Find your friends by their email address</Text>
       </View>
 
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
-          <Ionicons name="mail-outline" size={20} color={themeColors.textSecondary} />
+          <Ionicons name="mail-outline" size={30} color={theme.textColor} />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: theme.textInput, backgroundColor: theme.input }]}
             placeholder="Enter email address"
-            placeholderTextColor={themeColors.textSecondary}
+            placeholderTextColor={theme.textColor}
             value={searchEmail}
             onChangeText={setSearchEmail}
             keyboardType="email-address"
@@ -231,15 +234,12 @@ export default function NewUserScreen() {
               onPress={() => setSearchEmail('')}
               style={styles.clearButton}
             >
-              <Ionicons name="close-circle" size={20} color={themeColors.textSecondary} />
+              <Ionicons name="close-circle" size={20} color={theme.textColor} />
             </TouchableOpacity>
           )}
         </View>
         <TouchableOpacity 
-          style={[
-            styles.searchButton,
-            isSearching && styles.searchingButton
-          ]}
+          style={[styles.searchButton, isSearching && styles.searchingButton]}
           onPress={handleSearch}
           disabled={isSearching || !searchEmail.trim()}
         >
@@ -253,7 +253,7 @@ export default function NewUserScreen() {
 
       {foundUser && (
         <View style={styles.resultContainer}>
-          <View style={styles.userItem}>
+          <View style={[styles.userItem, { backgroundColor: theme.cardBackground }]}>
             <View style={styles.avatarContainer}>
               {foundUser.profile_picture ? (
                 <Image 
@@ -269,8 +269,8 @@ export default function NewUserScreen() {
               )}
             </View>
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>{foundUser.name}</Text>
-              <Text style={styles.userEmail}>{foundUser.email}</Text>
+              <Text style={[styles.userName, { color: theme.textColor }]}>{foundUser.name}</Text>
+              <Text style={[styles.userEmail, { color: theme.textColor }]}>{foundUser.email}</Text>
             </View>
             {pendingRequests.includes(foundUser.id) ? (
               <TouchableOpacity
@@ -299,12 +299,12 @@ export default function NewUserScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+  
   },
   header: {
     padding: 20,
     paddingTop: 40,
-    backgroundColor: '#fff',
+    
   },
   headerTitle: {
     fontSize: 28,

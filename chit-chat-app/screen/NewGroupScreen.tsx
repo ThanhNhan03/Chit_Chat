@@ -17,6 +17,7 @@ import { themeColors } from "../config/themeColor";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { uploadData } from "aws-amplify/storage";
+import { useTheme } from "../contexts/ThemeContext";
 
 const client = generateClient();
 const CLOUDFRONT_URL = "https://d1uil1dxdmhthh.cloudfront.net";
@@ -29,6 +30,7 @@ export default function NewGroupScreen({ navigation }) {
   const [contacts, setContacts] = useState([]);
   const [groupAvatar, setGroupAvatar] = useState("");
   const [uploading, setUploading] = useState(false);
+  const { theme } = useTheme();
 
   useEffect(() => {
     fetchContacts();
@@ -207,19 +209,19 @@ export default function NewGroupScreen({ navigation }) {
   );
 
   const renderHeader = () => (
-    <View style={styles.headerWrapper}>
+    <View style={[styles.headerWrapper, { backgroundColor: theme.backgroundColor }]}>
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
-        <Ionicons name="arrow-back" size={24} color={themeColors.primary} />
+        <Ionicons name="arrow-back" size={24} color={theme.textColor} />
       </TouchableOpacity>
-      <Text style={styles.headerText}>New Group</Text>
+      <Text style={[styles.headerText, { color: theme.textColor }]}>New Group</Text>
     </View>
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
       {renderHeader()}
       <View style={styles.contentContainer}>
         <View style={styles.groupInfoContainer}>
@@ -231,7 +233,7 @@ export default function NewGroupScreen({ navigation }) {
               <Image source={{ uri: groupAvatar }} style={styles.groupAvatar} />
             ) : (
               <View style={styles.groupAvatar}>
-                <Ionicons name="people" size={32} color={themeColors.surface} />
+                <Ionicons name="people" size={32} color={theme.textColor} />
               </View>
             )}
             <View style={styles.cameraIconContainer}>
@@ -239,23 +241,23 @@ export default function NewGroupScreen({ navigation }) {
             </View>
           </TouchableOpacity>
           <TextInput
-            style={styles.groupNameInput}
+            style={[styles.groupNameInput, { color: theme.textColor }]}
             placeholder="Group Name"
-            placeholderTextColor={themeColors.textSecondary}
+            placeholderTextColor={theme.textInput}
             value={groupName}
             onChangeText={setGroupName}
           />
-          <Text style={styles.selectedCount}>
+          <Text style={[styles.selectedCount, { color: theme.textColor }]}>
             Selected: {selectedUsers.length}/10 members
           </Text>
         </View>
 
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={themeColors.textSecondary} />
+        <View style={[styles.searchContainer, { backgroundColor:  themeColors.border }]}>
+          <Ionicons name="search" size={20} color={theme.textInput} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: theme.textColor }]}
             placeholder="Search users..."
-            placeholderTextColor={themeColors.textSecondary}
+            placeholderTextColor={theme.textInput}
             value={searchText}
             onChangeText={setSearchText}
           />
@@ -267,7 +269,7 @@ export default function NewGroupScreen({ navigation }) {
               <Ionicons
                 name="close-circle"
                 size={20}
-                color={themeColors.textSecondary}
+                color={theme.textInput}
               />
             </TouchableOpacity>
           )}
@@ -279,7 +281,7 @@ export default function NewGroupScreen({ navigation }) {
           contentContainerStyle={styles.listContainer}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={styles.userItem}
+              style={[styles.userItem, { backgroundColor: theme.backgroundColor }]}
               onPress={() => handleSelectUser(item.id)}
             >
               <View style={styles.avatar}>
@@ -287,19 +289,18 @@ export default function NewGroupScreen({ navigation }) {
                   <Image
                     source={{ uri: item.profile_picture }}
                     style={styles.avatarImage}
-                  // defaultSource={require('../assets/default-avatar.png')}
                   />
                 ) : (
                   <View style={styles.avatarFallback}>
-                    <Text style={styles.avatarText}>
+                    <Text style={[styles.avatarText, { color: theme.textColor }]}>
                       {item.name.charAt(0).toUpperCase()}
                     </Text>
                   </View>
                 )}
               </View>
               <View style={styles.userInfo}>
-                <Text style={styles.userName}>{item.name}</Text>
-                <Text style={styles.userEmail} numberOfLines={1}>
+                <Text style={[styles.userName, { color: theme.textColor }]}>{item.name}</Text>
+                <Text style={[styles.userEmail, { color: theme.textInput }]} numberOfLines={1}>
                   {item.email}
                 </Text>
               </View>
@@ -320,6 +321,7 @@ export default function NewGroupScreen({ navigation }) {
         <TouchableOpacity
           style={[
             styles.createButton,
+            { backgroundColor: themeColors.primary },
             (!groupName.trim() || selectedUsers.length === 0 || loading) &&
             styles.buttonDisabled,
           ]}
@@ -508,7 +510,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   buttonDisabled: {
-    opacity: 0.5,
+    opacity:1,
   },
   buttonText: {
     color: "#fff",
