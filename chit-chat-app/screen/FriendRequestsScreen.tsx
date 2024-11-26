@@ -9,6 +9,7 @@ import { onCreateFriendRequests } from '../src/graphql/subscriptions';
 import { sendNotification } from '../utils/notificationHelper';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { themeColors } from '../config/themeColor';
+import { useTheme } from '../contexts/ThemeContext';
 
 const client = generateClient();
 
@@ -21,6 +22,7 @@ type FriendRequest = {
 };
 
 export default function FriendRequestsScreen({ navigation }) {
+  const { theme } = useTheme();
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -195,22 +197,22 @@ export default function FriendRequestsScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
+      <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color={themeColors.primary} />
+          <Ionicons name="arrow-back" size={24} color={theme.textColor} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Friend Requests</Text>
+        <Text style={[styles.headerTitle, { color: theme.textColor }]}>Friend Requests</Text>
       </View>
 
       {friendRequests.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="people-outline" size={64} color={themeColors.textSecondary} />
-          <Text style={styles.emptyText}>No friend requests yet</Text>
-          <Text style={styles.emptySubtext}>When someone sends you a friend request, it will appear here</Text>
+          <Ionicons name="people-outline" size={64} color={theme.textColor} />
+          <Text style={[styles.emptyText, { color: theme.textColor }]}>No friend requests yet</Text>
+          <Text style={[styles.emptySubtext, { color: theme.textColor }]}>When someone sends you a friend request, it will appear here</Text>
         </View>
       ) : (
         <FlatList
@@ -218,7 +220,7 @@ export default function FriendRequestsScreen({ navigation }) {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContainer}
           renderItem={({ item }) => (
-            <View style={styles.requestItem}>
+            <View style={[styles.requestItem, { backgroundColor: theme.cardBackground }]}>
               <View style={styles.userInfo}>
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>
@@ -226,9 +228,11 @@ export default function FriendRequestsScreen({ navigation }) {
                   </Text>
                 </View>
                 <View style={styles.textContainer}>
-                  <Text style={styles.name}>{item.name}</Text>
-                  <Text style={styles.timestamp}>
-                    <Ionicons name="time-outline" size={14} color={themeColors.textSecondary} />
+                  <Text style={[styles.name, { color: theme.textColor }]}>
+                    {item.name}
+                  </Text>
+                  <Text style={[styles.timestamp, { color: theme.textColor }]}>
+                    <Ionicons name="time-outline" size={14} color={theme.textColor} />
                     {' '}{formatTimestamp(item.created_at)}
                   </Text>
                 </View>

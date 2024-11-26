@@ -19,6 +19,7 @@ import { listContacts, listStories} from '../src/graphql/queries'
 import { getUser } from '../src/graphql/queries'
 import { listStoryViews } from '../src/graphql/queries'
 import { useFocusEffect } from '@react-navigation/native';
+import { useTheme } from '../contexts/ThemeContext';
 
 const client = generateClient();
 
@@ -54,6 +55,7 @@ interface GroupedStory extends Story {
 
 const StoriesScreen = ({ navigation }) => {
   const { user } = useContext(AuthenticatedUserContext);
+  const { theme } = useTheme();
   const [userData, setUserData] = useState({
     name: '',
     profile_picture: '',
@@ -348,8 +350,8 @@ const StoriesScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.backgroundColor }]}>
+      <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
         <MainHeader title="Stories" />
         <FlatList
           data={[
@@ -373,12 +375,9 @@ const StoriesScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: themeColors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: themeColors.background,
-    // paddingTop: height * 0.02,
   },
   listContainer: {
     paddingHorizontal: SPACING,
@@ -450,7 +449,7 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 12,
+    borderRadius: 12,  
   },
 
   addButton: {

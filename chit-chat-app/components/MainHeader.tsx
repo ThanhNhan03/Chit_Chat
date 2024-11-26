@@ -4,6 +4,7 @@ import { themeColors } from '../config/themeColor';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -20,18 +21,19 @@ interface MainHeaderProps {
 
 const MainHeader: React.FC<MainHeaderProps> = ({ title }) => {
     const navigation = useNavigation<NavigationProp>();
+    const { theme } = useTheme();
 
     return (
-        <View style={styles.headerContainer}>
-            <Text style={styles.headerText}>{title}</Text>
+        <View style={[styles.headerContainer, { backgroundColor: theme.backgroundColor }]}>
+            <Text style={[styles.headerText, { color: theme.textColor }]}>{title}</Text>
             <TouchableOpacity 
                 onPress={() => navigation.navigate('Settings')}
                 style={styles.settingsButton}
             >
                 <Ionicons 
                     name="person-circle-outline" 
-                    size={24} 
-                    color={themeColors.text} 
+                    size={25} 
+                    color={theme.textColor}
                 />
             </TouchableOpacity>
         </View>

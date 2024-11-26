@@ -13,6 +13,7 @@ import { listUserFriendChats } from '../src/graphql/queries';
 import { themeColors } from '../config/themeColor';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { debounce } from 'lodash';
+import { useTheme } from '../contexts/ThemeContext';
 
 
 const client = generateClient();
@@ -29,6 +30,7 @@ type Friend = {
 
 export default function SelectUserScreen({ navigation }) {
   const { showActionSheetWithOptions } = useActionSheet();
+  const { theme } = useTheme();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -328,24 +330,24 @@ export default function SelectUserScreen({ navigation }) {
   };
 
   const renderCustomHeader = () => (
-    <View style={styles.headerWrapper}>
+    <View style={[styles.headerWrapper, { backgroundColor: theme.backgroundColor }]}>
       <TouchableOpacity 
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
         <Ionicons name="arrow-back" size={24} color={themeColors.primary} />
       </TouchableOpacity>
-      <Text style={styles.headerText}>Select Contact</Text>
+      <Text style={[styles.headerText, { color: theme.textColor }]}>Select Contact</Text>
     </View>
   );
 
   const renderSearchBar = () => (
-    <View style={styles.searchContainer}>
-      <Ionicons name="search" size={20} color={themeColors.textSecondary} />
+    <View style={[styles.searchContainer, { backgroundColor:theme.input}]}>
+      <Ionicons name="search" size={20} color={themeColors.text} />
       <TextInput
         style={styles.searchInput}
         placeholder="Search friends..."
-        placeholderTextColor={themeColors.textSecondary}
+        placeholderTextColor={themeColors.text}
         onChangeText={debouncedSearch}
         defaultValue={searchQuery}
       />
@@ -357,7 +359,7 @@ export default function SelectUserScreen({ navigation }) {
           }}
           style={styles.clearButton}
         >
-          <Ionicons name="close-circle" size={20} color={themeColors.textSecondary} />
+          <Ionicons name="close-circle" size={20} color={themeColors.text} />
         </TouchableOpacity>
       )}
     </View>
@@ -365,41 +367,197 @@ export default function SelectUserScreen({ navigation }) {
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
-      <Text style={styles.headerTitle}>Start a conversation</Text>
+      <Text style={[styles.headerTitle, { color: theme.textColor }]}>Start a conversation</Text>
       <View style={styles.optionsContainer}>
         <TouchableOpacity 
-          style={[styles.option, { backgroundColor: `${themeColors.primary}15` }]} 
+          style={[styles.option, { backgroundColor: `${theme.selecUser}15` }]} 
           onPress={() => navigation.navigate('NewGroup')}
         >
           <View style={[styles.iconContainer, { backgroundColor: themeColors.primary }]}>
             <Icon name="group" size={24} color="#fff" />
           </View>
-          <Text style={styles.optionText}>New Group</Text>
+          <Text style={[styles.optionText, { color: theme.textColor }]}>New Group</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={[styles.option, { backgroundColor: `${themeColors.secondary}15` }]} 
+          style={[styles.option, { backgroundColor: `${theme.selecUser}15` }]} 
           onPress={() => navigation.navigate('NewUser')}
         >
           <View style={[styles.iconContainer, { backgroundColor: themeColors.secondary }]}>
             <Icon name="person-add" size={24} color="#fff" />
           </View>
-          <Text style={styles.optionText}>Add Friends</Text>
+          <Text style={[styles.optionText, { color: theme.textColor }]}>Add Friends</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={[styles.option, { backgroundColor: `${themeColors.primary}15` }]} 
+          style={[styles.option, { backgroundColor: `${theme.selecUser}15` }]} 
           onPress={() => navigation.navigate('FriendRequests')}
         >
           <View style={[styles.iconContainer, { backgroundColor: themeColors.primary }]}>
             <Icon name="people" size={24} color="#fff" />
           </View>
-          <Text style={styles.optionText}>Friend Requests</Text>
+          <Text style={[styles.optionText, { color: theme.textColor }]}>Friend Requests</Text>
         </TouchableOpacity>
       </View>
-      <Text style={styles.sectionTitle}>Friends</Text>
+      <Text style={[styles.sectionTitle, { color: theme.textColor }]}>Friends</Text>
     </View>
   );
+
+  const styles = StyleSheet.create({
+    container: { 
+      flex: 1, 
+      backgroundColor: theme.backgroundColor,
+    },
+    headerContainer: {
+      padding: 16,
+      paddingHorizontal: 16,
+      paddingTop: 8, 
+    },
+    headerTitle: {
+      fontSize: 20, 
+      fontWeight: '700',
+      color: theme.textColor,
+      marginBottom: 16,
+    },
+    optionsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 24,
+    },
+    option: {
+      flex: 1,
+      alignItems: 'center',
+      padding: 16,
+      borderRadius: 12,
+      marginHorizontal: 4,
+    },
+    iconContainer: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    optionText: {
+      fontSize: 12,
+      color: themeColors.text,
+      fontWeight: '500',
+      textAlign: 'center',
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: themeColors.text,
+      marginBottom: 8,
+    },
+    userItem: {
+      flexDirection: 'row',
+      padding: 16,
+      alignItems: 'center',
+      backgroundColor: theme.cardBackground,
+      marginHorizontal: 16,
+      marginBottom: 8,
+      borderRadius: 12,
+    },
+    avatarContainer: {
+      position: 'relative',
+      marginRight: 12,
+    },
+    avatar: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      backgroundColor: themeColors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarText: {
+      fontSize: 20,
+      color: '#fff',
+      fontWeight: '600',
+    },
+    userInfo: {
+      flex: 1,
+    },
+    userName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: themeColors.text,
+      marginBottom: 4,
+    },
+    userStatus: {
+      fontSize: 13,
+      color: themeColors.textSecondary,
+    },
+    emptyContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 32,
+    },
+    emptyText: {
+      marginTop: 16,
+      fontSize: 16,
+      color: themeColors.textSecondary,
+      textAlign: 'center',
+    },
+    loadingFooter: {
+      padding: 16,
+      alignItems: 'center',
+    },
+    onlineIndicator: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: '#4CAF50',
+      position: 'absolute',
+      right: 0,
+      bottom: 0,
+      borderWidth: 2,
+      borderColor: themeColors.surface,
+    },
+    headerWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingTop: 20, 
+      paddingBottom: 16,
+      backgroundColor: themeColors.surface,
+      // borderBottomWidth: 1,
+      // borderBottomColor: themeColors.border,
+    },
+    backButton: {
+      padding: 8,
+      marginRight: 8,
+    },
+    headerText: {
+      flex: 1,
+      fontSize: 20,
+      fontWeight: '600',
+      color: themeColors.text,
+    },
+    searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: `${themeColors.primary}10`,
+      marginHorizontal: 16,
+      marginVertical: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 12,
+    },
+    searchInput: {
+      flex: 1,
+      marginLeft: 8,
+      fontSize: 16,
+      color: themeColors.text,
+      paddingVertical: 8,
+    },
+    clearButton: {
+      padding: 4,
+    },
+  });
 
   return (
     <View style={styles.container}>
@@ -425,7 +583,6 @@ export default function SelectUserScreen({ navigation }) {
                 <Image 
                   source={{ uri: item.avatar }} 
                   style={styles.avatar}
-                  // defaultSource={require('../assets/default-avatar.png')}
                 />
               ) : (
                 <View style={styles.avatar}>
@@ -459,159 +616,3 @@ export default function SelectUserScreen({ navigation }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: themeColors.background,
-  },
-  headerContainer: {
-    padding: 16,
-    paddingHorizontal: 16,
-    paddingTop: 8, 
-  },
-  headerTitle: {
-    fontSize: 20, 
-    fontWeight: '700',
-    color: themeColors.text,
-    marginBottom: 16,
-  },
-  optionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  option: {
-    flex: 1,
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginHorizontal: 4,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  optionText: {
-    fontSize: 12,
-    color: themeColors.text,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: themeColors.text,
-    marginBottom: 8,
-  },
-  userItem: {
-    flexDirection: 'row',
-    padding: 16,
-    alignItems: 'center',
-    backgroundColor: themeColors.surface,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    borderRadius: 12,
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginRight: 12,
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: themeColors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 20,
-    color: '#fff',
-    fontWeight: '600',
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: themeColors.text,
-    marginBottom: 4,
-  },
-  userStatus: {
-    fontSize: 13,
-    color: themeColors.textSecondary,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  emptyText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: themeColors.textSecondary,
-    textAlign: 'center',
-  },
-  loadingFooter: {
-    padding: 16,
-    alignItems: 'center',
-  },
-  onlineIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#4CAF50',
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    borderWidth: 2,
-    borderColor: themeColors.surface,
-  },
-  headerWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 20, 
-    paddingBottom: 16,
-    backgroundColor: themeColors.surface,
-    // borderBottomWidth: 1,
-    // borderBottomColor: themeColors.border,
-  },
-  backButton: {
-    padding: 8,
-    marginRight: 8,
-  },
-  headerText: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: '600',
-    color: themeColors.text,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: `${themeColors.primary}10`,
-    marginHorizontal: 16,
-    marginVertical: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 8,
-    fontSize: 16,
-    color: themeColors.text,
-    paddingVertical: 8,
-  },
-  clearButton: {
-    padding: 4,
-  },
-});
