@@ -95,6 +95,7 @@ export type GroupChat = {
   updated_at?: string | null,
   group_picture?: string | null,
   description?: string | null,
+  messages?: ModelMessagesConnection | null,
   createdAt: string,
   updatedAt: string,
 };
@@ -131,9 +132,11 @@ export type User = {
   Contacts?: ModelContactConnection | null,
   SentFriendRequests?: ModelFriendRequestsConnection | null,
   ReceivedFriendRequests?: ModelFriendRequestsConnection | null,
-  Reactions?: ModelReactionsConnection | null,
+  message_reactions?: ModelMessageReactionConnection | null,
+  story_reactions?: ModelStoryReactionConnection | null,
   Stories?: ModelStoryConnection | null,
   StoryViews?: ModelStoryViewConnection | null,
+  sent_messages?: ModelMessagesConnection | null,
   createdAt: string,
   updatedAt: string,
 };
@@ -163,6 +166,53 @@ export type FriendChat = {
   created_at?: string | null,
   last_message?: string | null,
   updated_at?: string | null,
+  messages?: ModelMessagesConnection | null,
+  createdAt: string,
+  updatedAt: string,
+};
+
+export type ModelMessagesConnection = {
+  __typename: "ModelMessagesConnection",
+  items:  Array<Messages | null >,
+  nextToken?: string | null,
+};
+
+export type Messages = {
+  __typename: "Messages",
+  id: string,
+  chat_type?: string | null,
+  chat_id: string,
+  sender_id: string,
+  content?: string | null,
+  timestamp?: string | null,
+  status?: string | null,
+  attachments?: string | null,
+  message_reactions?: ModelMessageReactionConnection | null,
+  sender?: User | null,
+  reply_to_message_id?: string | null,
+  reply_to_message?: Messages | null,
+  replied_messages?: ModelMessagesConnection | null,
+  group_chat?: GroupChat | null,
+  friend_chat?: FriendChat | null,
+  createdAt: string,
+  updatedAt: string,
+};
+
+export type ModelMessageReactionConnection = {
+  __typename: "ModelMessageReactionConnection",
+  items:  Array<MessageReaction | null >,
+  nextToken?: string | null,
+};
+
+export type MessageReaction = {
+  __typename: "MessageReaction",
+  id: string,
+  message_id: string,
+  user_id: string,
+  icon?: string | null,
+  created_at?: string | null,
+  user?: User | null,
+  message?: Messages | null,
   createdAt: string,
   updatedAt: string,
 };
@@ -179,6 +229,8 @@ export type Contact = {
   user_id: string,
   contact_user_id: string,
   created_at?: string | null,
+  user?: User | null,
+  contact_user?: User | null,
   createdAt: string,
   updatedAt: string,
 };
@@ -196,31 +248,29 @@ export type FriendRequests = {
   to_user_id: string,
   status?: string | null,
   created_at?: string | null,
+  from_user?: User | null,
+  to_user?: User | null,
   createdAt: string,
   updatedAt: string,
 };
 
-export type ModelReactionsConnection = {
-  __typename: "ModelReactionsConnection",
-  items:  Array<Reactions | null >,
+export type ModelStoryReactionConnection = {
+  __typename: "ModelStoryReactionConnection",
+  items:  Array<StoryReaction | null >,
   nextToken?: string | null,
 };
 
-export type Reactions = {
-  __typename: "Reactions",
+export type StoryReaction = {
+  __typename: "StoryReaction",
   id: string,
-  message_id: string,
+  story_id: string,
   user_id: string,
   icon?: string | null,
   created_at?: string | null,
+  user?: User | null,
+  story?: Story | null,
   createdAt: string,
   updatedAt: string,
-};
-
-export type ModelStoryConnection = {
-  __typename: "ModelStoryConnection",
-  items:  Array<Story | null >,
-  nextToken?: string | null,
 };
 
 export type Story = {
@@ -237,6 +287,7 @@ export type Story = {
   music_id?: string | null,
   music?: Music | null,
   views?: ModelStoryViewConnection | null,
+  story_reactions?: ModelStoryReactionConnection | null,
   created_at?: string | null,
   expires_at?: string | null,
   music_start_time?: number | null,
@@ -257,6 +308,12 @@ export type Music = {
   Stories?: ModelStoryConnection | null,
   createdAt: string,
   updatedAt: string,
+};
+
+export type ModelStoryConnection = {
+  __typename: "ModelStoryConnection",
+  items:  Array<Story | null >,
+  nextToken?: string | null,
 };
 
 export type ModelStoryViewConnection = {
@@ -333,6 +390,7 @@ export type CreateMessagesInput = {
   timestamp?: string | null,
   status?: string | null,
   attachments?: string | null,
+  reply_to_message_id?: string | null,
 };
 
 export type ModelMessagesConditionInput = {
@@ -343,26 +401,12 @@ export type ModelMessagesConditionInput = {
   timestamp?: ModelStringInput | null,
   status?: ModelStringInput | null,
   attachments?: ModelStringInput | null,
+  reply_to_message_id?: ModelIDInput | null,
   and?: Array< ModelMessagesConditionInput | null > | null,
   or?: Array< ModelMessagesConditionInput | null > | null,
   not?: ModelMessagesConditionInput | null,
   createdAt?: ModelStringInput | null,
   updatedAt?: ModelStringInput | null,
-};
-
-export type Messages = {
-  __typename: "Messages",
-  id: string,
-  chat_type?: string | null,
-  chat_id: string,
-  sender_id: string,
-  content?: string | null,
-  timestamp?: string | null,
-  status?: string | null,
-  attachments?: string | null,
-  reactions?: ModelReactionsConnection | null,
-  createdAt: string,
-  updatedAt: string,
 };
 
 export type UpdateMessagesInput = {
@@ -374,13 +418,14 @@ export type UpdateMessagesInput = {
   timestamp?: string | null,
   status?: string | null,
   attachments?: string | null,
+  reply_to_message_id?: string | null,
 };
 
 export type DeleteMessagesInput = {
   id: string,
 };
 
-export type CreateReactionsInput = {
+export type CreateMessageReactionInput = {
   id?: string | null,
   message_id: string,
   user_id: string,
@@ -388,19 +433,19 @@ export type CreateReactionsInput = {
   created_at?: string | null,
 };
 
-export type ModelReactionsConditionInput = {
+export type ModelMessageReactionConditionInput = {
   message_id?: ModelIDInput | null,
   user_id?: ModelIDInput | null,
   icon?: ModelStringInput | null,
   created_at?: ModelStringInput | null,
-  and?: Array< ModelReactionsConditionInput | null > | null,
-  or?: Array< ModelReactionsConditionInput | null > | null,
-  not?: ModelReactionsConditionInput | null,
+  and?: Array< ModelMessageReactionConditionInput | null > | null,
+  or?: Array< ModelMessageReactionConditionInput | null > | null,
+  not?: ModelMessageReactionConditionInput | null,
   createdAt?: ModelStringInput | null,
   updatedAt?: ModelStringInput | null,
 };
 
-export type UpdateReactionsInput = {
+export type UpdateMessageReactionInput = {
   id: string,
   message_id?: string | null,
   user_id?: string | null,
@@ -408,7 +453,7 @@ export type UpdateReactionsInput = {
   created_at?: string | null,
 };
 
-export type DeleteReactionsInput = {
+export type DeleteMessageReactionInput = {
   id: string,
 };
 
@@ -713,6 +758,38 @@ export type DeleteStoryViewInput = {
   id: string,
 };
 
+export type CreateStoryReactionInput = {
+  id?: string | null,
+  story_id: string,
+  user_id: string,
+  icon?: string | null,
+  created_at?: string | null,
+};
+
+export type ModelStoryReactionConditionInput = {
+  story_id?: ModelIDInput | null,
+  user_id?: ModelIDInput | null,
+  icon?: ModelStringInput | null,
+  created_at?: ModelStringInput | null,
+  and?: Array< ModelStoryReactionConditionInput | null > | null,
+  or?: Array< ModelStoryReactionConditionInput | null > | null,
+  not?: ModelStoryReactionConditionInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
+};
+
+export type UpdateStoryReactionInput = {
+  id: string,
+  story_id?: string | null,
+  user_id?: string | null,
+  icon?: string | null,
+  created_at?: string | null,
+};
+
+export type DeleteStoryReactionInput = {
+  id: string,
+};
+
 export type ModelGroupChatFilterInput = {
   id?: ModelIDInput | null,
   group_name?: ModelStringInput | null,
@@ -769,17 +846,12 @@ export type ModelMessagesFilterInput = {
   timestamp?: ModelStringInput | null,
   status?: ModelStringInput | null,
   attachments?: ModelStringInput | null,
+  reply_to_message_id?: ModelIDInput | null,
   createdAt?: ModelStringInput | null,
   updatedAt?: ModelStringInput | null,
   and?: Array< ModelMessagesFilterInput | null > | null,
   or?: Array< ModelMessagesFilterInput | null > | null,
   not?: ModelMessagesFilterInput | null,
-};
-
-export type ModelMessagesConnection = {
-  __typename: "ModelMessagesConnection",
-  items:  Array<Messages | null >,
-  nextToken?: string | null,
 };
 
 export type ModelStringKeyConditionInput = {
@@ -792,7 +864,7 @@ export type ModelStringKeyConditionInput = {
   beginsWith?: string | null,
 };
 
-export type ModelReactionsFilterInput = {
+export type ModelMessageReactionFilterInput = {
   id?: ModelIDInput | null,
   message_id?: ModelIDInput | null,
   user_id?: ModelIDInput | null,
@@ -800,9 +872,9 @@ export type ModelReactionsFilterInput = {
   created_at?: ModelStringInput | null,
   createdAt?: ModelStringInput | null,
   updatedAt?: ModelStringInput | null,
-  and?: Array< ModelReactionsFilterInput | null > | null,
-  or?: Array< ModelReactionsFilterInput | null > | null,
-  not?: ModelReactionsFilterInput | null,
+  and?: Array< ModelMessageReactionFilterInput | null > | null,
+  or?: Array< ModelMessageReactionFilterInput | null > | null,
+  not?: ModelMessageReactionFilterInput | null,
 };
 
 export type ModelContactFilterInput = {
@@ -928,6 +1000,19 @@ export type ModelStoryViewFilterInput = {
   not?: ModelStoryViewFilterInput | null,
 };
 
+export type ModelStoryReactionFilterInput = {
+  id?: ModelIDInput | null,
+  story_id?: ModelIDInput | null,
+  user_id?: ModelIDInput | null,
+  icon?: ModelStringInput | null,
+  created_at?: ModelStringInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
+  and?: Array< ModelStoryReactionFilterInput | null > | null,
+  or?: Array< ModelStoryReactionFilterInput | null > | null,
+  not?: ModelStoryReactionFilterInput | null,
+};
+
 export type ModelSubscriptionGroupChatFilterInput = {
   id?: ModelSubscriptionIDInput | null,
   group_name?: ModelSubscriptionStringInput | null,
@@ -994,13 +1079,14 @@ export type ModelSubscriptionMessagesFilterInput = {
   timestamp?: ModelSubscriptionStringInput | null,
   status?: ModelSubscriptionStringInput | null,
   attachments?: ModelSubscriptionStringInput | null,
+  reply_to_message_id?: ModelSubscriptionIDInput | null,
   createdAt?: ModelSubscriptionStringInput | null,
   updatedAt?: ModelSubscriptionStringInput | null,
   and?: Array< ModelSubscriptionMessagesFilterInput | null > | null,
   or?: Array< ModelSubscriptionMessagesFilterInput | null > | null,
 };
 
-export type ModelSubscriptionReactionsFilterInput = {
+export type ModelSubscriptionMessageReactionFilterInput = {
   id?: ModelSubscriptionIDInput | null,
   message_id?: ModelSubscriptionIDInput | null,
   user_id?: ModelSubscriptionIDInput | null,
@@ -1008,8 +1094,8 @@ export type ModelSubscriptionReactionsFilterInput = {
   created_at?: ModelSubscriptionStringInput | null,
   createdAt?: ModelSubscriptionStringInput | null,
   updatedAt?: ModelSubscriptionStringInput | null,
-  and?: Array< ModelSubscriptionReactionsFilterInput | null > | null,
-  or?: Array< ModelSubscriptionReactionsFilterInput | null > | null,
+  and?: Array< ModelSubscriptionMessageReactionFilterInput | null > | null,
+  or?: Array< ModelSubscriptionMessageReactionFilterInput | null > | null,
 };
 
 export type ModelSubscriptionContactFilterInput = {
@@ -1139,6 +1225,18 @@ export type ModelSubscriptionStoryViewFilterInput = {
   or?: Array< ModelSubscriptionStoryViewFilterInput | null > | null,
 };
 
+export type ModelSubscriptionStoryReactionFilterInput = {
+  id?: ModelSubscriptionIDInput | null,
+  story_id?: ModelSubscriptionIDInput | null,
+  user_id?: ModelSubscriptionIDInput | null,
+  icon?: ModelSubscriptionStringInput | null,
+  created_at?: ModelSubscriptionStringInput | null,
+  createdAt?: ModelSubscriptionStringInput | null,
+  updatedAt?: ModelSubscriptionStringInput | null,
+  and?: Array< ModelSubscriptionStoryReactionFilterInput | null > | null,
+  or?: Array< ModelSubscriptionStoryReactionFilterInput | null > | null,
+};
+
 export type CreateGroupChatMutationVariables = {
   input: CreateGroupChatInput,
   condition?: ModelGroupChatConditionInput | null,
@@ -1159,6 +1257,10 @@ export type CreateGroupChatMutation = {
     updated_at?: string | null,
     group_picture?: string | null,
     description?: string | null,
+    messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -1184,6 +1286,10 @@ export type UpdateGroupChatMutation = {
     updated_at?: string | null,
     group_picture?: string | null,
     description?: string | null,
+    messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -1209,6 +1315,10 @@ export type DeleteGroupChatMutation = {
     updated_at?: string | null,
     group_picture?: string | null,
     description?: string | null,
+    messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -1231,6 +1341,10 @@ export type CreateFriendChatMutation = {
     created_at?: string | null,
     last_message?: string | null,
     updated_at?: string | null,
+    messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -1253,6 +1367,10 @@ export type UpdateFriendChatMutation = {
     created_at?: string | null,
     last_message?: string | null,
     updated_at?: string | null,
+    messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -1275,6 +1393,10 @@ export type DeleteFriendChatMutation = {
     created_at?: string | null,
     last_message?: string | null,
     updated_at?: string | null,
+    messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -1296,9 +1418,64 @@ export type CreateMessagesMutation = {
     timestamp?: string | null,
     status?: string | null,
     attachments?: string | null,
-    reactions?:  {
-      __typename: "ModelReactionsConnection",
+    message_reactions?:  {
+      __typename: "ModelMessageReactionConnection",
       nextToken?: string | null,
+    } | null,
+    sender?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    reply_to_message_id?: string | null,
+    reply_to_message?:  {
+      __typename: "Messages",
+      id: string,
+      chat_type?: string | null,
+      chat_id: string,
+      sender_id: string,
+      content?: string | null,
+      timestamp?: string | null,
+      status?: string | null,
+      attachments?: string | null,
+      reply_to_message_id?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    replied_messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
+    group_chat?:  {
+      __typename: "GroupChat",
+      id: string,
+      group_name?: string | null,
+      created_by: string,
+      created_at?: string | null,
+      last_message?: string | null,
+      updated_at?: string | null,
+      group_picture?: string | null,
+      description?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    friend_chat?:  {
+      __typename: "FriendChat",
+      id: string,
+      chat_id?: string | null,
+      created_at?: string | null,
+      last_message?: string | null,
+      updated_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
     } | null,
     createdAt: string,
     updatedAt: string,
@@ -1321,9 +1498,64 @@ export type UpdateMessagesMutation = {
     timestamp?: string | null,
     status?: string | null,
     attachments?: string | null,
-    reactions?:  {
-      __typename: "ModelReactionsConnection",
+    message_reactions?:  {
+      __typename: "ModelMessageReactionConnection",
       nextToken?: string | null,
+    } | null,
+    sender?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    reply_to_message_id?: string | null,
+    reply_to_message?:  {
+      __typename: "Messages",
+      id: string,
+      chat_type?: string | null,
+      chat_id: string,
+      sender_id: string,
+      content?: string | null,
+      timestamp?: string | null,
+      status?: string | null,
+      attachments?: string | null,
+      reply_to_message_id?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    replied_messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
+    group_chat?:  {
+      __typename: "GroupChat",
+      id: string,
+      group_name?: string | null,
+      created_by: string,
+      created_at?: string | null,
+      last_message?: string | null,
+      updated_at?: string | null,
+      group_picture?: string | null,
+      description?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    friend_chat?:  {
+      __typename: "FriendChat",
+      id: string,
+      chat_id?: string | null,
+      created_at?: string | null,
+      last_message?: string | null,
+      updated_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
     } | null,
     createdAt: string,
     updatedAt: string,
@@ -1346,64 +1578,200 @@ export type DeleteMessagesMutation = {
     timestamp?: string | null,
     status?: string | null,
     attachments?: string | null,
-    reactions?:  {
-      __typename: "ModelReactionsConnection",
+    message_reactions?:  {
+      __typename: "ModelMessageReactionConnection",
       nextToken?: string | null,
+    } | null,
+    sender?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    reply_to_message_id?: string | null,
+    reply_to_message?:  {
+      __typename: "Messages",
+      id: string,
+      chat_type?: string | null,
+      chat_id: string,
+      sender_id: string,
+      content?: string | null,
+      timestamp?: string | null,
+      status?: string | null,
+      attachments?: string | null,
+      reply_to_message_id?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    replied_messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
+    group_chat?:  {
+      __typename: "GroupChat",
+      id: string,
+      group_name?: string | null,
+      created_by: string,
+      created_at?: string | null,
+      last_message?: string | null,
+      updated_at?: string | null,
+      group_picture?: string | null,
+      description?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    friend_chat?:  {
+      __typename: "FriendChat",
+      id: string,
+      chat_id?: string | null,
+      created_at?: string | null,
+      last_message?: string | null,
+      updated_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
     } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
 };
 
-export type CreateReactionsMutationVariables = {
-  input: CreateReactionsInput,
-  condition?: ModelReactionsConditionInput | null,
+export type CreateMessageReactionMutationVariables = {
+  input: CreateMessageReactionInput,
+  condition?: ModelMessageReactionConditionInput | null,
 };
 
-export type CreateReactionsMutation = {
-  createReactions?:  {
-    __typename: "Reactions",
+export type CreateMessageReactionMutation = {
+  createMessageReaction?:  {
+    __typename: "MessageReaction",
     id: string,
     message_id: string,
     user_id: string,
     icon?: string | null,
     created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    message?:  {
+      __typename: "Messages",
+      id: string,
+      chat_type?: string | null,
+      chat_id: string,
+      sender_id: string,
+      content?: string | null,
+      timestamp?: string | null,
+      status?: string | null,
+      attachments?: string | null,
+      reply_to_message_id?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
 };
 
-export type UpdateReactionsMutationVariables = {
-  input: UpdateReactionsInput,
-  condition?: ModelReactionsConditionInput | null,
+export type UpdateMessageReactionMutationVariables = {
+  input: UpdateMessageReactionInput,
+  condition?: ModelMessageReactionConditionInput | null,
 };
 
-export type UpdateReactionsMutation = {
-  updateReactions?:  {
-    __typename: "Reactions",
+export type UpdateMessageReactionMutation = {
+  updateMessageReaction?:  {
+    __typename: "MessageReaction",
     id: string,
     message_id: string,
     user_id: string,
     icon?: string | null,
     created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    message?:  {
+      __typename: "Messages",
+      id: string,
+      chat_type?: string | null,
+      chat_id: string,
+      sender_id: string,
+      content?: string | null,
+      timestamp?: string | null,
+      status?: string | null,
+      attachments?: string | null,
+      reply_to_message_id?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
 };
 
-export type DeleteReactionsMutationVariables = {
-  input: DeleteReactionsInput,
-  condition?: ModelReactionsConditionInput | null,
+export type DeleteMessageReactionMutationVariables = {
+  input: DeleteMessageReactionInput,
+  condition?: ModelMessageReactionConditionInput | null,
 };
 
-export type DeleteReactionsMutation = {
-  deleteReactions?:  {
-    __typename: "Reactions",
+export type DeleteMessageReactionMutation = {
+  deleteMessageReaction?:  {
+    __typename: "MessageReaction",
     id: string,
     message_id: string,
     user_id: string,
     icon?: string | null,
     created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    message?:  {
+      __typename: "Messages",
+      id: string,
+      chat_type?: string | null,
+      chat_id: string,
+      sender_id: string,
+      content?: string | null,
+      timestamp?: string | null,
+      status?: string | null,
+      attachments?: string | null,
+      reply_to_message_id?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -1421,6 +1789,32 @@ export type CreateContactMutation = {
     user_id: string,
     contact_user_id: string,
     created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    contact_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -1438,6 +1832,32 @@ export type UpdateContactMutation = {
     user_id: string,
     contact_user_id: string,
     created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    contact_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -1455,6 +1875,32 @@ export type DeleteContactMutation = {
     user_id: string,
     contact_user_id: string,
     created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    contact_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -1473,6 +1919,32 @@ export type CreateFriendRequestsMutation = {
     to_user_id: string,
     status?: string | null,
     created_at?: string | null,
+    from_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    to_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -1491,6 +1963,32 @@ export type UpdateFriendRequestsMutation = {
     to_user_id: string,
     status?: string | null,
     created_at?: string | null,
+    from_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    to_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -1509,6 +2007,32 @@ export type DeleteFriendRequestsMutation = {
     to_user_id: string,
     status?: string | null,
     created_at?: string | null,
+    from_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    to_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -1550,8 +2074,12 @@ export type CreateUserMutation = {
       __typename: "ModelFriendRequestsConnection",
       nextToken?: string | null,
     } | null,
-    Reactions?:  {
-      __typename: "ModelReactionsConnection",
+    message_reactions?:  {
+      __typename: "ModelMessageReactionConnection",
+      nextToken?: string | null,
+    } | null,
+    story_reactions?:  {
+      __typename: "ModelStoryReactionConnection",
       nextToken?: string | null,
     } | null,
     Stories?:  {
@@ -1560,6 +2088,10 @@ export type CreateUserMutation = {
     } | null,
     StoryViews?:  {
       __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
+    sent_messages?:  {
+      __typename: "ModelMessagesConnection",
       nextToken?: string | null,
     } | null,
     createdAt: string,
@@ -1603,8 +2135,12 @@ export type UpdateUserMutation = {
       __typename: "ModelFriendRequestsConnection",
       nextToken?: string | null,
     } | null,
-    Reactions?:  {
-      __typename: "ModelReactionsConnection",
+    message_reactions?:  {
+      __typename: "ModelMessageReactionConnection",
+      nextToken?: string | null,
+    } | null,
+    story_reactions?:  {
+      __typename: "ModelStoryReactionConnection",
       nextToken?: string | null,
     } | null,
     Stories?:  {
@@ -1613,6 +2149,10 @@ export type UpdateUserMutation = {
     } | null,
     StoryViews?:  {
       __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
+    sent_messages?:  {
+      __typename: "ModelMessagesConnection",
       nextToken?: string | null,
     } | null,
     createdAt: string,
@@ -1656,8 +2196,12 @@ export type DeleteUserMutation = {
       __typename: "ModelFriendRequestsConnection",
       nextToken?: string | null,
     } | null,
-    Reactions?:  {
-      __typename: "ModelReactionsConnection",
+    message_reactions?:  {
+      __typename: "ModelMessageReactionConnection",
+      nextToken?: string | null,
+    } | null,
+    story_reactions?:  {
+      __typename: "ModelStoryReactionConnection",
       nextToken?: string | null,
     } | null,
     Stories?:  {
@@ -1666,6 +2210,10 @@ export type DeleteUserMutation = {
     } | null,
     StoryViews?:  {
       __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
+    sent_messages?:  {
+      __typename: "ModelMessagesConnection",
       nextToken?: string | null,
     } | null,
     createdAt: string,
@@ -2034,6 +2582,10 @@ export type CreateStoryMutation = {
       __typename: "ModelStoryViewConnection",
       nextToken?: string | null,
     } | null,
+    story_reactions?:  {
+      __typename: "ModelStoryReactionConnection",
+      nextToken?: string | null,
+    } | null,
     created_at?: string | null,
     expires_at?: string | null,
     music_start_time?: number | null,
@@ -2089,6 +2641,10 @@ export type UpdateStoryMutation = {
       __typename: "ModelStoryViewConnection",
       nextToken?: string | null,
     } | null,
+    story_reactions?:  {
+      __typename: "ModelStoryReactionConnection",
+      nextToken?: string | null,
+    } | null,
     created_at?: string | null,
     expires_at?: string | null,
     music_start_time?: number | null,
@@ -2142,6 +2698,10 @@ export type DeleteStoryMutation = {
     } | null,
     views?:  {
       __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
+    story_reactions?:  {
+      __typename: "ModelStoryReactionConnection",
       nextToken?: string | null,
     } | null,
     created_at?: string | null,
@@ -2297,6 +2857,153 @@ export type DeleteStoryViewMutation = {
   } | null,
 };
 
+export type CreateStoryReactionMutationVariables = {
+  input: CreateStoryReactionInput,
+  condition?: ModelStoryReactionConditionInput | null,
+};
+
+export type CreateStoryReactionMutation = {
+  createStoryReaction?:  {
+    __typename: "StoryReaction",
+    id: string,
+    story_id: string,
+    user_id: string,
+    icon?: string | null,
+    created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    story?:  {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      music_start_time?: number | null,
+      music_end_time?: number | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type UpdateStoryReactionMutationVariables = {
+  input: UpdateStoryReactionInput,
+  condition?: ModelStoryReactionConditionInput | null,
+};
+
+export type UpdateStoryReactionMutation = {
+  updateStoryReaction?:  {
+    __typename: "StoryReaction",
+    id: string,
+    story_id: string,
+    user_id: string,
+    icon?: string | null,
+    created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    story?:  {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      music_start_time?: number | null,
+      music_end_time?: number | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type DeleteStoryReactionMutationVariables = {
+  input: DeleteStoryReactionInput,
+  condition?: ModelStoryReactionConditionInput | null,
+};
+
+export type DeleteStoryReactionMutation = {
+  deleteStoryReaction?:  {
+    __typename: "StoryReaction",
+    id: string,
+    story_id: string,
+    user_id: string,
+    icon?: string | null,
+    created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    story?:  {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      music_start_time?: number | null,
+      music_end_time?: number | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
 export type GetGroupChatQueryVariables = {
   id: string,
 };
@@ -2316,6 +3023,10 @@ export type GetGroupChatQuery = {
     updated_at?: string | null,
     group_picture?: string | null,
     description?: string | null,
+    messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -2391,6 +3102,10 @@ export type GetFriendChatQuery = {
     created_at?: string | null,
     last_message?: string | null,
     updated_at?: string | null,
+    messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -2434,9 +3149,64 @@ export type GetMessagesQuery = {
     timestamp?: string | null,
     status?: string | null,
     attachments?: string | null,
-    reactions?:  {
-      __typename: "ModelReactionsConnection",
+    message_reactions?:  {
+      __typename: "ModelMessageReactionConnection",
       nextToken?: string | null,
+    } | null,
+    sender?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    reply_to_message_id?: string | null,
+    reply_to_message?:  {
+      __typename: "Messages",
+      id: string,
+      chat_type?: string | null,
+      chat_id: string,
+      sender_id: string,
+      content?: string | null,
+      timestamp?: string | null,
+      status?: string | null,
+      attachments?: string | null,
+      reply_to_message_id?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    replied_messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
+    group_chat?:  {
+      __typename: "GroupChat",
+      id: string,
+      group_name?: string | null,
+      created_by: string,
+      created_at?: string | null,
+      last_message?: string | null,
+      updated_at?: string | null,
+      group_picture?: string | null,
+      description?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    friend_chat?:  {
+      __typename: "FriendChat",
+      id: string,
+      chat_id?: string | null,
+      created_at?: string | null,
+      last_message?: string | null,
+      updated_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
     } | null,
     createdAt: string,
     updatedAt: string,
@@ -2462,6 +3232,7 @@ export type ListMessagesQuery = {
       timestamp?: string | null,
       status?: string | null,
       attachments?: string | null,
+      reply_to_message_id?: string | null,
       createdAt: string,
       updatedAt: string,
     } | null >,
@@ -2491,6 +3262,7 @@ export type MessagesByChat_idAndTimestampQuery = {
       timestamp?: string | null,
       status?: string | null,
       attachments?: string | null,
+      reply_to_message_id?: string | null,
       createdAt: string,
       updatedAt: string,
     } | null >,
@@ -2519,6 +3291,7 @@ export type MessagesBySender_idQuery = {
       timestamp?: string | null,
       status?: string | null,
       attachments?: string | null,
+      reply_to_message_id?: string | null,
       createdAt: string,
       updatedAt: string,
     } | null >,
@@ -2526,34 +3299,90 @@ export type MessagesBySender_idQuery = {
   } | null,
 };
 
-export type GetReactionsQueryVariables = {
+export type MessagesByReply_to_message_idQueryVariables = {
+  reply_to_message_id: string,
+  sortDirection?: ModelSortDirection | null,
+  filter?: ModelMessagesFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type MessagesByReply_to_message_idQuery = {
+  messagesByReply_to_message_id?:  {
+    __typename: "ModelMessagesConnection",
+    items:  Array< {
+      __typename: "Messages",
+      id: string,
+      chat_type?: string | null,
+      chat_id: string,
+      sender_id: string,
+      content?: string | null,
+      timestamp?: string | null,
+      status?: string | null,
+      attachments?: string | null,
+      reply_to_message_id?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
+export type GetMessageReactionQueryVariables = {
   id: string,
 };
 
-export type GetReactionsQuery = {
-  getReactions?:  {
-    __typename: "Reactions",
+export type GetMessageReactionQuery = {
+  getMessageReaction?:  {
+    __typename: "MessageReaction",
     id: string,
     message_id: string,
     user_id: string,
     icon?: string | null,
     created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    message?:  {
+      __typename: "Messages",
+      id: string,
+      chat_type?: string | null,
+      chat_id: string,
+      sender_id: string,
+      content?: string | null,
+      timestamp?: string | null,
+      status?: string | null,
+      attachments?: string | null,
+      reply_to_message_id?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
 };
 
-export type ListReactionsQueryVariables = {
-  filter?: ModelReactionsFilterInput | null,
+export type ListMessageReactionsQueryVariables = {
+  filter?: ModelMessageReactionFilterInput | null,
   limit?: number | null,
   nextToken?: string | null,
 };
 
-export type ListReactionsQuery = {
-  listReactions?:  {
-    __typename: "ModelReactionsConnection",
+export type ListMessageReactionsQuery = {
+  listMessageReactions?:  {
+    __typename: "ModelMessageReactionConnection",
     items:  Array< {
-      __typename: "Reactions",
+      __typename: "MessageReaction",
       id: string,
       message_id: string,
       user_id: string,
@@ -2566,19 +3395,19 @@ export type ListReactionsQuery = {
   } | null,
 };
 
-export type ReactionsByMessage_idQueryVariables = {
+export type MessageReactionsByMessage_idQueryVariables = {
   message_id: string,
   sortDirection?: ModelSortDirection | null,
-  filter?: ModelReactionsFilterInput | null,
+  filter?: ModelMessageReactionFilterInput | null,
   limit?: number | null,
   nextToken?: string | null,
 };
 
-export type ReactionsByMessage_idQuery = {
-  reactionsByMessage_id?:  {
-    __typename: "ModelReactionsConnection",
+export type MessageReactionsByMessage_idQuery = {
+  messageReactionsByMessage_id?:  {
+    __typename: "ModelMessageReactionConnection",
     items:  Array< {
-      __typename: "Reactions",
+      __typename: "MessageReaction",
       id: string,
       message_id: string,
       user_id: string,
@@ -2591,19 +3420,19 @@ export type ReactionsByMessage_idQuery = {
   } | null,
 };
 
-export type ReactionsByUser_idQueryVariables = {
+export type MessageReactionsByUser_idQueryVariables = {
   user_id: string,
   sortDirection?: ModelSortDirection | null,
-  filter?: ModelReactionsFilterInput | null,
+  filter?: ModelMessageReactionFilterInput | null,
   limit?: number | null,
   nextToken?: string | null,
 };
 
-export type ReactionsByUser_idQuery = {
-  reactionsByUser_id?:  {
-    __typename: "ModelReactionsConnection",
+export type MessageReactionsByUser_idQuery = {
+  messageReactionsByUser_id?:  {
+    __typename: "ModelMessageReactionConnection",
     items:  Array< {
-      __typename: "Reactions",
+      __typename: "MessageReaction",
       id: string,
       message_id: string,
       user_id: string,
@@ -2627,6 +3456,32 @@ export type GetContactQuery = {
     user_id: string,
     contact_user_id: string,
     created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    contact_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -2714,6 +3569,32 @@ export type GetFriendRequestsQuery = {
     to_user_id: string,
     status?: string | null,
     created_at?: string | null,
+    from_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    to_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -2827,8 +3708,12 @@ export type GetUserQuery = {
       __typename: "ModelFriendRequestsConnection",
       nextToken?: string | null,
     } | null,
-    Reactions?:  {
-      __typename: "ModelReactionsConnection",
+    message_reactions?:  {
+      __typename: "ModelMessageReactionConnection",
+      nextToken?: string | null,
+    } | null,
+    story_reactions?:  {
+      __typename: "ModelStoryReactionConnection",
       nextToken?: string | null,
     } | null,
     Stories?:  {
@@ -2837,6 +3722,10 @@ export type GetUserQuery = {
     } | null,
     StoryViews?:  {
       __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
+    sent_messages?:  {
+      __typename: "ModelMessagesConnection",
       nextToken?: string | null,
     } | null,
     createdAt: string,
@@ -3204,6 +4093,10 @@ export type GetStoryQuery = {
       __typename: "ModelStoryViewConnection",
       nextToken?: string | null,
     } | null,
+    story_reactions?:  {
+      __typename: "ModelStoryReactionConnection",
+      nextToken?: string | null,
+    } | null,
     created_at?: string | null,
     expires_at?: string | null,
     music_start_time?: number | null,
@@ -3427,6 +4320,127 @@ export type StoryViewsByUser_idQuery = {
   } | null,
 };
 
+export type GetStoryReactionQueryVariables = {
+  id: string,
+};
+
+export type GetStoryReactionQuery = {
+  getStoryReaction?:  {
+    __typename: "StoryReaction",
+    id: string,
+    story_id: string,
+    user_id: string,
+    icon?: string | null,
+    created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    story?:  {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      music_start_time?: number | null,
+      music_end_time?: number | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type ListStoryReactionsQueryVariables = {
+  filter?: ModelStoryReactionFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type ListStoryReactionsQuery = {
+  listStoryReactions?:  {
+    __typename: "ModelStoryReactionConnection",
+    items:  Array< {
+      __typename: "StoryReaction",
+      id: string,
+      story_id: string,
+      user_id: string,
+      icon?: string | null,
+      created_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
+export type StoryReactionsByStory_idQueryVariables = {
+  story_id: string,
+  sortDirection?: ModelSortDirection | null,
+  filter?: ModelStoryReactionFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type StoryReactionsByStory_idQuery = {
+  storyReactionsByStory_id?:  {
+    __typename: "ModelStoryReactionConnection",
+    items:  Array< {
+      __typename: "StoryReaction",
+      id: string,
+      story_id: string,
+      user_id: string,
+      icon?: string | null,
+      created_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
+export type StoryReactionsByUser_idQueryVariables = {
+  user_id: string,
+  sortDirection?: ModelSortDirection | null,
+  filter?: ModelStoryReactionFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type StoryReactionsByUser_idQuery = {
+  storyReactionsByUser_id?:  {
+    __typename: "ModelStoryReactionConnection",
+    items:  Array< {
+      __typename: "StoryReaction",
+      id: string,
+      story_id: string,
+      user_id: string,
+      icon?: string | null,
+      created_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
 export type OnCreateGroupChatSubscriptionVariables = {
   filter?: ModelSubscriptionGroupChatFilterInput | null,
 };
@@ -3446,6 +4460,10 @@ export type OnCreateGroupChatSubscription = {
     updated_at?: string | null,
     group_picture?: string | null,
     description?: string | null,
+    messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -3470,6 +4488,10 @@ export type OnUpdateGroupChatSubscription = {
     updated_at?: string | null,
     group_picture?: string | null,
     description?: string | null,
+    messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -3494,6 +4516,10 @@ export type OnDeleteGroupChatSubscription = {
     updated_at?: string | null,
     group_picture?: string | null,
     description?: string | null,
+    messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -3515,6 +4541,10 @@ export type OnCreateFriendChatSubscription = {
     created_at?: string | null,
     last_message?: string | null,
     updated_at?: string | null,
+    messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -3536,6 +4566,10 @@ export type OnUpdateFriendChatSubscription = {
     created_at?: string | null,
     last_message?: string | null,
     updated_at?: string | null,
+    messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -3557,6 +4591,10 @@ export type OnDeleteFriendChatSubscription = {
     created_at?: string | null,
     last_message?: string | null,
     updated_at?: string | null,
+    messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -3577,9 +4615,64 @@ export type OnCreateMessagesSubscription = {
     timestamp?: string | null,
     status?: string | null,
     attachments?: string | null,
-    reactions?:  {
-      __typename: "ModelReactionsConnection",
+    message_reactions?:  {
+      __typename: "ModelMessageReactionConnection",
       nextToken?: string | null,
+    } | null,
+    sender?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    reply_to_message_id?: string | null,
+    reply_to_message?:  {
+      __typename: "Messages",
+      id: string,
+      chat_type?: string | null,
+      chat_id: string,
+      sender_id: string,
+      content?: string | null,
+      timestamp?: string | null,
+      status?: string | null,
+      attachments?: string | null,
+      reply_to_message_id?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    replied_messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
+    group_chat?:  {
+      __typename: "GroupChat",
+      id: string,
+      group_name?: string | null,
+      created_by: string,
+      created_at?: string | null,
+      last_message?: string | null,
+      updated_at?: string | null,
+      group_picture?: string | null,
+      description?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    friend_chat?:  {
+      __typename: "FriendChat",
+      id: string,
+      chat_id?: string | null,
+      created_at?: string | null,
+      last_message?: string | null,
+      updated_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
     } | null,
     createdAt: string,
     updatedAt: string,
@@ -3601,9 +4694,64 @@ export type OnUpdateMessagesSubscription = {
     timestamp?: string | null,
     status?: string | null,
     attachments?: string | null,
-    reactions?:  {
-      __typename: "ModelReactionsConnection",
+    message_reactions?:  {
+      __typename: "ModelMessageReactionConnection",
       nextToken?: string | null,
+    } | null,
+    sender?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    reply_to_message_id?: string | null,
+    reply_to_message?:  {
+      __typename: "Messages",
+      id: string,
+      chat_type?: string | null,
+      chat_id: string,
+      sender_id: string,
+      content?: string | null,
+      timestamp?: string | null,
+      status?: string | null,
+      attachments?: string | null,
+      reply_to_message_id?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    replied_messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
+    group_chat?:  {
+      __typename: "GroupChat",
+      id: string,
+      group_name?: string | null,
+      created_by: string,
+      created_at?: string | null,
+      last_message?: string | null,
+      updated_at?: string | null,
+      group_picture?: string | null,
+      description?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    friend_chat?:  {
+      __typename: "FriendChat",
+      id: string,
+      chat_id?: string | null,
+      created_at?: string | null,
+      last_message?: string | null,
+      updated_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
     } | null,
     createdAt: string,
     updatedAt: string,
@@ -3625,61 +4773,197 @@ export type OnDeleteMessagesSubscription = {
     timestamp?: string | null,
     status?: string | null,
     attachments?: string | null,
-    reactions?:  {
-      __typename: "ModelReactionsConnection",
+    message_reactions?:  {
+      __typename: "ModelMessageReactionConnection",
       nextToken?: string | null,
+    } | null,
+    sender?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    reply_to_message_id?: string | null,
+    reply_to_message?:  {
+      __typename: "Messages",
+      id: string,
+      chat_type?: string | null,
+      chat_id: string,
+      sender_id: string,
+      content?: string | null,
+      timestamp?: string | null,
+      status?: string | null,
+      attachments?: string | null,
+      reply_to_message_id?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    replied_messages?:  {
+      __typename: "ModelMessagesConnection",
+      nextToken?: string | null,
+    } | null,
+    group_chat?:  {
+      __typename: "GroupChat",
+      id: string,
+      group_name?: string | null,
+      created_by: string,
+      created_at?: string | null,
+      last_message?: string | null,
+      updated_at?: string | null,
+      group_picture?: string | null,
+      description?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    friend_chat?:  {
+      __typename: "FriendChat",
+      id: string,
+      chat_id?: string | null,
+      created_at?: string | null,
+      last_message?: string | null,
+      updated_at?: string | null,
+      createdAt: string,
+      updatedAt: string,
     } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
 };
 
-export type OnCreateReactionsSubscriptionVariables = {
-  filter?: ModelSubscriptionReactionsFilterInput | null,
+export type OnCreateMessageReactionSubscriptionVariables = {
+  filter?: ModelSubscriptionMessageReactionFilterInput | null,
 };
 
-export type OnCreateReactionsSubscription = {
-  onCreateReactions?:  {
-    __typename: "Reactions",
+export type OnCreateMessageReactionSubscription = {
+  onCreateMessageReaction?:  {
+    __typename: "MessageReaction",
     id: string,
     message_id: string,
     user_id: string,
     icon?: string | null,
     created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    message?:  {
+      __typename: "Messages",
+      id: string,
+      chat_type?: string | null,
+      chat_id: string,
+      sender_id: string,
+      content?: string | null,
+      timestamp?: string | null,
+      status?: string | null,
+      attachments?: string | null,
+      reply_to_message_id?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
 };
 
-export type OnUpdateReactionsSubscriptionVariables = {
-  filter?: ModelSubscriptionReactionsFilterInput | null,
+export type OnUpdateMessageReactionSubscriptionVariables = {
+  filter?: ModelSubscriptionMessageReactionFilterInput | null,
 };
 
-export type OnUpdateReactionsSubscription = {
-  onUpdateReactions?:  {
-    __typename: "Reactions",
+export type OnUpdateMessageReactionSubscription = {
+  onUpdateMessageReaction?:  {
+    __typename: "MessageReaction",
     id: string,
     message_id: string,
     user_id: string,
     icon?: string | null,
     created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    message?:  {
+      __typename: "Messages",
+      id: string,
+      chat_type?: string | null,
+      chat_id: string,
+      sender_id: string,
+      content?: string | null,
+      timestamp?: string | null,
+      status?: string | null,
+      attachments?: string | null,
+      reply_to_message_id?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
 };
 
-export type OnDeleteReactionsSubscriptionVariables = {
-  filter?: ModelSubscriptionReactionsFilterInput | null,
+export type OnDeleteMessageReactionSubscriptionVariables = {
+  filter?: ModelSubscriptionMessageReactionFilterInput | null,
 };
 
-export type OnDeleteReactionsSubscription = {
-  onDeleteReactions?:  {
-    __typename: "Reactions",
+export type OnDeleteMessageReactionSubscription = {
+  onDeleteMessageReaction?:  {
+    __typename: "MessageReaction",
     id: string,
     message_id: string,
     user_id: string,
     icon?: string | null,
     created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    message?:  {
+      __typename: "Messages",
+      id: string,
+      chat_type?: string | null,
+      chat_id: string,
+      sender_id: string,
+      content?: string | null,
+      timestamp?: string | null,
+      status?: string | null,
+      attachments?: string | null,
+      reply_to_message_id?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -3696,6 +4980,32 @@ export type OnCreateContactSubscription = {
     user_id: string,
     contact_user_id: string,
     created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    contact_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -3712,6 +5022,32 @@ export type OnUpdateContactSubscription = {
     user_id: string,
     contact_user_id: string,
     created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    contact_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -3728,6 +5064,32 @@ export type OnDeleteContactSubscription = {
     user_id: string,
     contact_user_id: string,
     created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    contact_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -3745,6 +5107,32 @@ export type OnCreateFriendRequestsSubscription = {
     to_user_id: string,
     status?: string | null,
     created_at?: string | null,
+    from_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    to_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -3762,6 +5150,32 @@ export type OnUpdateFriendRequestsSubscription = {
     to_user_id: string,
     status?: string | null,
     created_at?: string | null,
+    from_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    to_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -3779,6 +5193,32 @@ export type OnDeleteFriendRequestsSubscription = {
     to_user_id: string,
     status?: string | null,
     created_at?: string | null,
+    from_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    to_user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -3819,8 +5259,12 @@ export type OnCreateUserSubscription = {
       __typename: "ModelFriendRequestsConnection",
       nextToken?: string | null,
     } | null,
-    Reactions?:  {
-      __typename: "ModelReactionsConnection",
+    message_reactions?:  {
+      __typename: "ModelMessageReactionConnection",
+      nextToken?: string | null,
+    } | null,
+    story_reactions?:  {
+      __typename: "ModelStoryReactionConnection",
       nextToken?: string | null,
     } | null,
     Stories?:  {
@@ -3829,6 +5273,10 @@ export type OnCreateUserSubscription = {
     } | null,
     StoryViews?:  {
       __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
+    sent_messages?:  {
+      __typename: "ModelMessagesConnection",
       nextToken?: string | null,
     } | null,
     createdAt: string,
@@ -3871,8 +5319,12 @@ export type OnUpdateUserSubscription = {
       __typename: "ModelFriendRequestsConnection",
       nextToken?: string | null,
     } | null,
-    Reactions?:  {
-      __typename: "ModelReactionsConnection",
+    message_reactions?:  {
+      __typename: "ModelMessageReactionConnection",
+      nextToken?: string | null,
+    } | null,
+    story_reactions?:  {
+      __typename: "ModelStoryReactionConnection",
       nextToken?: string | null,
     } | null,
     Stories?:  {
@@ -3881,6 +5333,10 @@ export type OnUpdateUserSubscription = {
     } | null,
     StoryViews?:  {
       __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
+    sent_messages?:  {
+      __typename: "ModelMessagesConnection",
       nextToken?: string | null,
     } | null,
     createdAt: string,
@@ -3923,8 +5379,12 @@ export type OnDeleteUserSubscription = {
       __typename: "ModelFriendRequestsConnection",
       nextToken?: string | null,
     } | null,
-    Reactions?:  {
-      __typename: "ModelReactionsConnection",
+    message_reactions?:  {
+      __typename: "ModelMessageReactionConnection",
+      nextToken?: string | null,
+    } | null,
+    story_reactions?:  {
+      __typename: "ModelStoryReactionConnection",
       nextToken?: string | null,
     } | null,
     Stories?:  {
@@ -3933,6 +5393,10 @@ export type OnDeleteUserSubscription = {
     } | null,
     StoryViews?:  {
       __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
+    sent_messages?:  {
+      __typename: "ModelMessagesConnection",
       nextToken?: string | null,
     } | null,
     createdAt: string,
@@ -4291,6 +5755,10 @@ export type OnCreateStorySubscription = {
       __typename: "ModelStoryViewConnection",
       nextToken?: string | null,
     } | null,
+    story_reactions?:  {
+      __typename: "ModelStoryReactionConnection",
+      nextToken?: string | null,
+    } | null,
     created_at?: string | null,
     expires_at?: string | null,
     music_start_time?: number | null,
@@ -4345,6 +5813,10 @@ export type OnUpdateStorySubscription = {
       __typename: "ModelStoryViewConnection",
       nextToken?: string | null,
     } | null,
+    story_reactions?:  {
+      __typename: "ModelStoryReactionConnection",
+      nextToken?: string | null,
+    } | null,
     created_at?: string | null,
     expires_at?: string | null,
     music_start_time?: number | null,
@@ -4397,6 +5869,10 @@ export type OnDeleteStorySubscription = {
     } | null,
     views?:  {
       __typename: "ModelStoryViewConnection",
+      nextToken?: string | null,
+    } | null,
+    story_reactions?:  {
+      __typename: "ModelStoryReactionConnection",
       nextToken?: string | null,
     } | null,
     created_at?: string | null,
@@ -4544,6 +6020,150 @@ export type OnDeleteStoryViewSubscription = {
       updatedAt: string,
     } | null,
     viewed_at?: string | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnCreateStoryReactionSubscriptionVariables = {
+  filter?: ModelSubscriptionStoryReactionFilterInput | null,
+};
+
+export type OnCreateStoryReactionSubscription = {
+  onCreateStoryReaction?:  {
+    __typename: "StoryReaction",
+    id: string,
+    story_id: string,
+    user_id: string,
+    icon?: string | null,
+    created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    story?:  {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      music_start_time?: number | null,
+      music_end_time?: number | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnUpdateStoryReactionSubscriptionVariables = {
+  filter?: ModelSubscriptionStoryReactionFilterInput | null,
+};
+
+export type OnUpdateStoryReactionSubscription = {
+  onUpdateStoryReaction?:  {
+    __typename: "StoryReaction",
+    id: string,
+    story_id: string,
+    user_id: string,
+    icon?: string | null,
+    created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    story?:  {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      music_start_time?: number | null,
+      music_end_time?: number | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnDeleteStoryReactionSubscriptionVariables = {
+  filter?: ModelSubscriptionStoryReactionFilterInput | null,
+};
+
+export type OnDeleteStoryReactionSubscription = {
+  onDeleteStoryReaction?:  {
+    __typename: "StoryReaction",
+    id: string,
+    story_id: string,
+    user_id: string,
+    icon?: string | null,
+    created_at?: string | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      name?: string | null,
+      email: string,
+      password: string,
+      profile_picture?: string | null,
+      status?: string | null,
+      last_seen?: string | null,
+      push_token?: string | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
+    story?:  {
+      __typename: "Story",
+      id: string,
+      user_id: string,
+      type: string,
+      media_url?: string | null,
+      text_content?: string | null,
+      background_color?: string | null,
+      thumbnail_url?: string | null,
+      duration?: number | null,
+      music_id?: string | null,
+      created_at?: string | null,
+      expires_at?: string | null,
+      music_start_time?: number | null,
+      music_end_time?: number | null,
+      createdAt: string,
+      updatedAt: string,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,

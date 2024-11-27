@@ -25,6 +25,10 @@ export const createGroupChat = /* GraphQL */ `mutation CreateGroupChat(
     updated_at
     group_picture
     description
+    messages {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -51,6 +55,10 @@ export const updateGroupChat = /* GraphQL */ `mutation UpdateGroupChat(
     updated_at
     group_picture
     description
+    messages {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -77,6 +85,10 @@ export const deleteGroupChat = /* GraphQL */ `mutation DeleteGroupChat(
     updated_at
     group_picture
     description
+    messages {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -100,6 +112,10 @@ export const createFriendChat = /* GraphQL */ `mutation CreateFriendChat(
     created_at
     last_message
     updated_at
+    messages {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -123,6 +139,10 @@ export const updateFriendChat = /* GraphQL */ `mutation UpdateFriendChat(
     created_at
     last_message
     updated_at
+    messages {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -146,6 +166,10 @@ export const deleteFriendChat = /* GraphQL */ `mutation DeleteFriendChat(
     created_at
     last_message
     updated_at
+    messages {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -168,8 +192,63 @@ export const createMessages = /* GraphQL */ `mutation CreateMessages(
     timestamp
     status
     attachments
-    reactions {
+    message_reactions {
       nextToken
+      __typename
+    }
+    sender {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    reply_to_message_id
+    reply_to_message {
+      id
+      chat_type
+      chat_id
+      sender_id
+      content
+      timestamp
+      status
+      attachments
+      reply_to_message_id
+      createdAt
+      updatedAt
+      __typename
+    }
+    replied_messages {
+      nextToken
+      __typename
+    }
+    group_chat {
+      id
+      group_name
+      created_by
+      created_at
+      last_message
+      updated_at
+      group_picture
+      description
+      createdAt
+      updatedAt
+      __typename
+    }
+    friend_chat {
+      id
+      chat_id
+      created_at
+      last_message
+      updated_at
+      createdAt
+      updatedAt
       __typename
     }
     createdAt
@@ -194,8 +273,63 @@ export const updateMessages = /* GraphQL */ `mutation UpdateMessages(
     timestamp
     status
     attachments
-    reactions {
+    message_reactions {
       nextToken
+      __typename
+    }
+    sender {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    reply_to_message_id
+    reply_to_message {
+      id
+      chat_type
+      chat_id
+      sender_id
+      content
+      timestamp
+      status
+      attachments
+      reply_to_message_id
+      createdAt
+      updatedAt
+      __typename
+    }
+    replied_messages {
+      nextToken
+      __typename
+    }
+    group_chat {
+      id
+      group_name
+      created_by
+      created_at
+      last_message
+      updated_at
+      group_picture
+      description
+      createdAt
+      updatedAt
+      __typename
+    }
+    friend_chat {
+      id
+      chat_id
+      created_at
+      last_message
+      updated_at
+      createdAt
+      updatedAt
       __typename
     }
     createdAt
@@ -220,8 +354,63 @@ export const deleteMessages = /* GraphQL */ `mutation DeleteMessages(
     timestamp
     status
     attachments
-    reactions {
+    message_reactions {
       nextToken
+      __typename
+    }
+    sender {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    reply_to_message_id
+    reply_to_message {
+      id
+      chat_type
+      chat_id
+      sender_id
+      content
+      timestamp
+      status
+      attachments
+      reply_to_message_id
+      createdAt
+      updatedAt
+      __typename
+    }
+    replied_messages {
+      nextToken
+      __typename
+    }
+    group_chat {
+      id
+      group_name
+      created_by
+      created_at
+      last_message
+      updated_at
+      group_picture
+      description
+      createdAt
+      updatedAt
+      __typename
+    }
+    friend_chat {
+      id
+      chat_id
+      created_at
+      last_message
+      updated_at
+      createdAt
+      updatedAt
       __typename
     }
     createdAt
@@ -233,62 +422,143 @@ export const deleteMessages = /* GraphQL */ `mutation DeleteMessages(
   APITypes.DeleteMessagesMutationVariables,
   APITypes.DeleteMessagesMutation
 >;
-export const createReactions = /* GraphQL */ `mutation CreateReactions(
-  $input: CreateReactionsInput!
-  $condition: ModelReactionsConditionInput
+export const createMessageReaction = /* GraphQL */ `mutation CreateMessageReaction(
+  $input: CreateMessageReactionInput!
+  $condition: ModelMessageReactionConditionInput
 ) {
-  createReactions(input: $input, condition: $condition) {
+  createMessageReaction(input: $input, condition: $condition) {
     id
     message_id
     user_id
     icon
     created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    message {
+      id
+      chat_type
+      chat_id
+      sender_id
+      content
+      timestamp
+      status
+      attachments
+      reply_to_message_id
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
   }
 }
 ` as GeneratedMutation<
-  APITypes.CreateReactionsMutationVariables,
-  APITypes.CreateReactionsMutation
+  APITypes.CreateMessageReactionMutationVariables,
+  APITypes.CreateMessageReactionMutation
 >;
-export const updateReactions = /* GraphQL */ `mutation UpdateReactions(
-  $input: UpdateReactionsInput!
-  $condition: ModelReactionsConditionInput
+export const updateMessageReaction = /* GraphQL */ `mutation UpdateMessageReaction(
+  $input: UpdateMessageReactionInput!
+  $condition: ModelMessageReactionConditionInput
 ) {
-  updateReactions(input: $input, condition: $condition) {
+  updateMessageReaction(input: $input, condition: $condition) {
     id
     message_id
     user_id
     icon
     created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    message {
+      id
+      chat_type
+      chat_id
+      sender_id
+      content
+      timestamp
+      status
+      attachments
+      reply_to_message_id
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
   }
 }
 ` as GeneratedMutation<
-  APITypes.UpdateReactionsMutationVariables,
-  APITypes.UpdateReactionsMutation
+  APITypes.UpdateMessageReactionMutationVariables,
+  APITypes.UpdateMessageReactionMutation
 >;
-export const deleteReactions = /* GraphQL */ `mutation DeleteReactions(
-  $input: DeleteReactionsInput!
-  $condition: ModelReactionsConditionInput
+export const deleteMessageReaction = /* GraphQL */ `mutation DeleteMessageReaction(
+  $input: DeleteMessageReactionInput!
+  $condition: ModelMessageReactionConditionInput
 ) {
-  deleteReactions(input: $input, condition: $condition) {
+  deleteMessageReaction(input: $input, condition: $condition) {
     id
     message_id
     user_id
     icon
     created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    message {
+      id
+      chat_type
+      chat_id
+      sender_id
+      content
+      timestamp
+      status
+      attachments
+      reply_to_message_id
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
   }
 }
 ` as GeneratedMutation<
-  APITypes.DeleteReactionsMutationVariables,
-  APITypes.DeleteReactionsMutation
+  APITypes.DeleteMessageReactionMutationVariables,
+  APITypes.DeleteMessageReactionMutation
 >;
 export const createContact = /* GraphQL */ `mutation CreateContact(
   $input: CreateContactInput!
@@ -299,6 +569,32 @@ export const createContact = /* GraphQL */ `mutation CreateContact(
     user_id
     contact_user_id
     created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    contact_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -317,6 +613,32 @@ export const updateContact = /* GraphQL */ `mutation UpdateContact(
     user_id
     contact_user_id
     created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    contact_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -335,6 +657,32 @@ export const deleteContact = /* GraphQL */ `mutation DeleteContact(
     user_id
     contact_user_id
     created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    contact_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -354,6 +702,32 @@ export const createFriendRequests = /* GraphQL */ `mutation CreateFriendRequests
     to_user_id
     status
     created_at
+    from_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    to_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -373,6 +747,32 @@ export const updateFriendRequests = /* GraphQL */ `mutation UpdateFriendRequests
     to_user_id
     status
     created_at
+    from_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    to_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -392,6 +792,32 @@ export const deleteFriendRequests = /* GraphQL */ `mutation DeleteFriendRequests
     to_user_id
     status
     created_at
+    from_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    to_user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -434,7 +860,11 @@ export const createUser = /* GraphQL */ `mutation CreateUser(
       nextToken
       __typename
     }
-    Reactions {
+    message_reactions {
+      nextToken
+      __typename
+    }
+    story_reactions {
       nextToken
       __typename
     }
@@ -443,6 +873,10 @@ export const createUser = /* GraphQL */ `mutation CreateUser(
       __typename
     }
     StoryViews {
+      nextToken
+      __typename
+    }
+    sent_messages {
       nextToken
       __typename
     }
@@ -488,7 +922,11 @@ export const updateUser = /* GraphQL */ `mutation UpdateUser(
       nextToken
       __typename
     }
-    Reactions {
+    message_reactions {
+      nextToken
+      __typename
+    }
+    story_reactions {
       nextToken
       __typename
     }
@@ -497,6 +935,10 @@ export const updateUser = /* GraphQL */ `mutation UpdateUser(
       __typename
     }
     StoryViews {
+      nextToken
+      __typename
+    }
+    sent_messages {
       nextToken
       __typename
     }
@@ -542,7 +984,11 @@ export const deleteUser = /* GraphQL */ `mutation DeleteUser(
       nextToken
       __typename
     }
-    Reactions {
+    message_reactions {
+      nextToken
+      __typename
+    }
+    story_reactions {
       nextToken
       __typename
     }
@@ -551,6 +997,10 @@ export const deleteUser = /* GraphQL */ `mutation DeleteUser(
       __typename
     }
     StoryViews {
+      nextToken
+      __typename
+    }
+    sent_messages {
       nextToken
       __typename
     }
@@ -930,6 +1380,10 @@ export const createStory = /* GraphQL */ `mutation CreateStory(
       nextToken
       __typename
     }
+    story_reactions {
+      nextToken
+      __typename
+    }
     created_at
     expires_at
     music_start_time
@@ -986,6 +1440,10 @@ export const updateStory = /* GraphQL */ `mutation UpdateStory(
       nextToken
       __typename
     }
+    story_reactions {
+      nextToken
+      __typename
+    }
     created_at
     expires_at
     music_start_time
@@ -1039,6 +1497,10 @@ export const deleteStory = /* GraphQL */ `mutation DeleteStory(
       __typename
     }
     views {
+      nextToken
+      __typename
+    }
+    story_reactions {
       nextToken
       __typename
     }
@@ -1201,4 +1663,154 @@ export const deleteStoryView = /* GraphQL */ `mutation DeleteStoryView(
 ` as GeneratedMutation<
   APITypes.DeleteStoryViewMutationVariables,
   APITypes.DeleteStoryViewMutation
+>;
+export const createStoryReaction = /* GraphQL */ `mutation CreateStoryReaction(
+  $input: CreateStoryReactionInput!
+  $condition: ModelStoryReactionConditionInput
+) {
+  createStoryReaction(input: $input, condition: $condition) {
+    id
+    story_id
+    user_id
+    icon
+    created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.CreateStoryReactionMutationVariables,
+  APITypes.CreateStoryReactionMutation
+>;
+export const updateStoryReaction = /* GraphQL */ `mutation UpdateStoryReaction(
+  $input: UpdateStoryReactionInput!
+  $condition: ModelStoryReactionConditionInput
+) {
+  updateStoryReaction(input: $input, condition: $condition) {
+    id
+    story_id
+    user_id
+    icon
+    created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UpdateStoryReactionMutationVariables,
+  APITypes.UpdateStoryReactionMutation
+>;
+export const deleteStoryReaction = /* GraphQL */ `mutation DeleteStoryReaction(
+  $input: DeleteStoryReactionInput!
+  $condition: ModelStoryReactionConditionInput
+) {
+  deleteStoryReaction(input: $input, condition: $condition) {
+    id
+    story_id
+    user_id
+    icon
+    created_at
+    user {
+      id
+      name
+      email
+      password
+      profile_picture
+      status
+      last_seen
+      push_token
+      createdAt
+      updatedAt
+      __typename
+    }
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.DeleteStoryReactionMutationVariables,
+  APITypes.DeleteStoryReactionMutation
 >;
