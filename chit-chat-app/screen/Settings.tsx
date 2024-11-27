@@ -150,13 +150,10 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
                 </Text>
               </View>
               <View style={styles.darkModeSwitch}>
-                <View style={[
-                  styles.switchIndicator,
-                  { backgroundColor: isDarkMode ? themeColors.primary : '#E0E0E0' }
-                ]}>
+                <View style={styles.switchTrack}>
                   <View style={[
                     styles.switchKnob,
-                    { transform: [{ translateX: isDarkMode ? 10 : 0 }] }
+                    isDarkMode ? styles.switchKnobOn : styles.switchKnobOff
                   ]} />
                 </View>
               </View>
@@ -371,19 +368,32 @@ const styles = StyleSheet.create({
   darkModeSwitch: {
     padding: 2,
   },
-  switchIndicator: {
-    width: 48,
-    height: 28,
-    borderRadius: 14,
+  switchTrack: {
+    width: 51,
+    height: 31,
+    borderRadius: 31,
+    backgroundColor: '#E9E9EA',
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 4,
   },
   switchKnob: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#fff',
+    width: 27,
+    height: 27,
+    borderRadius: 27,
+    backgroundColor: '#FFFFFF',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 2.5,
+    elevation: 1.5,
+  },
+  switchKnobOn: {
+    transform: [{ translateX: 22 }],
+  },
+  switchKnobOff: {
+    transform: [{ translateX: 2 }],
   },
 
 });
