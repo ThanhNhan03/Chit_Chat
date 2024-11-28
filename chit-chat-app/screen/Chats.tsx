@@ -22,16 +22,10 @@ import { themeColors } from '../config/themeColor';
 
 const client = generateClient();
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-const [friends, setFriends] = useState<Friend[]>([
-    { id: '1', name: 'Alice', profilePicture: null },
-    { id: '2', name: 'Bob', profilePicture: null },
+
     // Add more mock friends here...
-]);
-interface Friend {
-    id: string;
-    name: string;
-    profilePicture?: string;
-}
+
+
 interface UserFriendChat {
     id: string;
     user_id: string;
@@ -646,9 +640,9 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
         <View style={styles.container}>
             <MainHeader title="Chats" />
        <SearchBar
-   placeholder="Search chats"
-    value={null}
-        onChangeText={null}/>
+        placeholder="Search chats"
+             value={null}
+             onChangeText={null}/>
       {/* <FriendBar
     friends={friends}
     onFriendPress={(friend) => console.log('Friend pressed:', friend)}
