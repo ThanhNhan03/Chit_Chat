@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     chatItem: {
-        padding: 16,
+    padding: 10,
        
         // borderBottomWidth: 1,
         // borderBottomColor: '#eee',
@@ -736,9 +736,9 @@ const styles = StyleSheet.create({
         backgroundColor: themeColors.primary,
     },
     avatarPlaceholder: {
-        width: screenWidth * 0.12,
-        height: screenWidth * 0.12,
-        borderRadius: screenWidth * 0.06,
+        width: screenWidth * 0.14,
+        height: screenWidth * 0.14,
+        borderRadius: screenWidth * 0.08,
         backgroundColor: themeColors.primary,
         justifyContent: 'center',
         alignItems: 'center',
@@ -774,7 +774,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 4,
+        marginBottom: 2,
     },
     chatName: {
         fontSize: screenWidth * 0.042,
