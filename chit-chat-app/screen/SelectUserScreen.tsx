@@ -483,12 +483,12 @@ export default function SelectUserScreen({ navigation }) {
     userName: {
       fontSize: 16,
       fontWeight: '600',
-      color: themeColors.text,
+      color: theme.textColor,
       marginBottom: 4,
     },
     userStatus: {
       fontSize: 13,
-      color: themeColors.textSecondary,
+      color: theme.textColor,
     },
     emptyContainer: {
       flex: 1,
@@ -552,7 +552,7 @@ export default function SelectUserScreen({ navigation }) {
       marginLeft: 8,
       fontSize: 16,
       color: themeColors.text,
-      paddingVertical: 8,
+      // paddingVertical: 8,
     },
     clearButton: {
       padding: 4,

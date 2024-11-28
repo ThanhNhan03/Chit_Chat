@@ -313,8 +313,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    // borderBottomWidth: 1,
+    // borderBottomColor: '#f0f0f0',
   },
   optionLeft: {
     flexDirection: 'row',
@@ -362,8 +362,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     paddingLeft: 32,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    // borderBottomWidth: 1,
+    // borderBottomColor: '#f0f0f0',
   },
   darkModeSwitch: {
     padding: 2,

@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 16,
         color: themeColors.text,
-        padding: 0, // Remove default padding
+        padding: 0, 
     },
 });
 
