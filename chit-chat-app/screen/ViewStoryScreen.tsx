@@ -13,15 +13,18 @@ import {
 } from 'react-native';
 import Icon from '@expo/vector-icons/Ionicons';
 import { themeColors } from '../config/themeColor';
-import { getStory } from '../src/graphql/queries';
+import { getStory, storyReactionsByStory_id } from '../src/graphql/queries';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 import { generateClient, GraphQLResult } from 'aws-amplify/api';
 import { useFocusEffect } from '@react-navigation/native';
 import { BackHandler } from 'react-native';
 import { AuthenticatedUserContext } from '../contexts/AuthContext';
-import { deleteStory } from '../src/graphql/mutations';
+import { createStoryReaction, deleteStory, deleteStoryReaction } from '../src/graphql/mutations';
 import StoryViewers from '../components/StoryViewers';
 import ViewsCounter from '../components/ViewsCounter';
+import ReactionPicker from '../components/ReactionPicker';
+import { StoryReaction as APIStoryReaction } from '../src/API';
+import { onCreateStoryReaction } from '../src/graphql/subscriptions';
 
 const client = generateClient();
 
@@ -147,6 +150,17 @@ interface StoryViewsResponse {
             };
         }>;
     };
+}
+
+// Update the local StoryReaction interface
+interface StoryReaction {
+    id: string;
+    story_id: string;
+    user_id: string;
+    icon: string;  // Make icon required
+    created_at: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
@@ -290,8 +304,10 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
 
     const handleNext = async () => {
         if (currentIndex < stories.length - 1) {
-            await cleanupSound(); // Cleanup trước khi chuyển story
+            await cleanupSound();
             setCurrentIndex(currentIndex + 1);
+            setShowReactions(false);
+            setCurrentReaction(null);
         } else {
             handleBack();
         }
@@ -299,8 +315,10 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
 
     const handlePrevious = async () => {
         if (currentIndex > 0) {
-            await cleanupSound(); // Cleanup trước khi chuyển story
+            await cleanupSound();
             setCurrentIndex(currentIndex - 1);
+            setShowReactions(false);
+            setCurrentReaction(null);
         }
     };
 
@@ -473,7 +491,7 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
     };
 
     const handleDeleteStory = async () => {
-        if (!user?.userId || user.userId !== currentStory.user_id) {
+        if (!user?.userId || !currentStory || user.userId !== currentStory.user_id) {
             console.log('Unauthorized to delete this story');
             return;
         }
@@ -482,50 +500,48 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
             "Delete Story",
             "Are you sure you want to delete this story?",
             [
-                {
-                    text: "Cancel",
-                    style: "cancel"
-                },
+                { text: "Cancel", style: "cancel" },
                 {
                     text: "Delete",
                     style: "destructive",
                     onPress: async () => {
                         try {
-                            // Cleanup trước khi xóa
-                            await cleanupSound();
-                            progress.stopAnimation();
+                            // Store necessary data before deletion
+                            const storyIdToDelete = currentStory.id;
+                            const newStories = stories.filter(s => s.id !== storyIdToDelete);
+                            
+                            // Navigate back if this is the last story
+                            if (newStories.length === 0) {
+                                await cleanupSound();
+                                progress.stopAnimation();
+                                navigation.goBack();
+                                
+                                // Delete after navigation
+                                await client.graphql({
+                                    query: deleteStory,
+                                    variables: {
+                                        input: { id: storyIdToDelete }
+                                    }
+                                });
+                                return;
+                            }
 
+                            // Update state first
+                            const newIndex = currentIndex >= newStories.length ? newStories.length - 1 : currentIndex;
+                            setCurrentIndex(newIndex);
+                            setStories(newStories);
+
+                            // Then delete from backend
                             await client.graphql({
                                 query: deleteStory,
                                 variables: {
-                                    input: {
-                                        id: currentStory.id
-                                    }
+                                    input: { id: storyIdToDelete }
                                 }
                             });
 
-                            // Xóa story khỏi danh sách và xử lý navigation
-                            const newStories = stories.filter(s => s.id !== currentStory.id);
-
-                            if (newStories.length === 0) {
-                                // Nếu không còn story nào, quay về màn hình trước
-                                handleBack();
-                            } else {
-                                // Cập nhật stories trước
-                                setStories(newStories);
-                                
-                                // Sau đó mới cập nhật currentIndex nếu cần
-                                if (currentIndex >= newStories.length) {
-                                    setCurrentIndex(newStories.length - 1);
-                                }
-                            }
-
                         } catch (error) {
                             console.error('Error deleting story:', error);
-                            Alert.alert(
-                                "Error",
-                                "Failed to delete story. Please try again."
-                            );
+                            Alert.alert("Error", "Failed to delete story. Please try again.");
                         }
                     }
                 }
@@ -539,6 +555,129 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
             handleBack();
         }
     }, [stories, currentIndex]);
+
+    const [showReactions, setShowReactions] = useState(false);
+    const [currentReaction, setCurrentReaction] = useState<string | null>(null);
+    const [storyReactions, setStoryReactions] = useState<StoryReaction[]>([]);
+
+    // Fetch reactions khi component mount
+    useEffect(() => {
+        if (currentStory?.id) {
+            fetchStoryReactions();
+        }
+    }, [currentStory?.id]);
+
+    const fetchStoryReactions = async () => {
+        try {
+            const response = await client.graphql({
+                query: storyReactionsByStory_id,
+                variables: { story_id: currentStory.id },
+                authMode: 'apiKey'
+            });
+            
+            if (response.data?.storyReactionsByStory_id?.items) {
+                setStoryReactions(response.data.storyReactionsByStory_id.items
+                    .filter(item => item.icon) // Filter out items without icon
+                    .map(item => ({
+                        ...item,
+                        icon: item.icon!, // Assert icon is non-null
+                        created_at: item.created_at || item.createdAt
+                    }))
+                );
+                // Set current user's reaction if exists
+                const userReaction = response.data.storyReactionsByStory_id.items
+                    .find(reaction => reaction.user_id === user?.userId);
+                setCurrentReaction(userReaction?.icon || null);
+            }
+        } catch (error) {
+            console.error('Error fetching reactions:', error);
+        }
+    };
+
+    const handleReaction = async (icon: string) => {
+        if (!user?.userId || user.userId === currentStory.user_id) return;
+        
+        try {
+            if (currentReaction === icon) {
+                const existingReaction = storyReactions.find(
+                    r => r.user_id === user.userId
+                );
+                
+                if (existingReaction) {
+                    await client.graphql({
+                        query: deleteStoryReaction,
+                        variables: { 
+                            input: { id: existingReaction.id }
+                        },
+                        authMode: 'apiKey'
+                    });
+                    
+                    setCurrentReaction(null);
+                    setStoryReactions(prev => 
+                        prev.filter(r => r.id !== existingReaction.id)
+                    );
+                }
+            } else {
+                const input = {
+                    story_id: currentStory.id,
+                    user_id: user.userId,
+                    icon: icon,
+                    created_at: new Date().toISOString()
+                };
+
+                const response = await client.graphql({
+                    query: createStoryReaction,
+                    variables: { input },
+                    authMode: 'apiKey'
+                });
+
+                if (response.data?.createStoryReaction) {
+                    setCurrentReaction(icon);
+                    setStoryReactions(prev => [...prev, {
+                        id: response.data.createStoryReaction.id,
+                        story_id: response.data.createStoryReaction.story_id,
+                        user_id: response.data.createStoryReaction.user_id,
+                        icon: response.data.createStoryReaction.icon,
+                        created_at: response.data.createStoryReaction.created_at || response.data.createStoryReaction.createdAt
+                    }]);
+                }
+            }
+            setShowReactions(false);
+        } catch (error) {
+            console.error('Error handling reaction:', error);
+        }
+    };
+
+    // Add subscription for real-time updates
+    useEffect(() => {
+        const sub = client.graphql({
+            query: onCreateStoryReaction,
+            variables: { filter: { story_id: { eq: currentStory.id } } }
+        }).subscribe({
+            next: ({ data }) => {
+                if (data?.onCreateStoryReaction && data.onCreateStoryReaction.icon) {
+                    setStoryReactions(prev => [...prev, {
+                        ...data.onCreateStoryReaction,
+                        icon: data.onCreateStoryReaction.icon,
+                        created_at: data.onCreateStoryReaction.created_at || data.onCreateStoryReaction.createdAt
+                    }]);
+                }
+            },
+            error: error => console.error('Subscription error:', error)
+        });
+
+        return () => {
+            sub.unsubscribe();
+        };
+    }, [currentStory.id]);
+
+    // Thêm useEffect để kiểm tra reaction hiện tại khi story thay đổi
+    useEffect(() => {
+        if (currentStory && user?.userId) {
+            const userReaction = storyReactions.find(r => r.user_id === user.userId);
+            setCurrentReaction(userReaction?.icon || null);
+        }
+    }, [currentStory, storyReactions]);
 
     return (
         <SafeAreaView style={[
@@ -683,9 +822,41 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
             <StoryViewers 
                 isVisible={showViewers}
                 viewers={storyViews}
+                reactions={storyReactions}
                 onClose={toggleViewers}
                 formatTimeAgo={formatTimeAgo}
             />
+
+            {/* Add reaction button */}
+            <TouchableOpacity 
+                style={styles.reactionButton}
+                onPress={() => setShowReactions(true)}
+            >
+                <Icon name="heart-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+
+            {/* Reaction picker modal */}
+            {showReactions && (
+                <ReactionPicker
+                    isVisible={showReactions}
+                    onSelectReaction={handleReaction}
+                    currentReaction={currentReaction}
+                    onClose={() => setShowReactions(false)}
+                    isCurrentUser={currentStory?.user_id === user?.userId}
+                />
+            )}
+
+            {/* Show reactions count for story owner */}
+            {user?.userId === currentStory.user_id && (
+                <TouchableOpacity 
+                    style={styles.reactionsCounter}
+                    onPress={() => setShowReactions(true)}
+                >
+                    <Text style={styles.reactionsText}>
+                        {storyReactions.length} reactions
+                    </Text>
+                </TouchableOpacity>
+            )}
         </SafeAreaView>
     );
 };
@@ -834,6 +1005,26 @@ const styles = StyleSheet.create({
     },
     timeAgo: {
         color: 'rgba(255,255,255,0.8)',
+        fontSize: 12,
+    },
+    reactionButton: {
+        position: 'absolute',
+        bottom: 20,
+        right: 20,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        padding: 10,
+        borderRadius: 20,
+    },
+    reactionsCounter: {
+        position: 'absolute',
+        bottom: 20,
+        right: 20,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        padding: 8,
+        borderRadius: 20,
+    },
+    reactionsText: {
+        color: '#fff',
         fontSize: 12,
     },
 });

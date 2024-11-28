@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -22,9 +22,21 @@ interface StoryViewer {
     };
 }
 
+interface StoryReaction {
+    id: string;
+    created_at: string;
+    icon: string;
+    user?: {
+        id: string;
+        name: string;
+        profile_picture?: string;
+    };
+}
+
 interface StoryViewersProps {
     isVisible: boolean;
     viewers: StoryViewer[];
+    reactions: StoryReaction[];
     onClose: () => void;
     formatTimeAgo: (date: string) => string;
 }
@@ -32,46 +44,98 @@ interface StoryViewersProps {
 const StoryViewers: React.FC<StoryViewersProps> = ({
     isVisible,
     viewers,
+    reactions,
     onClose,
     formatTimeAgo,
 }) => {
+    const [activeTab, setActiveTab] = useState<'views' | 'reactions'>('views');
+
     if (!isVisible) return null;
 
     return (
         <View style={styles.container}>
             <View style={styles.modal}>
                 <View style={styles.header}>
-                    <Text style={styles.title}>Views ({viewers.length})</Text>
+                    <View style={styles.tabs}>
+                        <TouchableOpacity 
+                            style={[styles.tab, activeTab === 'views' && styles.activeTab]}
+                            onPress={() => setActiveTab('views')}
+                        >
+                            <Text style={[styles.tabText, activeTab === 'views' && styles.activeTabText]}>
+                                Views ({viewers.length})
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            style={[styles.tab, activeTab === 'reactions' && styles.activeTab]}
+                            onPress={() => setActiveTab('reactions')}
+                        >
+                            <Text style={[styles.tabText, activeTab === 'reactions' && styles.activeTabText]}>
+                                Reactions ({reactions.length})
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                     <TouchableOpacity onPress={onClose}>
                         <Icon name="close" size={24} color="#000" />
                     </TouchableOpacity>
                 </View>
+
                 <ScrollView style={styles.viewersList}>
-                    {viewers.map((viewer) => (
-                        <View key={viewer.id} style={styles.viewerItem}>
-                            {viewer.user?.profile_picture ? (
-                                <Image 
-                                    source={{ uri: viewer.user.profile_picture }} 
-                                    style={styles.viewerAvatar}
-                                    defaultSource={require('../assets/default-avatar.png')}
-                                />
-                            ) : (
-                                <View style={[styles.viewerAvatar, styles.defaultAvatar]}>
-                                    <Text style={styles.avatarText}>
-                                        {viewer.user?.name?.charAt(0).toUpperCase() || '?'}
+                    {activeTab === 'views' ? (
+                        viewers.map((viewer) => (
+                            <View key={viewer.id} style={styles.viewerItem}>
+                                {viewer.user?.profile_picture ? (
+                                    <Image 
+                                        source={{ uri: viewer.user.profile_picture }} 
+                                        style={styles.viewerAvatar}
+                                        defaultSource={require('../assets/default-avatar.png')}
+                                    />
+                                ) : (
+                                    <View style={[styles.viewerAvatar, styles.defaultAvatar]}>
+                                        <Text style={styles.avatarText}>
+                                            {viewer.user?.name?.charAt(0).toUpperCase() || '?'}
+                                        </Text>
+                                    </View>
+                                )}
+                                <View style={styles.viewerInfo}>
+                                    <Text style={styles.viewerName}>
+                                        {viewer.user?.name || 'Unknown User'}
+                                    </Text>
+                                    <Text style={styles.viewTime}>
+                                        {formatTimeAgo(viewer.viewed_at)}
                                     </Text>
                                 </View>
-                            )}
-                            <View style={styles.viewerInfo}>
-                                <Text style={styles.viewerName}>
-                                    {viewer.user?.name || 'Unknown User'}
-                                </Text>
-                                <Text style={styles.viewTime}>
-                                    {formatTimeAgo(viewer.viewed_at)}
-                                </Text>
                             </View>
-                        </View>
-                    ))}
+                        ))
+                    ) : (
+                        reactions.map((reaction) => (
+                            <View key={reaction.id} style={styles.viewerItem}>
+                                {reaction.user?.profile_picture ? (
+                                    <Image 
+                                        source={{ uri: reaction.user.profile_picture }} 
+                                        style={styles.viewerAvatar}
+                                        defaultSource={require('../assets/default-avatar.png')}
+                                    />
+                                ) : (
+                                    <View style={[styles.viewerAvatar, styles.defaultAvatar]}>
+                                        <Text style={styles.avatarText}>
+                                            {reaction.user?.name?.charAt(0).toUpperCase() || '?'}
+                                        </Text>
+                                    </View>
+                                )}
+                                <View style={styles.viewerInfo}>
+                                    <Text style={styles.viewerName}>
+                                        {reaction.user?.name || 'Unknown User'}
+                                    </Text>
+                                    <View style={styles.reactionInfo}>
+                                        <Text style={styles.reactionEmoji}>{reaction.icon}</Text>
+                                        <Text style={styles.viewTime}>
+                                            {formatTimeAgo(reaction.created_at)}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+                        ))
+                    )}
                 </ScrollView>
             </View>
         </View>
@@ -105,8 +169,26 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
     },
-    title: {
-        fontSize: 18,
+    tabs: {
+        flexDirection: 'row',
+        flex: 1,
+        marginRight: 20,
+    },
+    tab: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        marginRight: 10,
+        borderRadius: 20,
+    },
+    activeTab: {
+        backgroundColor: '#f0f0f0',
+    },
+    tabText: {
+        fontSize: 16,
+        color: '#666',
+    },
+    activeTabText: {
+        color: '#000',
         fontWeight: '600',
     },
     viewersList: {
@@ -145,6 +227,15 @@ const styles = StyleSheet.create({
         color: '#666',
         marginTop: 2,
     },
+    reactionInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 2,
+    },
+    reactionEmoji: {
+        fontSize: 16,
+        marginRight: 8,
+    },
 });
 
-export default StoryViewers; 
+export default StoryViewers;
