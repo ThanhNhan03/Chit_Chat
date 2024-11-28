@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, { useState, useEffect, useRef, useContext, useMemo } from 'react';
 import {
     View,
     StyleSheet,
@@ -10,6 +10,7 @@ import {
     Text,
     TouchableWithoutFeedback,
     Alert,
+    ScrollView,
 } from 'react-native';
 import Icon from '@expo/vector-icons/Ionicons';
 import { themeColors } from '../config/themeColor';
@@ -161,7 +162,60 @@ interface StoryReaction {
     created_at: string;
     createdAt?: string;
     updatedAt?: string;
+    user?: {
+        id: string;
+        name: string;
+        profile_picture?: string;
+    };
 }
+
+interface ReactionsDisplayProps {
+    reactions: StoryReaction[];
+    isStoryOwner: boolean;
+    currentUserId: string;
+}
+
+const ReactionsDisplay = React.memo(({ reactions, isStoryOwner, currentUserId }: ReactionsDisplayProps) => {
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+
+    // Sử dụng useMemo để tránh tính toán lại không cần thiết
+    const myReactions = useMemo(() => {
+        const userReactions = reactions.filter(reaction => reaction.user_id === currentUserId);
+        return userReactions.sort((a, b) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+    }, [reactions, currentUserId]);
+
+    useEffect(() => {
+        // Reset và chạy animation khi reactions thay đổi
+        fadeAnim.setValue(0);
+        Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+        }).start();
+    }, [myReactions.length]); // Chỉ chạy khi số lượng reactions thay đổi
+
+    if (isStoryOwner || myReactions.length === 0) return null;
+
+    return (
+        <Animated.View style={[styles.reactionsContainer]}>
+            <View style={styles.reactionsBubble}>
+                <View style={styles.emojisContainer}>
+                    {myReactions.map((reaction, index) => (
+                        <Text 
+                            key={`${reaction.id}-${index}`}
+                            style={styles.reactionEmoji}
+                        >
+                            {reaction.icon}
+                        </Text>
+                    ))}
+                </View>
+                <Text style={styles.reactionText}>Đã gửi</Text>
+            </View>
+        </Animated.View>
+    );
+});
 
 const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
     const { user } = useContext(AuthenticatedUserContext);
@@ -203,6 +257,9 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
     const [showViewers, setShowViewers] = useState(false);
     const soundRef = useRef<Audio.Sound | null>(null);
     const isMountedRef = useRef(true);
+
+    // Thêm ref để lưu giá trị progress hiện tại
+    const progressValue = useRef(0);
 
     const createStoryView = async () => {
         if (!user?.userId || isCurrentUser) return;
@@ -334,18 +391,49 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
         }
     };
 
+    // Thêm state để theo dõi trạng thái tạm dừng
+    const [isPaused, setIsPaused] = useState(false);
+    const [hasFloatingReactions, setHasFloatingReactions] = useState(false);
+    const progressRef = useRef(0);
+
+    // Thêm hàm xử lý khi animation hoàn thành
+    const handleAnimationComplete = () => {
+        if (!hasFloatingReactions) {
+            setIsPaused(false);
+            if (sound) {
+                sound.playAsync();
+            }
+        }
+    };
+
+    // Sửa lại hàm startProgress
     const startProgress = () => {
-        progress.setValue(0);
+        if (isAnimating) return;
+        
+        const duration = (currentStory.duration || 5) * 1000 * (1 - progressRef.current);
+        progress.setValue(progressRef.current);
+        
         Animated.timing(progress, {
             toValue: 1,
-            duration: currentStory.duration * 1000 || 5000,
+            duration: duration,
             useNativeDriver: false,
         }).start(({ finished }) => {
-            if (finished) {
+            if (finished && !isAnimating) {
                 handleNext();
             }
         });
     };
+
+    // Thêm listener cho progress
+    useEffect(() => {
+        const listener = progress.addListener(({ value }) => {
+            progressValue.current = value;
+        });
+
+        return () => {
+            progress.removeListener(listener);
+        };
+    }, []);
 
     const cleanupSound = async () => {
         try {
@@ -410,7 +498,7 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
                     soundRef.current = newSound;
                     setSound(newSound);
 
-                    // Xử lý loop nhạc
+                    // X lý loop nhạc
                     newSound.setOnPlaybackStatusUpdate(async (status: AVPlaybackStatus) => {
                         if (!status.isLoaded || !isMountedRef.current) return;
                         
@@ -594,61 +682,81 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
         }
     };
 
+    // Thêm state để theo dõi trạng thái animation
+    const [isAnimating, setIsAnimating] = useState(false);
+
+    // Sửa lại hàm handleReaction
     const handleReaction = async (icon: string) => {
         if (!user?.userId || user.userId === currentStory.user_id) return;
         
         try {
-            if (currentReaction === icon) {
-                const existingReaction = storyReactions.find(
-                    r => r.user_id === user.userId
-                );
-                
-                if (existingReaction) {
-                    await client.graphql({
-                        query: deleteStoryReaction,
-                        variables: { 
-                            input: { id: existingReaction.id }
-                        },
-                        authMode: 'apiKey'
-                    });
-                    
-                    setCurrentReaction(null);
-                    setStoryReactions(prev => 
-                        prev.filter(r => r.id !== existingReaction.id)
-                    );
-                }
-            } else {
-                const input = {
-                    story_id: currentStory.id,
-                    user_id: user.userId,
-                    icon: icon,
-                    created_at: new Date().toISOString()
-                };
+            // Pause story and sound
+            setIsAnimating(true);
+            progress.stopAnimation(value => {
+                progressRef.current = value;
+            });
+            if (sound) {
+                sound.pauseAsync();
+            }
 
-                const response = await client.graphql({
-                    query: createStoryReaction,
-                    variables: { input },
+            // Find existing reaction with same icon
+            const existingReaction = storyReactions.find(
+                reaction => reaction.user_id === user.userId && reaction.icon === icon
+            );
+
+            // If exists, delete it first
+            if (existingReaction) {
+                await client.graphql({
+                    query: deleteStoryReaction,
+                    variables: { input: { id: existingReaction.id } },
                     authMode: 'apiKey'
                 });
+            }
 
-                if (response.data?.createStoryReaction) {
-                    setCurrentReaction(icon);
-                    setStoryReactions(prev => [...prev, {
+            // Create new reaction
+            const input = {
+                story_id: currentStory.id,
+                user_id: user.userId,
+                icon: icon,
+                created_at: new Date().toISOString()
+            };
+
+            const response = await client.graphql({
+                query: createStoryReaction,
+                variables: { input },
+                authMode: 'apiKey'
+            });
+
+            if (response.data?.createStoryReaction) {
+                setCurrentReaction(icon);
+                // Update local state with new reaction at start
+                setStoryReactions(prev => [
+                    {
                         id: response.data.createStoryReaction.id,
                         story_id: response.data.createStoryReaction.story_id,
                         user_id: response.data.createStoryReaction.user_id,
                         icon: response.data.createStoryReaction.icon,
                         created_at: response.data.createStoryReaction.created_at || response.data.createStoryReaction.createdAt
-                    }]);
-                }
+                    },
+                    // Filter out old reaction with same icon if exists
+                    ...prev.filter(reaction => 
+                        !(reaction.user_id === user.userId && reaction.icon === icon)
+                    )
+                ]);
             }
-            setShowReactions(false);
         } catch (error) {
             console.error('Error handling reaction:', error);
         }
     };
 
-    // Add subscription for real-time updates
+    // Sửa lại useEffect để theo dõi story và animation
+    useEffect(() => {
+        if (currentStory?.id && !isAnimating) {
+            startProgress();
+        }
+    }, [currentStory, isAnimating]);
+
+    // Sửa lại useEffect subscription
     useEffect(() => {
         const sub = client.graphql({
             query: onCreateStoryReaction,
@@ -656,11 +764,30 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
         }).subscribe({
             next: ({ data }) => {
                 if (data?.onCreateStoryReaction && data.onCreateStoryReaction.icon) {
-                    setStoryReactions(prev => [...prev, {
-                        ...data.onCreateStoryReaction,
-                        icon: data.onCreateStoryReaction.icon,
-                        created_at: data.onCreateStoryReaction.created_at || data.onCreateStoryReaction.createdAt
-                    }]);
+                    setStoryReactions(prev => {
+                        // Kiểm tra nếu reaction đã tồn tại (cùng user và cùng icon)
+                        const exists = prev.some(r => 
+                            r.user_id === data.onCreateStoryReaction.user_id && 
+                            r.icon === data.onCreateStoryReaction.icon
+                        );
+                        
+                        // Nếu đã tồn tại, không thêm vào nữa
+                        if (exists) return prev;
+
+                        // Nếu chưa tồn tại, thêm vào đầu mảng
+                        return [{
+                            id: data.onCreateStoryReaction.id,
+                            story_id: data.onCreateStoryReaction.story_id,
+                            user_id: data.onCreateStoryReaction.user_id,
+                            icon: data.onCreateStoryReaction.icon,
+                            created_at: data.onCreateStoryReaction.created_at || data.onCreateStoryReaction.createdAt,
+                            user: data.onCreateStoryReaction.user ? {
+                                id: data.onCreateStoryReaction.user.id,
+                                name: data.onCreateStoryReaction.user.name || 'Unknown',
+                                profile_picture: data.onCreateStoryReaction.user.profile_picture
+                            } : undefined
+                        }, ...prev];
+                    });
                 }
             },
             error: error => console.error('Subscription error:', error)
@@ -678,6 +805,58 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
             setCurrentReaction(userReaction?.icon || null);
         }
     }, [currentStory, storyReactions]);
+
+    // Sửa lại hàm xử lý khi mở/đóng ReactionPicker
+    const handleShowReactions = () => {
+        setShowReactions(true);
+        setIsPaused(true);
+        if (sound) {
+            sound.pauseAsync();
+        }
+        // Lưu giá trị progress hiện tại
+        progress.stopAnimation();
+    };
+
+    const handleCloseReactions = () => {
+        setShowReactions(false);
+        setIsPaused(false);
+        if (sound) {
+            sound.playAsync();
+        }
+        startProgress();
+    };
+
+    // Sửa lại useEffect để theo dõi isPaused
+    useEffect(() => {
+        if (!isPaused && currentStory?.id) {
+            if (sound) {
+                sound.playAsync();
+            }
+            startProgress();
+        }
+    }, [isPaused, currentStory]);
+
+    // Sửa lại useEffect để theo dõi progress
+    useEffect(() => {
+        if (!isPaused && currentStory?.id) {
+            const duration = (currentStory.duration || 5) * 1000 * (1 - progressRef.current);
+            progress.setValue(progressRef.current);
+            
+            Animated.timing(progress, {
+                toValue: 1,
+                duration: duration,
+                useNativeDriver: false,
+            }).start(({ finished }) => {
+                if (finished && !isPaused) {
+                    handleNext();
+                }
+            });
+        } else {
+            progress.stopAnimation(value => {
+                progressRef.current = value;
+            });
+        }
+    }, [isPaused, currentStory]);
 
     return (
         <SafeAreaView style={[
@@ -743,7 +922,7 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
                         </View>
                     )}
                     <View style={styles.userTextContainer}>
-                        <Text style={styles.username}>
+                        <Text style={styles.storyUsername}>
                             {isCurrentUser ? 'You' : username || 'User'}
                         </Text>
                         {currentStory.created_at && (
@@ -785,27 +964,26 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
 
             {/* Music Info */}
             {currentStory.music_id && currentStory.music && (
-                <View style={styles.musicInfo}>
-                    <View style={styles.musicInfoLeft}>
-                        {currentStory.music.cover_image ? (
-                            <Image 
-                                source={{ uri: currentStory.music.cover_image }} 
-                                style={styles.musicCover}
-                                // defaultSource={require('../assets/default-music-cover.png')}
-                            />
-                        ) : (
-                            <View style={styles.musicIcon}>
-                                <Icon name="musical-notes" size={16} color="#fff" />
-                            </View>
-                        )}
-                        <View style={styles.musicTextContainer}>
-                            <Text style={styles.musicTitle} numberOfLines={1}>
-                                {currentStory.music.title || 'Unknown Title'}
-                            </Text>
-                            <Text style={styles.musicArtist} numberOfLines={1}>
-                                {currentStory.music.artist || 'Unknown Artist'}
-                            </Text>
+                <View style={styles.musicInfoContainer}>
+                    {currentStory.music.cover_image ? (
+                        <Image
+                            source={{ uri: currentStory.music.cover_image }}
+                            style={styles.musicCover}
+                        />
+                    ) : (
+                        <View style={styles.musicIcon}>
+                            <Icon name="musical-notes" size={20} color="#fff" />
                         </View>
+                    )}
+                    <View style={styles.musicTextContainer}>
+                        <Text numberOfLines={1} style={styles.musicTitle}>
+                            {currentStory.music.title}
+                        </Text>
+                        {currentStory.music.artist && (
+                            <Text numberOfLines={1} style={styles.musicArtist}>
+                                {currentStory.music.artist}
+                            </Text>
+                        )}
                     </View>
                 </View>
             )}
@@ -827,36 +1005,29 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
                 formatTimeAgo={formatTimeAgo}
             />
 
-            {/* Add reaction button */}
-            <TouchableOpacity 
-                style={styles.reactionButton}
-                onPress={() => setShowReactions(true)}
-            >
-                <Icon name="heart-outline" size={24} color="#fff" />
-            </TouchableOpacity>
-
-            {/* Reaction picker modal */}
-            {showReactions && (
+            {/* Reaction picker modal - only show for non-owners */}
+            {user?.userId !== currentStory.user_id && (
                 <ReactionPicker
-                    isVisible={showReactions}
+                    isVisible={true}
                     onSelectReaction={handleReaction}
                     currentReaction={currentReaction}
-                    onClose={() => setShowReactions(false)}
                     isCurrentUser={currentStory?.user_id === user?.userId}
+                    onAnimationComplete={() => {
+                        setIsAnimating(false);
+                        if (sound) {
+                            sound.playAsync();
+                        }
+                        startProgress();
+                    }}
                 />
             )}
 
-            {/* Show reactions count for story owner */}
-            {user?.userId === currentStory.user_id && (
-                <TouchableOpacity 
-                    style={styles.reactionsCounter}
-                    onPress={() => setShowReactions(true)}
-                >
-                    <Text style={styles.reactionsText}>
-                        {storyReactions.length} reactions
-                    </Text>
-                </TouchableOpacity>
-            )}
+            {/* Display Reactions in bottom left */}
+            <ReactionsDisplay 
+                reactions={storyReactions}
+                isStoryOwner={currentStory?.user_id === user?.userId}
+                currentUserId={user?.userId}
+            />
         </SafeAreaView>
     );
 };
@@ -922,7 +1093,7 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: '#fff',
     },
-    username: {
+    storyUsername: {
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
@@ -942,38 +1113,31 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontWeight: '600',
     },
-    musicInfo: {
+    musicInfoContainer: {
         position: 'absolute',
-        bottom: 20,
-        left: 20,
-        right: 20,
+        bottom: 100,
+        right: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.5)',
-        borderRadius: 10,
-        padding: 12,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        zIndex: 1,
-    },
-    musicInfoLeft: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
+        padding: 8,
+        borderRadius: 20,
+        maxWidth: 200,
     },
     musicCover: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        marginRight: 12,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        marginRight: 8,
     },
     musicIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
         backgroundColor: 'rgba(255,255,255,0.1)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
+        marginRight: 8,
     },
     musicTextContainer: {
         flex: 1,
@@ -981,13 +1145,13 @@ const styles = StyleSheet.create({
     },
     musicTitle: {
         color: '#fff',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '600',
         marginBottom: 2,
     },
     musicArtist: {
         color: 'rgba(255,255,255,0.8)',
-        fontSize: 12,
+        fontSize: 10,
     },
     defaultAvatar: {
         backgroundColor: 'rgba(255,255,255,0.1)',
@@ -1007,14 +1171,6 @@ const styles = StyleSheet.create({
         color: 'rgba(255,255,255,0.8)',
         fontSize: 12,
     },
-    reactionButton: {
-        position: 'absolute',
-        bottom: 20,
-        right: 20,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        padding: 10,
-        borderRadius: 20,
-    },
     reactionsCounter: {
         position: 'absolute',
         bottom: 20,
@@ -1026,6 +1182,32 @@ const styles = StyleSheet.create({
     reactionsText: {
         color: '#fff',
         fontSize: 12,
+    },
+    reactionsContainer: {
+        position: 'absolute',
+        bottom: 70,
+        left: 2,
+        zIndex: 999,
+    },
+    reactionsBubble: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        gap: 8,
+    },
+    emojisContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    reactionText: {
+        color: '#fff',
+        fontSize: 14,
+        marginLeft: 4,
+    },
+    reactionEmoji: {
+        fontSize: 16,
     },
 });
 

@@ -1,50 +1,83 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
     View,
     TouchableOpacity,
     Text,
     StyleSheet,
+    ScrollView,
+    Dimensions,
 } from 'react-native';
 import FloatingReaction from './FloatingReaction';
 
+const { width } = Dimensions.get('window');
+
 const REACTIONS = [
-    { icon: '👍', label: 'Like' },
     { icon: '❤️', label: 'Love' },
     { icon: '😆', label: 'Haha' },
     { icon: '😮', label: 'Wow' },
     { icon: '😢', label: 'Sad' },
     { icon: '😡', label: 'Angry' },
+    { icon: '👍', label: 'Like' },
+    // Thêm các reaction khác nếu cần
 ];
 
 interface ReactionPickerProps {
-    onSelectReaction: (reaction: string) => void;
+    isVisible: boolean;
+    onSelectReaction: (icon: string) => Promise<void>;
     currentReaction: string | null;
-    onClose: () => void;
     isCurrentUser: boolean;
 }
 
+// Cập nhật interface ReactionPickerProps
+interface ReactionPickerProps {
+    isVisible: boolean;
+    onSelectReaction: (icon: string) => Promise<void>;
+    currentReaction: string | null;
+    isCurrentUser: boolean;
+}
+
+// Cập nhật interface ReactionPickerProps
+interface ReactionPickerProps {
+    isVisible: boolean;
+    onSelectReaction: (icon: string) => Promise<void>;
+    currentReaction: string | null;
+    isCurrentUser: boolean;
+    onAnimationComplete: () => void;
+}
+
 const ReactionPicker: React.FC<ReactionPickerProps> = ({
+    isVisible,
     onSelectReaction,
     currentReaction,
-    onClose,
     isCurrentUser,
+    onAnimationComplete,
 }) => {
     const [floatingReactions, setFloatingReactions] = useState<Array<{ id: number; icon: string }>>([]);
     const nextIdRef = useRef(0);
 
-    const handleReactionPress = (icon: string) => {
-        // Tạo hiệu ứng nổi cho reaction
-        const newReactions = Array(5).fill(null).map(() => ({
+    // Kiểm tra khi tất cả animation hoàn thành
+    useEffect(() => {
+        if (floatingReactions.length === 0 && nextIdRef.current > 0) {
+            onAnimationComplete();
+            nextIdRef.current = 0;
+        }
+    }, [floatingReactions]);
+
+    const handleReactionPress = async (icon: string) => {
+        // Tăng số lượng bong bóng lên
+        const newReactions = Array(8).fill(null).map(() => ({
             id: nextIdRef.current++,
             icon,
         }));
         
         setFloatingReactions(prev => [...prev, ...newReactions]);
-        onSelectReaction(icon);
+        await onSelectReaction(icon);
     };
 
     const removeFloatingReaction = (id: number) => {
-        setFloatingReactions(prev => prev.filter(reaction => reaction.id !== id));
+        setFloatingReactions(prev => 
+            prev.filter(reaction => reaction.id !== id)
+        );
     };
 
     if (isCurrentUser) return null;
@@ -60,21 +93,29 @@ const ReactionPicker: React.FC<ReactionPickerProps> = ({
                 />
             ))}
 
-            {/* Reaction buttons */}
-            <View style={styles.reactionsRow}>
-                {REACTIONS.map((reaction) => (
-                    <TouchableOpacity
-                        key={reaction.icon}
-                        style={[
-                            styles.reactionButton,
-                            currentReaction === reaction.icon && styles.selectedReaction
-                        ]}
-                        onPress={() => handleReactionPress(reaction.icon)}
-                    >
-                        <Text style={styles.reactionEmoji}>{reaction.icon}</Text>
-                        <Text style={styles.reactionLabel}>{reaction.label}</Text>
-                    </TouchableOpacity>
-                ))}
+            {/* Thanh reaction luôn hiển thị ở dưới */}
+            <View style={styles.reactionsContainer}>
+                <ScrollView 
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.scrollContent}
+                >
+                    <View style={styles.inputField}>
+                        <Text style={styles.inputText}>Gửi tin nhắn</Text>
+                    </View>
+                    {REACTIONS.map((reaction) => (
+                        <TouchableOpacity
+                            key={reaction.icon}
+                            style={[
+                                styles.reactionButton,
+                                currentReaction === reaction.icon && styles.selectedReaction
+                            ]}
+                            onPress={() => handleReactionPress(reaction.icon)}
+                        >
+                            <Text style={styles.reactionEmoji}>{reaction.icon}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
             </View>
         </View>
     );
@@ -88,33 +129,39 @@ const styles = StyleSheet.create({
         bottom: 0,
         top: 0,
     },
-    reactionsRow: {
+    reactionsContainer: {
         position: 'absolute',
-        bottom: 20,
+        bottom: 0,
         left: 0,
         right: 0,
-        flexDirection: 'row',
-        justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        paddingVertical: 10,
+    },
+    scrollContent: {
+        paddingHorizontal: 15,
         alignItems: 'center',
-        paddingHorizontal: 20,
-        gap: 8,
+    },
+    inputField: {
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 20,
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        marginRight: 15,
+    },
+    inputText: {
+        color: '#fff',
+        opacity: 0.7,
     },
     reactionButton: {
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        padding: 12,
-        borderRadius: 30,
-        alignItems: 'center',
+        marginHorizontal: 8,
+        padding: 5,
     },
     selectedReaction: {
-        backgroundColor: 'rgba(255,255,255,0.3)',
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 20,
     },
     reactionEmoji: {
         fontSize: 24,
-    },
-    reactionLabel: {
-        color: '#fff',
-        fontSize: 10,
-        marginTop: 4,
     },
 });
 
