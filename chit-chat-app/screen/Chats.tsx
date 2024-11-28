@@ -8,7 +8,7 @@ import ContactRow from "../components/ContactRow";
 import SearchBar from "../components/SearchBar";
 // import Seperator from "../components/Seperator";
 import { Ionicons } from '@expo/vector-icons';
-// import FriendBar from '../components/FriendBar';
+ import FriendBar from '../components/FriendBar';
 import { colors } from "../config/constrants";
 import {
     ListUserFriendChatsQuery,
@@ -23,7 +23,15 @@ import { useTheme } from '../contexts/ThemeContext';
 
 const client = generateClient();
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
+const friendsData = [
+    { id: '1', name: 'John Doe', profilePicture: 'https://example.com/john.jpg' },
+    { id: '2', name: 'Jane Smith', profilePicture: 'https://example.com/jane.jpg' },
+    { id: '3', name: 'Alice Brown', profilePicture: '' },
+    // ... thêm bạn bè khác
+];
+const handleFriendPress = (friend) => {
+    console.log('Bạn đã chọn:', friend.name);
+};
 interface UserFriendChat {
     id: string;
     user_id: string;
@@ -662,6 +670,7 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                 value={searchQuery}
                 onChangeText={handleSearch}
             />
+            <FriendBar friends={friendsData} onFriendPress={handleFriendPress} />
             {loading ? (
                 <ActivityIndicator size="large" style={styles.loadingContainer} color={themeColors.primary} />
             ) : (
@@ -716,7 +725,9 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     chatItem: {
-    padding: 10,
+paddingHorizontal: screenWidth * 0.04,
+paddingVertical:10,
+
        
         // borderBottomWidth: 1,
         // borderBottomColor: '#eee',

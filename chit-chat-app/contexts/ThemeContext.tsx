@@ -20,7 +20,7 @@ type Theme = {
 };
 
 const lightTheme: Theme = {
-  backgroundColor: '#f8f9fa',
+backgroundColor: '#fff',
   textColor: '#000000',
   cardBackground: '#ffffff',
   borderColor: '#f0f0f0',
