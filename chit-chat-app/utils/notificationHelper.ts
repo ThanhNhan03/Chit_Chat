@@ -282,3 +282,32 @@ export const sendGroupChatNotification = async ({
         }
     });
 };
+
+export const sendFriendRequestNotification = async ({
+    expoPushToken,
+    senderName,
+    senderId,
+    requestId
+}: {
+    expoPushToken: string;
+    senderName: string;
+    senderId: string;
+    requestId: string;
+}) => {
+    if (!expoPushToken) {
+        console.log('No push token to send notification to.');
+        return;
+    }
+
+    return sendPushNotifications({
+        expoPushTokens: [expoPushToken],
+        title: 'New Friend Request',
+        body: `${senderName} sent you a friend request`,
+        data: {
+            type: 'friend_request',
+            senderId,
+            requestId,
+            channelId: 'friend-requests'
+        }
+    });
+};

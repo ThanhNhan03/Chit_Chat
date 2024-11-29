@@ -7,6 +7,8 @@ import { getCurrentUser } from 'aws-amplify/auth';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { themeColors } from '../config/themeColor';
+import { sendFriendRequestNotification } from '../utils/notificationHelper';
+import { getUser } from '../src/graphql/queries';
 
 
 // Tạo client GraphQL
@@ -20,6 +22,7 @@ export default function NewUserScreen() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [pendingRequestId, setPendingRequestId] = useState<string | null>(null);
+  const [currentUserName, setCurrentUserName] = useState('');
 
   useEffect(() => {
     fetchCurrentUser();
@@ -29,6 +32,15 @@ export default function NewUserScreen() {
     try {
       const user = await getCurrentUser();
       setCurrentUserId(user.userId);
+
+      const userData = await client.graphql({
+        query: getUser,
+        variables: { id: user.userId }
+      });
+      
+      if (userData.data.getUser) {
+        setCurrentUserName(userData.data.getUser.name);
+      }
     } catch (error) {
       console.error('Error fetching current user:', error);
     }
@@ -103,7 +115,6 @@ export default function NewUserScreen() {
     setIsSearching(true);
     try {
       const searchTerm = searchEmail.trim();
-      console.log('Searching for email:', searchTerm);
       
       const response = await client.graphql({
         query: listUsers,
@@ -117,8 +128,6 @@ export default function NewUserScreen() {
           }
         }
       });
-
-      console.log('Search response:', response.data.listUsers.items);
 
       const users = response.data.listUsers.items;
       if (users && users.length > 0) {
@@ -138,7 +147,6 @@ export default function NewUserScreen() {
           } else {
             setFoundUser(users[0]);
             const hasExistingRequest = await checkExistingRequest(users[0].id);
-            console.log('Existing request check:', hasExistingRequest);
           }
         }
       } else {
@@ -201,8 +209,19 @@ export default function NewUserScreen() {
         variables: { input }
       });
 
-      setPendingRequestId(response.data.createFriendRequests.id);
+      const newRequestId = response.data.createFriendRequests.id;
+      setPendingRequestId(newRequestId);
       setPendingRequests([toUser.id]);
+
+      if (toUser.push_token) {
+        await sendFriendRequestNotification({
+          expoPushToken: toUser.push_token,
+          senderName: currentUserName,
+          senderId: currentUserId,
+          requestId: newRequestId
+        });
+      }
+
       Alert.alert('Success', `Friend request sent to ${toUser.name}.`);
     } catch (error) {
       console.error('Error sending friend request:', error);

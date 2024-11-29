@@ -164,10 +164,11 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
             const members = await Promise.all(memberPromises);
             setGroupMembers(members);
             
+        
             const tokens = members
-                .filter(member => member.id !== currentUserId)
-                .map(member => member.push_token)
-                .filter(token => token);
+                .filter(member => member.id !== currentUserId && member.push_token)
+                .map(member => member.push_token as string);
+            
             setMemberPushTokens(tokens);
             
             setIsLoadingMembers(false);
@@ -351,9 +352,10 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                 updateLastMessage(messageText)
             ]);
 
+       
             if (memberPushTokens.length > 0) {
                 await sendGroupChatNotification({
-                    expoPushTokens: memberPushTokens,
+                    expoPushTokens: memberPushTokens, 
                     senderName: currentUserName,
                     message: messageText,
                     chatId: chatId,
@@ -438,9 +440,10 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                         )
                     );
 
+                
                     if (memberPushTokens.length > 0) {
                         await sendGroupChatNotification({
-                            expoPushTokens: memberPushTokens,
+                            expoPushTokens: memberPushTokens, 
                             senderName: currentUserName,
                             message: '📷 Sent a photo',
                             chatId: chatId,

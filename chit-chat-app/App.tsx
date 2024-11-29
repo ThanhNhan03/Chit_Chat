@@ -173,34 +173,17 @@ const App: React.FC = () => {
             }
 
             notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-                // console.log('Received notification:', notification);
+              
             });
 
             responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
                 try {
                     const data = response.notification.request.content.data;
-                    console.log('Notification response data:', data);
-
-                    if (data.type === 'new_message') {
-                        navigationRef.current?.navigate('Chat', {
-                            chatId: data.chatId,
-                            userId: data.senderId,
-                            name: data.senderName
-                        });
-                    } else if (data.type === 'friend_request') {
+                    
+                    if (data.type === 'friend_request') {
                         navigationRef.current?.navigate('FriendRequests');
-                    } else if (data.type === 'new_story') {
-                        navigationRef.current?.navigate('ViewStory', {
-                            storyId: data.storyId,
-                            userId: data.userId,
-                            initialStoryIndex: 0
-                        });
-                    } else if (data.type === 'new_group_message') {
-                        navigationRef.current?.navigate('GroupChat', {
-                            chatId: data.chatId,
-                            name: data.groupName
-                        });
                     }
+              
                 } catch (error) {
                     console.error('Error handling notification response:', error);
                 }
