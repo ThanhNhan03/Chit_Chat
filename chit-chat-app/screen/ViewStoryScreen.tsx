@@ -357,6 +357,23 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
 
     const toggleViewers = () => {
         setShowViewers(!showViewers);
+        if (!showViewers) {
+            // Tạm dừng khi mở modal
+            setIsPaused(true);
+            progress.stopAnimation(value => {
+                progressRef.current = value;
+            });
+            if (sound) {
+                sound.pauseAsync();
+            }
+        } else {
+            // Tiếp tục từ vị trí đã dừng khi đóng modal
+            setIsPaused(false);
+            if (sound) {
+                sound.playAsync();
+            }
+            startProgress();
+        }
     };
 
     const handleNext = async () => {
@@ -365,6 +382,9 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
             setCurrentIndex(currentIndex + 1);
             setShowReactions(false);
             setCurrentReaction(null);
+            // Reset progress khi chuyển story
+            progressRef.current = 0;
+            progress.setValue(0);
         } else {
             handleBack();
         }
@@ -376,6 +396,9 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
             setCurrentIndex(currentIndex - 1);
             setShowReactions(false);
             setCurrentReaction(null);
+            // Reset progress khi chuyển story
+            progressRef.current = 0;
+            progress.setValue(0);
         }
     };
 

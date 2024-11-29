@@ -9,6 +9,7 @@ import {
     Dimensions,
 } from 'react-native';
 import Icon from '@expo/vector-icons/Ionicons';
+import { StoryReaction as APIStoryReaction } from '../src/API';
 
 const { height } = Dimensions.get('window');
 
@@ -22,21 +23,10 @@ interface StoryViewer {
     };
 }
 
-interface StoryReaction {
-    id: string;
-    created_at: string;
-    icon: string;
-    user?: {
-        id: string;
-        name: string;
-        profile_picture?: string;
-    };
-}
-
 interface StoryViewersProps {
     isVisible: boolean;
     viewers: StoryViewer[];
-    reactions: StoryReaction[];
+    reactions: APIStoryReaction[];
     onClose: () => void;
     formatTimeAgo: (date: string) => string;
 }
@@ -48,41 +38,39 @@ const StoryViewers: React.FC<StoryViewersProps> = ({
     onClose,
     formatTimeAgo,
 }) => {
-    const [activeTab, setActiveTab] = useState<'views' | 'reactions'>('views');
-
     if (!isVisible) return null;
+
+    // Tạo map để lưu tất cả reaction của mỗi user
+    const userReactions = new Map();
+    reactions.forEach(reaction => {
+        if (reaction.user_id) {
+            if (!userReactions.has(reaction.user_id)) {
+                userReactions.set(reaction.user_id, []);
+            }
+            userReactions.get(reaction.user_id).push(reaction.icon);
+        }
+    });
+
+    // Kết hợp thông tin viewer và tất cả reactions
+    const viewersWithReactions = viewers.map(viewer => ({
+        ...viewer,
+        reactions: viewer.user?.id ? userReactions.get(viewer.user.id) || [] : []
+    }));
 
     return (
         <View style={styles.container}>
             <View style={styles.modal}>
                 <View style={styles.header}>
-                    <View style={styles.tabs}>
-                        <TouchableOpacity 
-                            style={[styles.tab, activeTab === 'views' && styles.activeTab]}
-                            onPress={() => setActiveTab('views')}
-                        >
-                            <Text style={[styles.tabText, activeTab === 'views' && styles.activeTabText]}>
-                                Views ({viewers.length})
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                            style={[styles.tab, activeTab === 'reactions' && styles.activeTab]}
-                            onPress={() => setActiveTab('reactions')}
-                        >
-                            <Text style={[styles.tabText, activeTab === 'reactions' && styles.activeTabText]}>
-                                Reactions ({reactions.length})
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
+                    <Text style={styles.headerTitle}>Story Views</Text>
                     <TouchableOpacity onPress={onClose}>
                         <Icon name="close" size={24} color="#000" />
                     </TouchableOpacity>
                 </View>
 
                 <ScrollView style={styles.viewersList}>
-                    {activeTab === 'views' ? (
-                        viewers.map((viewer) => (
-                            <View key={viewer.id} style={styles.viewerItem}>
+                    {viewersWithReactions.map((viewer) => (
+                        <View key={viewer.id} style={styles.viewerItem}>
+                            <View style={styles.viewerMain}>
                                 {viewer.user?.profile_picture ? (
                                     <Image 
                                         source={{ uri: viewer.user.profile_picture }} 
@@ -97,45 +85,30 @@ const StoryViewers: React.FC<StoryViewersProps> = ({
                                     </View>
                                 )}
                                 <View style={styles.viewerInfo}>
-                                    <Text style={styles.viewerName}>
-                                        {viewer.user?.name || 'Unknown User'}
-                                    </Text>
+                                    <View style={styles.viewerNameContainer}>
+                                        <Text style={styles.viewerName}>
+                                            {viewer.user?.name || 'Unknown User'}
+                                        </Text>
+                                        {viewer.reactions.length > 0 && (
+                                            <View style={styles.reactionsContainer}>
+                                                {viewer.reactions.map((icon, index) => (
+                                                    <Text 
+                                                        key={`${viewer.id}-${index}`}
+                                                        style={styles.reactionEmoji}
+                                                    >
+                                                        {icon}
+                                                    </Text>
+                                                ))}
+                                            </View>
+                                        )}
+                                    </View>
                                     <Text style={styles.viewTime}>
                                         {formatTimeAgo(viewer.viewed_at)}
                                     </Text>
                                 </View>
                             </View>
-                        ))
-                    ) : (
-                        reactions.map((reaction) => (
-                            <View key={reaction.id} style={styles.viewerItem}>
-                                {reaction.user?.profile_picture ? (
-                                    <Image 
-                                        source={{ uri: reaction.user.profile_picture }} 
-                                        style={styles.viewerAvatar}
-                                        defaultSource={require('../assets/default-avatar.png')}
-                                    />
-                                ) : (
-                                    <View style={[styles.viewerAvatar, styles.defaultAvatar]}>
-                                        <Text style={styles.avatarText}>
-                                            {reaction.user?.name?.charAt(0).toUpperCase() || '?'}
-                                        </Text>
-                                    </View>
-                                )}
-                                <View style={styles.viewerInfo}>
-                                    <Text style={styles.viewerName}>
-                                        {reaction.user?.name || 'Unknown User'}
-                                    </Text>
-                                    <View style={styles.reactionInfo}>
-                                        <Text style={styles.reactionEmoji}>{reaction.icon}</Text>
-                                        <Text style={styles.viewTime}>
-                                            {formatTimeAgo(reaction.created_at)}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </View>
-                        ))
-                    )}
+                        </View>
+                    ))}
                 </ScrollView>
             </View>
         </View>
@@ -169,35 +142,19 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
     },
-    tabs: {
-        flexDirection: 'row',
-        flex: 1,
-        marginRight: 20,
-    },
-    tab: {
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        marginRight: 10,
-        borderRadius: 20,
-    },
-    activeTab: {
-        backgroundColor: '#f0f0f0',
-    },
-    tabText: {
-        fontSize: 16,
-        color: '#666',
-    },
-    activeTabText: {
-        color: '#000',
+    headerTitle: {
+        fontSize: 18,
         fontWeight: '600',
     },
     viewersList: {
         padding: 20,
     },
     viewerItem: {
+        marginBottom: 20,
+    },
+    viewerMain: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 15,
     },
     viewerAvatar: {
         width: 40,
@@ -218,6 +175,11 @@ const styles = StyleSheet.create({
     viewerInfo: {
         flex: 1,
     },
+    viewerNameContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
     viewerName: {
         fontSize: 16,
         fontWeight: '500',
@@ -227,14 +189,13 @@ const styles = StyleSheet.create({
         color: '#666',
         marginTop: 2,
     },
-    reactionInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 2,
-    },
     reactionEmoji: {
         fontSize: 16,
-        marginRight: 8,
+    },
+    reactionsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
     },
 });
 
