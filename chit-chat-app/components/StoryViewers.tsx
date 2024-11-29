@@ -90,7 +90,7 @@ const StoryViewers: React.FC<StoryViewersProps> = ({
                                             {viewer.user?.name || 'Unknown User'}
                                         </Text>
                                         {viewer.reactions.length > 0 && (
-                                            <View style={styles.reactionsContainer}>
+                                            <View style={styles.viewerNameContainer}>
                                                 {viewer.reactions.map((icon, index) => (
                                                     <Text 
                                                         key={`${viewer.id}-${index}`}
@@ -179,6 +179,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
+        justifyContent: 'space-between',
     },
     viewerName: {
         fontSize: 16,
@@ -191,11 +192,6 @@ const styles = StyleSheet.create({
     },
     reactionEmoji: {
         fontSize: 16,
-    },
-    reactionsContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
     },
 });
 
