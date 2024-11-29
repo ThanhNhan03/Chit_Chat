@@ -261,6 +261,9 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
     // Thêm ref để lưu giá trị progress hiện tại
     const progressValue = useRef(0);
 
+    // Thêm state để lưu progress của từng story
+    const [storyProgresses] = useState<{ [key: string]: number }>({});
+
     const createStoryView = async () => {
         if (!user?.userId || isCurrentUser) return;
 
@@ -357,8 +360,8 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
 
     const toggleViewers = () => {
         setShowViewers(!showViewers);
+        // Tạm dừng khi mở modal
         if (!showViewers) {
-            // Tạm dừng khi mở modal
             setIsPaused(true);
             progress.stopAnimation(value => {
                 progressRef.current = value;
@@ -367,7 +370,7 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
                 sound.pauseAsync();
             }
         } else {
-            // Tiếp tục từ vị trí đã dừng khi đóng modal
+            // Tiếp tục khi đóng modal
             setIsPaused(false);
             if (sound) {
                 sound.playAsync();
@@ -378,13 +381,12 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
 
     const handleNext = async () => {
         if (currentIndex < stories.length - 1) {
+            // Lưu progress của story hiện tại
+            storyProgresses[currentStory.id] = 1; // Đánh dấu đã xem xong
             await cleanupSound();
             setCurrentIndex(currentIndex + 1);
             setShowReactions(false);
             setCurrentReaction(null);
-            // Reset progress khi chuyển story
-            progressRef.current = 0;
-            progress.setValue(0);
         } else {
             handleBack();
         }
@@ -392,13 +394,14 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
 
     const handlePrevious = async () => {
         if (currentIndex > 0) {
+            // Lưu progress của story hiện tại
+            progress.stopAnimation(value => {
+                storyProgresses[currentStory.id] = value;
+            });
             await cleanupSound();
             setCurrentIndex(currentIndex - 1);
             setShowReactions(false);
             setCurrentReaction(null);
-            // Reset progress khi chuyển story
-            progressRef.current = 0;
-            progress.setValue(0);
         }
     };
 
@@ -433,8 +436,11 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
     const startProgress = () => {
         if (isAnimating) return;
         
-        const duration = (currentStory.duration || 5) * 1000 * (1 - progressRef.current);
-        progress.setValue(progressRef.current);
+        // Lấy progress đã lưu của story hiện tại hoặc bắt đầu từ 0
+        const savedProgress = storyProgresses[currentStory.id] || 0;
+        const duration = (currentStory.duration || 5) * 1000 * (1 - savedProgress);
+        
+        progress.setValue(savedProgress);
         
         Animated.timing(progress, {
             toValue: 1,
@@ -713,7 +719,6 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
         if (!user?.userId || user.userId === currentStory.user_id) return;
         
         try {
-            // Pause story and sound
             setIsAnimating(true);
             progress.stopAnimation(value => {
                 progressRef.current = value;
@@ -722,50 +727,51 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
                 sound.pauseAsync();
             }
 
-            // Find existing reaction with same icon
+            // Kiểm tra xem reaction đã tồn tại chưa
             const existingReaction = storyReactions.find(
                 reaction => reaction.user_id === user.userId && reaction.icon === icon
             );
 
-            // If exists, delete it first
             if (existingReaction) {
-                await client.graphql({
-                    query: deleteStoryReaction,
-                    variables: { input: { id: existingReaction.id } },
+                // Nếu reaction đã tồn tại, đẩy nó lên đầu danh sách
+                setStoryReactions(prev => [
+                    // Đặt reaction hiện tại lên đầu với thời gian mới
+                    {
+                        ...existingReaction,
+                        created_at: new Date().toISOString()
+                    },
+                    // Lọc bỏ reaction cũ và giữ lại các reaction khác
+                    ...prev.filter(r => r.id !== existingReaction.id)
+                ]);
+                setCurrentReaction(icon);
+            } else {
+                // Nếu chưa tồn tại, tạo reaction mới
+                const input = {
+                    story_id: currentStory.id,
+                    user_id: user.userId,
+                    icon: icon,
+                    created_at: new Date().toISOString()
+                };
+
+                const response = await client.graphql({
+                    query: createStoryReaction,
+                    variables: { input },
                     authMode: 'apiKey'
                 });
-            }
 
-            // Create new reaction
-            const input = {
-                story_id: currentStory.id,
-                user_id: user.userId,
-                icon: icon,
-                created_at: new Date().toISOString()
-            };
-
-            const response = await client.graphql({
-                query: createStoryReaction,
-                variables: { input },
-                authMode: 'apiKey'
-            });
-
-            if (response.data?.createStoryReaction) {
-                setCurrentReaction(icon);
-                // Update local state with new reaction at start
-                setStoryReactions(prev => [
-                    {
-                        id: response.data.createStoryReaction.id,
-                        story_id: response.data.createStoryReaction.story_id,
-                        user_id: response.data.createStoryReaction.user_id,
-                        icon: response.data.createStoryReaction.icon,
-                        created_at: response.data.createStoryReaction.created_at || response.data.createStoryReaction.createdAt
-                    },
-                    // Filter out old reaction with same icon if exists
-                    ...prev.filter(reaction => 
-                        !(reaction.user_id === user.userId && reaction.icon === icon)
-                    )
-                ]);
+                if (response.data?.createStoryReaction) {
+                    setCurrentReaction(icon);
+                    setStoryReactions(prev => [
+                        {
+                            id: response.data.createStoryReaction.id,
+                            story_id: response.data.createStoryReaction.story_id,
+                            user_id: response.data.createStoryReaction.user_id,
+                            icon: response.data.createStoryReaction.icon,
+                            created_at: response.data.createStoryReaction.created_at || response.data.createStoryReaction.createdAt
+                        },
+                        ...prev
+                    ]);
+                }
             }
         } catch (error) {
             console.error('Error handling reaction:', error);
@@ -1023,7 +1029,7 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
             <StoryViewers 
                 isVisible={showViewers}
                 viewers={storyViews}
-                reactions={storyReactions}
+                reactions={storyReactions as APIStoryReaction[]}
                 onClose={toggleViewers}
                 formatTimeAgo={formatTimeAgo}
             />
