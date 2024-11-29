@@ -217,3 +217,34 @@ export const sendNewStoryNotification = async ({
         }
     });
 };
+
+export const sendChatNotification = async ({
+    expoPushToken,
+    senderName,
+    message,
+    chatId,
+    senderId,
+}: {
+    expoPushToken: string;
+    senderName: string;
+    message: string;
+    chatId: string;
+    senderId: string;
+}) => {
+    if (!expoPushToken) {
+        console.log('No push token to send notification to.');
+        return;
+    }
+
+    return sendPushNotifications({
+        expoPushTokens: [expoPushToken],
+        title: senderName,
+        body: message.length > 50 ? message.substring(0, 47) + '...' : message,
+        data: {
+            type: 'new_message',
+            chatId,
+            senderId,
+            channelId: 'messages'
+        }
+    });
+};

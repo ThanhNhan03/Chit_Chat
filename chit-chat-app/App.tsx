@@ -182,11 +182,11 @@ const App: React.FC = () => {
                     const data = response.notification.request.content.data;
                     console.log('Notification response data:', data);
 
-                    if (data.type === 'message') {
+                    if (data.type === 'new_message') {
                         navigationRef.current?.navigate('Chat', {
                             chatId: data.chatId,
-                            userId: data.userId,
-                            name: data.name
+                            userId: data.senderId,
+                            name: data.senderName
                         });
                     } else if (data.type === 'friend_request') {
                         navigationRef.current?.navigate('FriendRequests');
