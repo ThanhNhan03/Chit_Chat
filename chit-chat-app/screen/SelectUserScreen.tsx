@@ -1,19 +1,33 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, FlatList, TouchableOpacity, 
-  StyleSheet, ActivityIndicator, Alert, TextInput, Image } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { generateClient } from 'aws-amplify/api';
-import { getCurrentUser } from 'aws-amplify/auth';
-import { listContacts, getUser } from '../src/graphql/queries';
-import { onCreateContact } from '../src/graphql/subscriptions';
-import { ActionSheetProvider, useActionSheet } from '@expo/react-native-action-sheet';
-import { deleteContact } from '../src/graphql/mutations';
-import { createFriendChat, createUserFriendChat } from '../src/graphql/mutations';
-import { listUserFriendChats } from '../src/graphql/queries';
-import { themeColors } from '../config/themeColor';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import { debounce } from 'lodash';
-
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  TextInput,
+  Image,
+} from "react-native";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import { generateClient } from "aws-amplify/api";
+import { getCurrentUser } from "aws-amplify/auth";
+import { listContacts, getUser } from "../src/graphql/queries";
+import { onCreateContact } from "../src/graphql/subscriptions";
+import {
+  ActionSheetProvider,
+  useActionSheet,
+} from "@expo/react-native-action-sheet";
+import { deleteContact } from "../src/graphql/mutations";
+import {
+  createFriendChat,
+  createUserFriendChat,
+} from "../src/graphql/mutations";
+import { listUserFriendChats } from "../src/graphql/queries";
+import { themeColors } from "../config/themeColor";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import { debounce } from "lodash";
 
 const client = generateClient();
 
@@ -32,7 +46,7 @@ export default function SelectUserScreen({ navigation }) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   const debouncedSearch = useCallback(
     debounce((text: string) => {
@@ -49,15 +63,16 @@ export default function SelectUserScreen({ navigation }) {
 
   const filteredFriends = useMemo(() => {
     if (!searchQuery.trim()) return friends;
-    return friends.filter(friend => 
-      friend.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      friend.email.toLowerCase().includes(searchQuery.toLowerCase())
+    return friends.filter(
+      (friend) =>
+        friend.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        friend.email.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [friends, searchQuery]);
 
   useEffect(() => {
     navigation.setOptions({
-      headerShown: false
+      headerShown: false,
     });
     fetchCurrentUser();
   }, []);
@@ -77,7 +92,7 @@ export default function SelectUserScreen({ navigation }) {
       const user = await getCurrentUser();
       setCurrentUserId(user.userId);
     } catch (error) {
-      console.error('Error fetching current user:', error);
+      console.error("Error fetching current user:", error);
     }
   };
 
@@ -87,9 +102,9 @@ export default function SelectUserScreen({ navigation }) {
         query: listContacts,
         variables: {
           filter: {
-            user_id: { eq: currentUserId }
-          }
-        }
+            user_id: { eq: currentUserId },
+          },
+        },
       });
 
       const contacts = contactsResponse.data.listContacts.items;
@@ -98,66 +113,68 @@ export default function SelectUserScreen({ navigation }) {
         contacts.map(async (contact: any) => {
           const userResponse = await client.graphql({
             query: getUser,
-            variables: { id: contact.contact_user_id }
+            variables: { id: contact.contact_user_id },
           });
-          
+
           const userData = userResponse.data.getUser;
           return {
             id: userData.id,
             name: userData.name,
             email: userData.email,
-            status: userData.status || 'Hey there! I am using ChitChat',
+            status: userData.status || "Hey there! I am using ChitChat",
             online: false,
-            lastSeen: 'Offline',
-            avatar: userData.profile_picture
+            lastSeen: "Offline",
+            avatar: userData.profile_picture,
           };
         })
       );
 
       setFriends(friendsData);
     } catch (error) {
-      console.error('Error fetching friends:', error);
+      console.error("Error fetching friends:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const subscribeToNewContacts = () => {
-    return client.graphql({
-      query: onCreateContact,
-      variables: {
-        filter: {
-          user_id: { eq: currentUserId }
-        }
-      }
-    }).subscribe({
-      next: async ({ data }) => {
-        if (data?.onCreateContact) {
-          const userResponse = await client.graphql({
-            query: getUser,
-            variables: { id: data.onCreateContact.contact_user_id }
-          });
-          
-          const userData = userResponse.data.getUser;
-          const newFriend = {
-            id: userData.id,
-            name: userData.name,
-            email: userData.email,
-            status: userData.status || 'Hey there! I am using ChitChat',
-            online: false,
-            lastSeen: 'Offline',
-            avatar: userData.profile_picture
-          };
-          
-          setFriends(prev => [...prev, newFriend]);
-        }
-      },
-      error: (error) => console.warn(error)
-    });
+    return client
+      .graphql({
+        query: onCreateContact,
+        variables: {
+          filter: {
+            user_id: { eq: currentUserId },
+          },
+        },
+      })
+      .subscribe({
+        next: async ({ data }) => {
+          if (data?.onCreateContact) {
+            const userResponse = await client.graphql({
+              query: getUser,
+              variables: { id: data.onCreateContact.contact_user_id },
+            });
+
+            const userData = userResponse.data.getUser;
+            const newFriend = {
+              id: userData.id,
+              name: userData.name,
+              email: userData.email,
+              status: userData.status || "Hey there! I am using ChitChat",
+              online: false,
+              lastSeen: "Offline",
+              avatar: userData.profile_picture,
+            };
+
+            setFriends((prev) => [...prev, newFriend]);
+          }
+        },
+        error: (error) => console.warn(error),
+      });
   };
 
   const handleLongPress = (friend: Friend) => {
-    const options = ['Delete Friend', 'Block User', 'Cancel'];
+    const options = ["Delete Friend", "Block User", "Cancel"];
     const destructiveButtonIndex = 0;
     const cancelButtonIndex = 2;
 
@@ -167,7 +184,7 @@ export default function SelectUserScreen({ navigation }) {
         cancelButtonIndex,
         destructiveButtonIndex,
         title: friend.name,
-        message: 'Choose an action',
+        message: "Choose an action",
       },
       async (selectedIndex) => {
         switch (selectedIndex) {
@@ -178,7 +195,7 @@ export default function SelectUserScreen({ navigation }) {
               [
                 {
                   text: "Cancel",
-                  style: "cancel"
+                  style: "cancel",
                 },
                 {
                   text: "Delete",
@@ -191,10 +208,10 @@ export default function SelectUserScreen({ navigation }) {
                           filter: {
                             and: [
                               { user_id: { eq: currentUserId } },
-                              { contact_user_id: { eq: friend.id } }
-                            ]
-                          }
-                        }
+                              { contact_user_id: { eq: friend.id } },
+                            ],
+                          },
+                        },
                       });
 
                       const reverseContactsResponse = await client.graphql({
@@ -203,10 +220,10 @@ export default function SelectUserScreen({ navigation }) {
                           filter: {
                             and: [
                               { user_id: { eq: friend.id } },
-                              { contact_user_id: { eq: currentUserId } }
-                            ]
-                          }
-                        }
+                              { contact_user_id: { eq: currentUserId } },
+                            ],
+                          },
+                        },
                       });
 
                       await Promise.all([
@@ -214,33 +231,40 @@ export default function SelectUserScreen({ navigation }) {
                           query: deleteContact,
                           variables: {
                             input: {
-                              id: contactsResponse.data.listContacts.items[0].id
-                            }
-                          }
+                              id: contactsResponse.data.listContacts.items[0]
+                                .id,
+                            },
+                          },
                         }),
                         client.graphql({
                           query: deleteContact,
                           variables: {
                             input: {
-                              id: reverseContactsResponse.data.listContacts.items[0].id
-                            }
-                          }
-                        })
+                              id: reverseContactsResponse.data.listContacts
+                                .items[0].id,
+                            },
+                          },
+                        }),
                       ]);
 
-                      setFriends(prev => prev.filter(f => f.id !== friend.id));
+                      setFriends((prev) =>
+                        prev.filter((f) => f.id !== friend.id)
+                      );
                       Alert.alert("Success", "Friend removed successfully");
                     } catch (error) {
-                      console.error('Error deleting friend:', error);
+                      console.error("Error deleting friend:", error);
                       Alert.alert("Error", "Failed to remove friend");
                     }
-                  }
-                }
+                  },
+                },
               ]
             );
             break;
           case 1: // Block User
-            Alert.alert("Coming Soon", "Block functionality will be implemented soon");
+            Alert.alert(
+              "Coming Soon",
+              "Block functionality will be implemented soon"
+            );
             break;
         }
       }
@@ -254,11 +278,12 @@ export default function SelectUserScreen({ navigation }) {
         variables: {
           filter: {
             user_id: { eq: currentUserId },
-          }
-        }
+          },
+        },
       });
 
-      const existingChats = existingChatsResponse.data.listUserFriendChats.items;
+      const existingChats =
+        existingChatsResponse.data.listUserFriendChats.items;
       let friendChatId = null;
 
       for (const chat of existingChats) {
@@ -268,10 +293,10 @@ export default function SelectUserScreen({ navigation }) {
             filter: {
               and: [
                 { friend_chat_id: { eq: chat.friend_chat_id } },
-                { user_id: { eq: friend.id } }
-              ]
-            }
-          }
+                { user_id: { eq: friend.id } },
+              ],
+            },
+          },
         });
 
         if (otherUserChat.data.listUserFriendChats.items.length > 0) {
@@ -287,9 +312,9 @@ export default function SelectUserScreen({ navigation }) {
             input: {
               chat_id: `${currentUserId}_${friend.id}`,
               created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }
-          }
+              updated_at: new Date().toISOString(),
+            },
+          },
         });
 
         friendChatId = newFriendChat.data.createFriendChat.id;
@@ -300,36 +325,36 @@ export default function SelectUserScreen({ navigation }) {
             variables: {
               input: {
                 user_id: currentUserId,
-                friend_chat_id: friendChatId
-              }
-            }
+                friend_chat_id: friendChatId,
+              },
+            },
           }),
           client.graphql({
             query: createUserFriendChat,
             variables: {
               input: {
                 user_id: friend.id,
-                friend_chat_id: friendChatId
-              }
-            }
-          })
+                friend_chat_id: friendChatId,
+              },
+            },
+          }),
         ]);
       }
 
-      navigation.navigate('Chat', { 
-        userId: friend.id, 
+      navigation.navigate("Chat", {
+        userId: friend.id,
         name: friend.name,
-        chatId: friendChatId
+        chatId: friendChatId,
       });
     } catch (error) {
-      console.error('Error creating/getting chat:', error);
-      Alert.alert('Error', 'Failed to start chat');
+      console.error("Error creating/getting chat:", error);
+      Alert.alert("Error", "Failed to start chat");
     }
   };
 
   const renderCustomHeader = () => (
     <View style={styles.headerWrapper}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
@@ -350,14 +375,18 @@ export default function SelectUserScreen({ navigation }) {
         defaultValue={searchQuery}
       />
       {searchQuery.length > 0 && (
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => {
-            setSearchQuery('');
+            setSearchQuery("");
             debouncedSearch.cancel();
           }}
           style={styles.clearButton}
         >
-          <Ionicons name="close-circle" size={20} color={themeColors.textSecondary} />
+          <Ionicons
+            name="close-circle"
+            size={20}
+            color={themeColors.textSecondary}
+          />
         </TouchableOpacity>
       )}
     </View>
@@ -367,31 +396,55 @@ export default function SelectUserScreen({ navigation }) {
     <View style={styles.headerContainer}>
       <Text style={styles.headerTitle}>Start a conversation</Text>
       <View style={styles.optionsContainer}>
-        <TouchableOpacity 
-          style={[styles.option, { backgroundColor: `${themeColors.primary}15` }]} 
-          onPress={() => navigation.navigate('NewGroup')}
+        <TouchableOpacity
+          style={[
+            styles.option,
+            { backgroundColor: `${themeColors.primary}15` },
+          ]}
+          onPress={() => navigation.navigate("NewGroup")}
         >
-          <View style={[styles.iconContainer, { backgroundColor: themeColors.primary }]}>
+          <View
+            style={[
+              styles.iconContainer,
+              { backgroundColor: themeColors.primary },
+            ]}
+          >
             <Icon name="group" size={24} color="#fff" />
           </View>
           <Text style={styles.optionText}>New Group</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.option, { backgroundColor: `${themeColors.secondary}15` }]} 
-          onPress={() => navigation.navigate('NewUser')}
+        <TouchableOpacity
+          style={[
+            styles.option,
+            { backgroundColor: `${themeColors.secondary}15` },
+          ]}
+          onPress={() => navigation.navigate("NewUser")}
         >
-          <View style={[styles.iconContainer, { backgroundColor: themeColors.secondary }]}>
+          <View
+            style={[
+              styles.iconContainer,
+              { backgroundColor: themeColors.secondary },
+            ]}
+          >
             <Icon name="person-add" size={24} color="#fff" />
           </View>
           <Text style={styles.optionText}>Add Friends</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.option, { backgroundColor: `${themeColors.primary}15` }]} 
-          onPress={() => navigation.navigate('FriendRequests')}
+        <TouchableOpacity
+          style={[
+            styles.option,
+            { backgroundColor: `${themeColors.primary}15` },
+          ]}
+          onPress={() => navigation.navigate("FriendRequests")}
         >
-          <View style={[styles.iconContainer, { backgroundColor: themeColors.primary }]}>
+          <View
+            style={[
+              styles.iconContainer,
+              { backgroundColor: themeColors.primary },
+            ]}
+          >
             <Icon name="people" size={24} color="#fff" />
           </View>
           <Text style={styles.optionText}>Friend Requests</Text>
@@ -414,7 +467,7 @@ export default function SelectUserScreen({ navigation }) {
         )}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.userItem}
             onPress={() => handleUserSelect(item)}
             onLongPress={() => handleLongPress(item)}
@@ -422,8 +475,8 @@ export default function SelectUserScreen({ navigation }) {
           >
             <View style={styles.avatarContainer}>
               {item.avatar ? (
-                <Image 
-                  source={{ uri: item.avatar }} 
+                <Image
+                  source={{ uri: item.avatar }}
                   style={styles.avatar}
                   // defaultSource={require('../assets/default-avatar.png')}
                 />
@@ -450,40 +503,42 @@ export default function SelectUserScreen({ navigation }) {
             <Text style={styles.emptyText}>No friends yet</Text>
           </View>
         )}
-        ListFooterComponent={loading ? (
-          <View style={styles.loadingFooter}>
-            <ActivityIndicator size="small" color="#2196F3" />
-          </View>
-        ) : null}
+        ListFooterComponent={
+          loading ? (
+            <View style={styles.loadingFooter}>
+              <ActivityIndicator size="small" color="#2196F3" />
+            </View>
+          ) : null
+        }
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
+  container: {
+    flex: 1,
     backgroundColor: themeColors.background,
   },
   headerContainer: {
     padding: 16,
     paddingHorizontal: 16,
-    paddingTop: 8, 
+    paddingTop: 8,
   },
   headerTitle: {
-    fontSize: 20, 
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: "700",
     color: themeColors.text,
     marginBottom: 16,
   },
   optionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 24,
   },
   option: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     padding: 16,
     borderRadius: 12,
     marginHorizontal: 4,
@@ -492,33 +547,33 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 8,
   },
   optionText: {
     fontSize: 12,
     color: themeColors.text,
-    fontWeight: '500',
-    textAlign: 'center',
+    fontWeight: "500",
+    textAlign: "center",
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: themeColors.text,
     marginBottom: 8,
   },
   userItem: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: themeColors.surface,
     marginHorizontal: 16,
     marginBottom: 8,
     borderRadius: 12,
   },
   avatarContainer: {
-    position: 'relative',
+    position: "relative",
     marginRight: 12,
   },
   avatar: {
@@ -526,20 +581,20 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     backgroundColor: themeColors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarText: {
     fontSize: 20,
-    color: '#fff',
-    fontWeight: '600',
+    color: "#fff",
+    fontWeight: "600",
   },
   userInfo: {
     flex: 1,
   },
   userName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: themeColors.text,
     marginBottom: 4,
   },
@@ -549,36 +604,36 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 32,
   },
   emptyText: {
     marginTop: 16,
     fontSize: 16,
     color: themeColors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   loadingFooter: {
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
   },
   onlineIndicator: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#4CAF50',
-    position: 'absolute',
+    backgroundColor: "#4CAF50",
+    position: "absolute",
     right: 0,
     bottom: 0,
     borderWidth: 2,
     borderColor: themeColors.surface,
   },
   headerWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 20, 
+    paddingTop: 20,
     paddingBottom: 16,
     backgroundColor: themeColors.surface,
     // borderBottomWidth: 1,
@@ -591,12 +646,12 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     color: themeColors.text,
   },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: `${themeColors.primary}10`,
     marginHorizontal: 16,
     marginVertical: 12,
