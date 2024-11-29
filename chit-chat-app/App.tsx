@@ -172,9 +172,8 @@ const App: React.FC = () => {
                 console.log('Token successfully saved to database');
             }
 
-            // Setup listeners
             notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-                console.log('Received notification:', notification);
+                // console.log('Received notification:', notification);
             });
 
             responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
@@ -195,6 +194,11 @@ const App: React.FC = () => {
                             storyId: data.storyId,
                             userId: data.userId,
                             initialStoryIndex: 0
+                        });
+                    } else if (data.type === 'new_group_message') {
+                        navigationRef.current?.navigate('GroupChat', {
+                            chatId: data.chatId,
+                            name: data.groupName
                         });
                     }
                 } catch (error) {
@@ -238,7 +242,7 @@ const App: React.FC = () => {
     };
 
     const subscription = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('Notification response received:', response);
+      // console.log('Notification response received:', response);
     });
 
     checkAndUpdateToken();

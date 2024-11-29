@@ -24,7 +24,7 @@ import * as ImagePicker from 'expo-image-picker';
 import EmojiPicker from 'rn-emoji-keyboard';
 import ImageViewer from '../components/ImageViewer';
 import { Ionicons } from '@expo/vector-icons';
-import { sendNotification } from '../utils/notificationHelper';
+import { sendNotification, sendGroupChatNotification } from '../utils/notificationHelper';
 // import { ModelSortDirection } from '../src/API';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MessageTimestamp from '../components/MessageTimestamp';
@@ -52,6 +52,7 @@ interface GroupMember {
     id: string;
     name: string;
     profile_picture?: string;
+    push_token?: string;
 }
 
 interface GroupedMessages {
@@ -90,6 +91,8 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
     const { theme } = useTheme();
+    const [memberPushTokens, setMemberPushTokens] = useState<string[]>([]);
+    const [currentUserName, setCurrentUserName] = useState('');
 
     useEffect(() => {
         fetchCurrentUser();
@@ -119,6 +122,15 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
         try {
             const user = await getCurrentUser();
             setCurrentUserId(user.userId);
+            
+            const userData = await client.graphql({
+                query: getUser,
+                variables: { id: user.userId }
+            });
+            
+            if (userData.data.getUser) {
+                setCurrentUserName(userData.data.getUser.name);
+            }
         } catch (error) {
             console.error('Error fetching current user:', error);
         }
@@ -143,13 +155,21 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                     return {
                         id: userResponse.data.getUser.id,
                         name: userResponse.data.getUser.name,
-                        profile_picture: userResponse.data.getUser.profile_picture
+                        profile_picture: userResponse.data.getUser.profile_picture,
+                        push_token: userResponse.data.getUser.push_token
                     };
                 }
             );
 
             const members = await Promise.all(memberPromises);
             setGroupMembers(members);
+            
+            const tokens = members
+                .filter(member => member.id !== currentUserId)
+                .map(member => member.push_token)
+                .filter(token => token);
+            setMemberPushTokens(tokens);
+            
             setIsLoadingMembers(false);
         } catch (error) {
             console.error('Error fetching group members:', error);
@@ -330,6 +350,17 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                 }),
                 updateLastMessage(messageText)
             ]);
+
+            if (memberPushTokens.length > 0) {
+                await sendGroupChatNotification({
+                    expoPushTokens: memberPushTokens,
+                    senderName: currentUserName,
+                    message: messageText,
+                    chatId: chatId,
+                    senderId: currentUserId || '',
+                    groupName: name
+                });
+            }
         } catch (error) {
             console.error('Error sending message:', error);
             setMessages(prev => prev.filter(msg => msg.id !== tempId));
@@ -406,6 +437,17 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                                 : msg
                         )
                     );
+
+                    if (memberPushTokens.length > 0) {
+                        await sendGroupChatNotification({
+                            expoPushTokens: memberPushTokens,
+                            senderName: currentUserName,
+                            message: '📷 Sent a photo',
+                            chatId: chatId,
+                            senderId: currentUserId || '',
+                            groupName: name
+                        });
+                    }
 
                 } catch (error) {
                     console.error('Error uploading image:', error);

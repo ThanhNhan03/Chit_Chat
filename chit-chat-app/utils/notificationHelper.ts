@@ -248,3 +248,37 @@ export const sendChatNotification = async ({
         }
     });
 };
+
+export const sendGroupChatNotification = async ({
+    expoPushTokens,
+    senderName,
+    message,
+    chatId,
+    senderId,
+    groupName
+}: {
+    expoPushTokens: string[];
+    senderName: string;
+    message: string;
+    chatId: string;
+    senderId: string;
+    groupName: string;
+}) => {
+    if (!expoPushTokens || expoPushTokens.length === 0) {
+        console.log('No tokens to send notifications to.');
+        return;
+    }
+
+    return sendPushNotifications({
+        expoPushTokens,
+        title: `${groupName} - ${senderName}`,
+        body: message.length > 50 ? message.substring(0, 47) + '...' : message,
+        data: {
+            type: 'new_group_message',
+            chatId,
+            senderId,
+            groupName,
+            channelId: 'messages'
+        }
+    });
+};
