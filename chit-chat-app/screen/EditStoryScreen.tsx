@@ -69,7 +69,7 @@ const EditStoryScreen = ({ route, navigation }: EditStoryScreenProps) => {
     const { imageUri, mode, backgroundColor } = route.params;
     const [text, setText] = useState('');
     const [textColor, setTextColor] = useState('#FFFFFF');
-    const [currentBgColor, setCurrentBgColor] = useState(backgroundColor || themeColors.primary);
+    const [currentBgColor, setCurrentBgColor] = useState(themeColors.primary);
     const [showColorPicker, setShowColorPicker] = useState(false);
     const [showMusicPicker, setShowMusicPicker] = useState(false);
     const [selectedMusic, setSelectedMusic] = useState<Music | null>(null);
@@ -147,17 +147,16 @@ const EditStoryScreen = ({ route, navigation }: EditStoryScreenProps) => {
                 music_end_time: selectedMusic ? Math.min(selectedMusic.duration || 0, STORY_DURATION) : 0
             };
 
-            // Create story in database
             const result = await client.graphql({
                 query: createStory,
                 variables: { input: storyInput }
             });
 
-            // Lấy danh sách push tokens của bạn bè
+      
             const friendTokens = await getFriendPushTokens(currentUserId);
             
-            // Gửi thông báo nếu có tokens
-            if (friendTokens.length > 0) {
+      
+            if (friendTokens && friendTokens.length > 0) {
                 await sendNewStoryNotification({
                     expoPushTokens: friendTokens,
                     userName: userData.name,

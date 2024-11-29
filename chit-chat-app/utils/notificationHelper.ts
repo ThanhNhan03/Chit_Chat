@@ -32,7 +32,7 @@ export const requestNotificationPermissions = async () => {
             }
             
             if (finalStatus !== 'granted') {
-                console.log('Failed to get push token for push notification!');
+                // console.log('Failed to get push token for push notification!');
                 return false;
             }
             return true;
@@ -78,19 +78,19 @@ export const initializeNotifications = async () => {
 export const getExpoPushToken = async () => {
     try {
         const { status } = await Notifications.getPermissionsAsync();
-        console.log('Current permission status:', status);
+        // console.log('Current permission status:', status);
 
         if (status !== 'granted') {
             const { status: newStatus } = await Notifications.requestPermissionsAsync();
-            console.log('New permission status:', newStatus);
+            // console.log('New permission status:', newStatus);
             if (newStatus !== 'granted') return null;
         }
 
-        console.log('Getting push token...');
+        // console.log('Getting push token...');
         const token = await Notifications.getExpoPushTokenAsync({
             projectId: "0b168073-1ccb-4f36-aced-64caa2a241e7"
         });
-        console.log('Generated token:', token.data);
+        // console.log('Generated token:', token.data);
         return token.data;
     } catch (error) {
         console.error('Error getting push token:', error);
@@ -155,7 +155,7 @@ export const sendPushNotifications = async ({
             body,
             data: {
                 ...data,
-                channelId: 'stories' // Sử dụng channel stories cho thông báo story
+                channelId: 'stories' 
             },
             priority: 'high',
         }));
@@ -200,6 +200,11 @@ export const sendNewStoryNotification = async ({
     storyId: string;
     userId: string;
 }) => {
+    if (!expoPushTokens || expoPushTokens.length === 0) {
+        console.log('No friend tokens to send notifications to.');
+        return;
+    }
+
     return sendPushNotifications({
         expoPushTokens,
         title: 'New Story',
