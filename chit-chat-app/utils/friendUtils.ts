@@ -32,7 +32,7 @@ export const getFriendPushTokens = async (userId: string): Promise<string[]> => 
 
     const tokens = await Promise.all(tokenPromises);
     
-    // Lọc bỏ các token null/undefined
+
     return tokens.filter(token => token) as string[];
   } catch (error) {
     console.error('Error getting friend tokens:', error);
