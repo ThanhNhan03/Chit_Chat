@@ -23,15 +23,14 @@ import { useTheme } from '../contexts/ThemeContext';
 
 const client = generateClient();
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-const friendsData = [
-    { id: '1', name: 'John Doe', profilePicture: 'https://example.com/john.jpg' },
-    { id: '2', name: 'Jane Smith', profilePicture: 'https://example.com/jane.jpg' },
-    { id: '3', name: 'Alice Brown', profilePicture: '' },
-    // ... thêm bạn bè khác
-];
-const handleFriendPress = (friend) => {
-    console.log('Bạn đã chọn:', friend.name);
-};
+
+interface Friend {
+    id: string;
+    name: string;
+    profilePicture?: string;
+    status?: string;
+}
+
 interface UserFriendChat {
     id: string;
     user_id: string;
@@ -44,31 +43,31 @@ interface UserGroupChat {
     group_chat_id: string;
 }
 
-interface FriendChatData {
-    id: string;
-    last_message?: string;
-    updated_at: string;
-}
+// interface FriendChatData {
+//     id: string;
+//     last_message?: string;
+//     updated_at: string;
+// }
 
-interface GroupChatData {
-    id: string;
-    group_name: string;
-    last_message?: string;
-    updated_at: string;
-    group_picture?: string;
-    members?: ModelUserGroupChatConnection;
-}
+// interface GroupChatData {
+//     id: string;
+//     group_name: string;
+//     last_message?: string;
+//     updated_at: string;
+//     group_picture?: string;
+//     members?: ModelUserGroupChatConnection;
+// }
 
-interface UserData {
-    id: string;
-    name: string;
-    profile_picture?: string;
-}
+// interface UserData {
+//     id: string;
+//     name: string;
+//     profile_picture?: string;
+// }
 
-interface UserFriendChatsConnection {
-    items: UserFriendChat[];
-    nextToken?: string;
-}
+// interface UserFriendChatsConnection {
+//     items: UserFriendChat[];
+//     nextToken?: string;
+// }
 
 interface UserGroupChatsConnection {
     items: UserGroupChat[];
@@ -123,7 +122,6 @@ const formatTimestamp = (timestamp: string) => {
     const diffDays = Math.floor(diff / (1000 * 60 * 60 * 24));
     
     if (diffDays === 0) {
-        // Today: show time
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } else if (diffDays === 1) {
         // Yesterday
@@ -152,6 +150,7 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredChats, setFilteredChats] = useState<Chat[]>([]);
+    const [friendsData, setFriendsData] = useState<Friend[]>([]);
 
     useEffect(() => {
         fetchCurrentUser();
@@ -182,6 +181,12 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
             setFilteredChats(filtered);
         }
     }, [searchQuery, chats]);
+
+    useEffect(() => {
+        if (currentUserId) {
+            fetchFriends();
+        }
+    }, [currentUserId]);
 
     const loadCachedChats = async () => {
         try {
@@ -662,6 +667,42 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
         </View>
     );
 
+    const fetchFriends = async () => {
+        try {
+            const contactsResponse = await client.graphql({
+                query: listContacts,
+                variables: {
+                    filter: {
+                        user_id: { eq: currentUserId }
+                    }
+                }
+            });
+
+            const contacts = contactsResponse.data.listContacts.items;
+
+            const friendsData = await Promise.all(
+                contacts.map(async (contact: any) => {
+                    const userResponse = await client.graphql({
+                        query: getUser,
+                        variables: { id: contact.contact_user_id }
+                    });
+                    
+                    const userData = userResponse.data.getUser;
+                    return {
+                        id: userData.id,
+                        name: userData.name,
+                        profilePicture: userData.profile_picture,
+                        status: userData.status || 'Hey there! I am using ChitChat',
+                    };
+                })
+            );
+
+            setFriendsData(friendsData);
+        } catch (error) {
+            console.warn('Error fetching friends:', error);
+        }
+    };
+
     return (
         <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
             <MainHeader title="Chats" />
@@ -670,7 +711,11 @@ const Chats: React.FC<ChatsProps> = ({ navigation }) => {
                 value={searchQuery}
                 onChangeText={handleSearch}
             />
-            <FriendBar friends={friendsData} onFriendPress={handleFriendPress} />
+            <FriendBar 
+                friends={friendsData} 
+                currentUserId={currentUserId}
+                navigation={navigation}
+            />
             {loading ? (
                 <ActivityIndicator size="large" style={styles.loadingContainer} color={themeColors.primary} />
             ) : (
@@ -725,8 +770,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     chatItem: {
-paddingHorizontal: screenWidth * 0.04,
-paddingVertical:10,
+        paddingHorizontal: screenWidth * 0.04,
+        paddingVertical:10,
 
        
         // borderBottomWidth: 1,
@@ -741,9 +786,9 @@ paddingVertical:10,
         marginRight: 15,
     },
     avatar: {
-        width: screenWidth * 0.12,
-        height: screenWidth * 0.12,
-        borderRadius: screenWidth * 0.06,
+        width: screenWidth * 0.14,
+        height: screenWidth * 0.14,
+        borderRadius: screenWidth * 0.07,
         backgroundColor: themeColors.primary,
     },
     avatarPlaceholder: {

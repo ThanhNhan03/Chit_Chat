@@ -194,7 +194,7 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
             {isAccountExpanded && (
               <View style={[styles.subOptions, { backgroundColor: theme.backgroundColor }]}>
                 <TouchableOpacity 
-                  style={[styles.subOption, { borderBottomColor: theme.borderColor }]}
+                  style={styles.subOption}
                   onPress={handleChangePassword}
                 >
                   <View style={styles.optionLeft}>
@@ -313,8 +313,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   optionLeft: {
     flexDirection: 'row',
@@ -362,8 +360,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     paddingLeft: 32,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   darkModeSwitch: {
     padding: 2,

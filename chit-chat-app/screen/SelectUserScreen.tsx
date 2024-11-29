@@ -552,7 +552,6 @@ export default function SelectUserScreen({ navigation }) {
       marginLeft: 8,
       fontSize: 16,
       color: themeColors.text,
-      paddingVertical: 8,
     },
     clearButton: {
       padding: 4,

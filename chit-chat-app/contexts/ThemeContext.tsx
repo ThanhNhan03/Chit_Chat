@@ -36,12 +36,12 @@ const darkTheme: Theme = {
   textColor: '#ffffff',
   cardBackground: 'black',
   borderColor: 'black',
- input: '#F0F0F0',
- textInput: '#000000', 
- tabBar: '#a794a3',
- selecUser: '#f2edf1',
- group: '#fff',
- 
+  input: '#F0F0F0',
+  textInput: '#000000', 
+  tabBar: '#a794a3',
+  selecUser: '#f2edf1',
+  group: '#fff',
+  
 };
 
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);

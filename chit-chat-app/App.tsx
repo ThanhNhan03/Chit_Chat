@@ -1,7 +1,8 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator} from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Amplify } from 'aws-amplify';
 import { getCurrentUser } from 'aws-amplify/auth';
 import * as Notifications from 'expo-notifications';
@@ -252,8 +253,9 @@ const App: React.FC = () => {
   }
 
   return (
-    <ThemeProvider>
-      <ActionSheetProvider>
+    <SafeAreaProvider style={{ flex: 1 }}>
+      <ThemeProvider>
+        <ActionSheetProvider>
         <AuthenticatedUserContext.Provider value={{ user, setUser }}>
           <NavigationContainer ref={navigationRef}>
             <Stack.Navigator screenOptions={{ gestureEnabled: false }}>
@@ -386,7 +388,8 @@ const App: React.FC = () => {
           </NavigationContainer>
         </AuthenticatedUserContext.Provider>
       </ActionSheetProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 };
 
