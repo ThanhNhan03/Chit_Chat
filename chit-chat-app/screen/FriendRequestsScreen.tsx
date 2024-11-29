@@ -1,15 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { generateClient } from 'aws-amplify/api';
-import { getCurrentUser } from 'aws-amplify/auth';
-import { listFriendRequests, getUser } from '../src/graphql/queries';
-import { updateFriendRequests, createContact, deleteFriendRequests } from '../src/graphql/mutations';
-import { onCreateFriendRequests } from '../src/graphql/subscriptions';
-import { sendNotification } from '../utils/notificationHelper';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import { themeColors } from '../config/themeColor';
-import { useTheme } from '../contexts/ThemeContext';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from "react-native";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import { generateClient } from "aws-amplify/api";
+import { getCurrentUser } from "aws-amplify/auth";
+import { listFriendRequests, getUser } from "../src/graphql/queries";
+import {
+  updateFriendRequests,
+  createContact,
+  deleteFriendRequests,
+} from "../src/graphql/mutations";
+import { onCreateFriendRequests } from "../src/graphql/subscriptions";
+import { sendNotification } from "../utils/notificationHelper";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import { themeColors } from "../config/themeColor";
+import { useTheme } from "../contexts/ThemeContext";
 
 const client = generateClient();
 
@@ -45,7 +56,7 @@ export default function FriendRequestsScreen({ navigation }) {
       const user = await getCurrentUser();
       setCurrentUserId(user.userId);
     } catch (error) {
-      console.error('Error fetching current user:', error);
+      console.error("Error fetching current user:", error);
     }
   };
 
@@ -57,73 +68,75 @@ export default function FriendRequestsScreen({ navigation }) {
           filter: {
             and: [
               { to_user_id: { eq: currentUserId } },
-              { status: { eq: 'PENDING' } }
-            ]
-          }
-        }
+              { status: { eq: "PENDING" } },
+            ],
+          },
+        },
       });
 
       const requests = await Promise.all(
         response.data.listFriendRequests.items.map(async (request: any) => {
           const userResponse = await client.graphql({
             query: getUser,
-            variables: { id: request.from_user_id }
+            variables: { id: request.from_user_id },
           });
-          
+
           return {
             id: request.id,
             from_user_id: request.from_user_id,
             name: userResponse.data.getUser.name,
             created_at: request.created_at,
-            status: request.status
+            status: request.status,
           };
         })
       );
 
       setFriendRequests(requests);
     } catch (error) {
-      console.error('Error fetching friend requests:', error);
+      console.error("Error fetching friend requests:", error);
     }
   };
 
   const subscribeToNewRequests = () => {
-    const subscription = client.graphql({
-      query: onCreateFriendRequests,
-      variables: {
-        filter: {
-          to_user_id: { eq: currentUserId }
-        }
-      }
-    }).subscribe({
-      next: async ({ data }) => {
-        if (data?.onCreateFriendRequests) {
-          const newRequest = data.onCreateFriendRequests;
-          
-          // Lấy thông tin người gửi lời mời
-          const userResponse = await client.graphql({
-            query: getUser,
-            variables: { id: newRequest.from_user_id }
-          });
-          const sender = userResponse.data.getUser;
+    const subscription = client
+      .graphql({
+        query: onCreateFriendRequests,
+        variables: {
+          filter: {
+            to_user_id: { eq: currentUserId },
+          },
+        },
+      })
+      .subscribe({
+        next: async ({ data }) => {
+          if (data?.onCreateFriendRequests) {
+            const newRequest = data.onCreateFriendRequests;
 
-          // Gửi thông báo
-          await sendNotification({
-            title: 'New Friend Request',
-            body: `${sender.name} sent you a friend request`,
-            data: {
-              type: 'friend_request',
-              requestId: newRequest.id,
-              senderId: newRequest.from_user_id,
-              senderName: sender.name
-            },
-            channelId: 'friend-requests'
-          });
+            // Lấy thông tin người gửi lời mời
+            const userResponse = await client.graphql({
+              query: getUser,
+              variables: { id: newRequest.from_user_id },
+            });
+            const sender = userResponse.data.getUser;
 
-          fetchFriendRequests();
-        }
-      },
-      error: (error) => console.warn(error)
-    });
+            // Gửi thông báo
+            await sendNotification({
+              title: "New Friend Request",
+              body: `${sender.name} sent you a friend request`,
+              data: {
+                type: "friend_request",
+                requestId: newRequest.id,
+                senderId: newRequest.from_user_id,
+                senderName: sender.name,
+              },
+              channelId: "friend-requests",
+            });
+
+            fetchFriendRequests();
+          }
+        },
+        error: (error) => console.warn(error),
+      });
 
     return () => subscription.unsubscribe();
   };
@@ -136,9 +149,9 @@ export default function FriendRequestsScreen({ navigation }) {
         variables: {
           input: {
             id: request.id,
-            status: 'ACCEPTED'
-          }
-        }
+            status: "ACCEPTED",
+          },
+        },
       });
 
       // Create mutual contacts
@@ -149,9 +162,9 @@ export default function FriendRequestsScreen({ navigation }) {
             input: {
               user_id: currentUserId!,
               contact_user_id: request.from_user_id,
-              created_at: new Date().toISOString()
-            }
-          }
+              created_at: new Date().toISOString(),
+            },
+          },
         }),
         client.graphql({
           query: createContact,
@@ -159,17 +172,19 @@ export default function FriendRequestsScreen({ navigation }) {
             input: {
               user_id: request.from_user_id,
               contact_user_id: currentUserId!,
-              created_at: new Date().toISOString()
-            }
-          }
-        })
+              created_at: new Date().toISOString(),
+            },
+          },
+        }),
       ]);
 
-      setFriendRequests(prev => prev.filter(item => item.id !== request.id));
-      Alert.alert('Success', `You are now friends with ${request.name}`);
+      setFriendRequests((prev) =>
+        prev.filter((item) => item.id !== request.id)
+      );
+      Alert.alert("Success", `You are now friends with ${request.name}`);
     } catch (error) {
-      console.error('Error accepting friend request:', error);
-      Alert.alert('Error', 'Failed to accept friend request');
+      console.error("Error accepting friend request:", error);
+      Alert.alert("Error", "Failed to accept friend request");
     }
   };
 
@@ -179,16 +194,18 @@ export default function FriendRequestsScreen({ navigation }) {
         query: deleteFriendRequests,
         variables: {
           input: {
-            id: request.id
-          }
-        }
+            id: request.id,
+          },
+        },
       });
 
-      setFriendRequests(prev => prev.filter(item => item.id !== request.id));
-      Alert.alert('Success', `Friend request from ${request.name} declined`);
+      setFriendRequests((prev) =>
+        prev.filter((item) => item.id !== request.id)
+      );
+      Alert.alert("Success", `Friend request from ${request.name} declined`);
     } catch (error) {
-      console.error('Error declining friend request:', error);
-      Alert.alert('Error', 'Failed to decline friend request');
+      console.error("Error declining friend request:", error);
+      Alert.alert("Error", "Failed to decline friend request");
     }
   };
 
@@ -197,22 +214,30 @@ export default function FriendRequestsScreen({ navigation }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
+    <View
+      style={[styles.container, { backgroundColor: theme.backgroundColor }]}
+    >
       <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Ionicons name="arrow-back" size={24} color={theme.textColor} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.textColor }]}>Friend Requests</Text>
+        <Text style={[styles.headerTitle, { color: theme.textColor }]}>
+          Friend Requests
+        </Text>
       </View>
 
       {friendRequests.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="people-outline" size={64} color={theme.textColor} />
-          <Text style={[styles.emptyText, { color: theme.textColor }]}>No friend requests yet</Text>
-          <Text style={[styles.emptySubtext, { color: theme.textColor }]}>When someone sends you a friend request, it will appear here</Text>
+          <Text style={[styles.emptyText, { color: theme.textColor }]}>
+            No friend requests yet
+          </Text>
+          <Text style={[styles.emptySubtext, { color: theme.textColor }]}>
+            When someone sends you a friend request, it will appear here
+          </Text>
         </View>
       ) : (
         <FlatList
@@ -220,7 +245,12 @@ export default function FriendRequestsScreen({ navigation }) {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContainer}
           renderItem={({ item }) => (
-            <View style={[styles.requestItem, { backgroundColor: theme.cardBackground }]}>
+            <View
+              style={[
+                styles.requestItem,
+                { backgroundColor: theme.cardBackground },
+              ]}
+            >
               <View style={styles.userInfo}>
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>
@@ -232,8 +262,12 @@ export default function FriendRequestsScreen({ navigation }) {
                     {item.name}
                   </Text>
                   <Text style={[styles.timestamp, { color: theme.textColor }]}>
-                    <Ionicons name="time-outline" size={14} color={theme.textColor} />
-                    {' '}{formatTimestamp(item.created_at)}
+                    <Ionicons
+                      name="time-outline"
+                      size={14}
+                      color={theme.textColor}
+                    />{" "}
+                    {formatTimestamp(item.created_at)}
                   </Text>
                 </View>
               </View>
@@ -264,15 +298,15 @@ export default function FriendRequestsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 40,
     paddingBottom: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   backButton: {
     padding: 4,
@@ -280,23 +314,23 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: "700",
     color: themeColors.text,
   },
   listContainer: {
     padding: 16,
   },
   requestItem: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: "#f0f0f0",
   },
   userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
   },
   avatar: {
@@ -304,39 +338,39 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     backgroundColor: themeColors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 16,
   },
   avatarText: {
     fontSize: 24,
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: "600",
+    color: "#fff",
   },
   textContainer: {
     flex: 1,
   },
   name: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: themeColors.text,
     marginBottom: 4,
   },
   timestamp: {
     fontSize: 14,
     color: themeColors.textSecondary,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   buttonContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   button: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 12,
     borderRadius: 12,
     gap: 8,
@@ -348,31 +382,31 @@ const styles = StyleSheet.create({
     backgroundColor: `${themeColors.error}10`,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   declineText: {
     color: themeColors.error,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   emptyText: {
     marginTop: 16,
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: themeColors.text,
   },
   emptySubtext: {
     marginTop: 8,
     fontSize: 14,
     color: themeColors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });
