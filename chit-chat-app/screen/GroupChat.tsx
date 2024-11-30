@@ -508,6 +508,7 @@ const GroupChat: React.FC<any> = ({ route, navigation }) => {
                         isFirstInGroup={index === 0}
                         isLastInGroup={index === group.messages.length - 1}
                         showSender={false}
+                        currentUserId={currentUserId}
                     />
                 ))}
             </View>
