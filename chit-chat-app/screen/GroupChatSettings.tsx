@@ -668,7 +668,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     leaveButton: {
-        backgroundColor: 'rgba(255, 71, 87, 0.1)',
+        backgroundColor: themeColors.error,
     },
     deleteButton: {
         backgroundColor: '#ff4757',
