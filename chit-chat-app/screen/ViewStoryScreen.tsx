@@ -211,7 +211,6 @@ const ReactionsDisplay = React.memo(({ reactions, isStoryOwner, currentUserId }:
                         </Text>
                     ))}
                 </View>
-                <Text style={styles.reactionText}>Đã gửi</Text>
             </View>
         </Animated.View>
     );

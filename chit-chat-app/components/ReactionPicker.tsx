@@ -18,7 +18,6 @@ const REACTIONS = [
     { icon: '😢', label: 'Sad' },
     { icon: '😡', label: 'Angry' },
     { icon: '👍', label: 'Like' },
-    // Thêm các reaction khác nếu cần
 ];
 
 interface ReactionPickerProps {
@@ -55,7 +54,6 @@ const ReactionPicker: React.FC<ReactionPickerProps> = ({
     const [floatingReactions, setFloatingReactions] = useState<Array<{ id: number; icon: string }>>([]);
     const nextIdRef = useRef(0);
 
-    // Kiểm tra khi tất cả animation hoàn thành
     useEffect(() => {
         if (floatingReactions.length === 0 && nextIdRef.current > 0) {
             onAnimationComplete();
@@ -64,7 +62,6 @@ const ReactionPicker: React.FC<ReactionPickerProps> = ({
     }, [floatingReactions]);
 
     const handleReactionPress = async (icon: string) => {
-        // Tăng số lượng bong bóng lên
         const newReactions = Array(8).fill(null).map(() => ({
             id: nextIdRef.current++,
             icon,
@@ -101,7 +98,7 @@ const ReactionPicker: React.FC<ReactionPickerProps> = ({
                     contentContainerStyle={styles.scrollContent}
                 >
                     <View style={styles.inputField}>
-                        <Text style={styles.inputText}>Gửi tin nhắn</Text>
+                        <Text style={styles.inputText}>Send Message</Text>
                     </View>
                     {REACTIONS.map((reaction) => (
                         <TouchableOpacity
