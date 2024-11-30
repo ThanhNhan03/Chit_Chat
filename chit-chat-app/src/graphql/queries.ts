@@ -183,6 +183,7 @@ export const getMessages = /* GraphQL */ `query GetMessages($id: ID!) {
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -214,6 +215,25 @@ export const getMessages = /* GraphQL */ `query GetMessages($id: ID!) {
       updatedAt
       __typename
     }
+    story_id
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
+      createdAt
+      updatedAt
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -239,6 +259,7 @@ export const listMessages = /* GraphQL */ `query ListMessages(
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -277,6 +298,7 @@ export const messagesByChat_idAndTimestamp = /* GraphQL */ `query MessagesByChat
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -313,6 +335,7 @@ export const messagesBySender_id = /* GraphQL */ `query MessagesBySender_id(
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -349,6 +372,7 @@ export const messagesByReply_to_message_id = /* GraphQL */ `query MessagesByRepl
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -360,6 +384,43 @@ export const messagesByReply_to_message_id = /* GraphQL */ `query MessagesByRepl
 ` as GeneratedQuery<
   APITypes.MessagesByReply_to_message_idQueryVariables,
   APITypes.MessagesByReply_to_message_idQuery
+>;
+export const messagesByStory_id = /* GraphQL */ `query MessagesByStory_id(
+  $story_id: ID!
+  $sortDirection: ModelSortDirection
+  $filter: ModelMessagesFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  messagesByStory_id(
+    story_id: $story_id
+    sortDirection: $sortDirection
+    filter: $filter
+    limit: $limit
+    nextToken: $nextToken
+  ) {
+    items {
+      id
+      chat_type
+      chat_id
+      sender_id
+      content
+      timestamp
+      status
+      attachments
+      reply_to_message_id
+      story_id
+      createdAt
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.MessagesByStory_idQueryVariables,
+  APITypes.MessagesByStory_idQuery
 >;
 export const getMessageReaction = /* GraphQL */ `query GetMessageReaction($id: ID!) {
   getMessageReaction(id: $id) {
@@ -391,6 +452,7 @@ export const getMessageReaction = /* GraphQL */ `query GetMessageReaction($id: I
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -1194,6 +1256,10 @@ export const getStory = /* GraphQL */ `query GetStory($id: ID!) {
     expires_at
     music_start_time
     music_end_time
+    replies {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename

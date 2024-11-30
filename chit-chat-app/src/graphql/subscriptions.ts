@@ -205,6 +205,7 @@ export const onCreateMessages = /* GraphQL */ `subscription OnCreateMessages($fi
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -232,6 +233,25 @@ export const onCreateMessages = /* GraphQL */ `subscription OnCreateMessages($fi
       created_at
       last_message
       updated_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    story_id
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
       createdAt
       updatedAt
       __typename
@@ -283,6 +303,7 @@ export const onUpdateMessages = /* GraphQL */ `subscription OnUpdateMessages($fi
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -310,6 +331,25 @@ export const onUpdateMessages = /* GraphQL */ `subscription OnUpdateMessages($fi
       created_at
       last_message
       updated_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    story_id
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
       createdAt
       updatedAt
       __typename
@@ -361,6 +401,7 @@ export const onDeleteMessages = /* GraphQL */ `subscription OnDeleteMessages($fi
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -388,6 +429,25 @@ export const onDeleteMessages = /* GraphQL */ `subscription OnDeleteMessages($fi
       created_at
       last_message
       updated_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    story_id
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
       createdAt
       updatedAt
       __typename
@@ -433,6 +493,7 @@ export const onCreateMessageReaction = /* GraphQL */ `subscription OnCreateMessa
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -478,6 +539,7 @@ export const onUpdateMessageReaction = /* GraphQL */ `subscription OnUpdateMessa
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -523,6 +585,7 @@ export const onDeleteMessageReaction = /* GraphQL */ `subscription OnDeleteMessa
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -1325,6 +1388,10 @@ export const onCreateStory = /* GraphQL */ `subscription OnCreateStory($filter: 
     expires_at
     music_start_time
     music_end_time
+    replies {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -1382,6 +1449,10 @@ export const onUpdateStory = /* GraphQL */ `subscription OnUpdateStory($filter: 
     expires_at
     music_start_time
     music_end_time
+    replies {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -1439,6 +1510,10 @@ export const onDeleteStory = /* GraphQL */ `subscription OnDeleteStory($filter: 
     expires_at
     music_start_time
     music_end_time
+    replies {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename

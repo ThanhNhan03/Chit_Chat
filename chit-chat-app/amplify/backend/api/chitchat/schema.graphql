@@ -23,12 +23,12 @@ type FriendChat @model @auth(rules: [{allow: public}]) {
 
 type Messages @model @auth(rules: [{allow: public}]) {
   id: ID!
-  chat_type: String # "private" hoặc "group"
+  chat_type: String # "private" hoặc "group" hoặc "story_reply"
   chat_id: ID! @index(name: "byChat", sortKeyFields: ["timestamp"])
   sender_id: ID! @index(name: "bySender")
   content: String
   timestamp: AWSDateTime
-  status: String @default(value: "sent") # "sent", "delivered", "seen"
+  status: String @default(value: "sent")
   attachments: String
   message_reactions: [MessageReaction] @hasMany(indexName: "reactionsByMessage", fields: ["id"])
   sender: User @belongsTo(fields: ["sender_id"])
@@ -37,6 +37,8 @@ type Messages @model @auth(rules: [{allow: public}]) {
   replied_messages: [Messages] @hasMany(indexName: "byReplyToMessage", fields: ["id"])
   group_chat: GroupChat @belongsTo(fields: ["chat_id"])
   friend_chat: FriendChat @belongsTo(fields: ["chat_id"])
+  story_id: ID @index(name: "byStory")
+  story: Story @belongsTo(fields: ["story_id"])
 }
 
 type MessageReaction @model @auth(rules: [{allow: public}]) {
@@ -136,8 +138,9 @@ type Story @model @auth(rules: [{allow: public}]) {
   story_reactions: [StoryReaction] @hasMany(indexName: "reactionsByStory", fields: ["id"])
   created_at: AWSDateTime
   expires_at: AWSDateTime
-  music_start_time: Float    # Thời điểm bắt đầu (seconds)
-  music_end_time: Float      # Thời điểm kết thúc (seconds)
+  music_start_time: Float
+  music_end_time: Float
+  replies: [Messages] @hasMany(indexName: "byStory", fields: ["id"])
 }
 
 # Type để theo dõi người xem story
