@@ -172,31 +172,18 @@ const App: React.FC = () => {
                 console.log('Token successfully saved to database');
             }
 
-            // Setup listeners
             notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-                console.log('Received notification:', notification);
+              
             });
 
             responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
                 try {
                     const data = response.notification.request.content.data;
-                    console.log('Notification response data:', data);
-
-                    if (data.type === 'message') {
-                        navigationRef.current?.navigate('Chat', {
-                            chatId: data.chatId,
-                            userId: data.userId,
-                            name: data.name
-                        });
-                    } else if (data.type === 'friend_request') {
+                    
+                    if (data.type === 'friend_request') {
                         navigationRef.current?.navigate('FriendRequests');
-                    } else if (data.type === 'new_story') {
-                        navigationRef.current?.navigate('ViewStory', {
-                            storyId: data.storyId,
-                            userId: data.userId,
-                            initialStoryIndex: 0
-                        });
                     }
+              
                 } catch (error) {
                     console.error('Error handling notification response:', error);
                 }
@@ -238,7 +225,7 @@ const App: React.FC = () => {
     };
 
     const subscription = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('Notification response received:', response);
+      // console.log('Notification response received:', response);
     });
 
     checkAndUpdateToken();

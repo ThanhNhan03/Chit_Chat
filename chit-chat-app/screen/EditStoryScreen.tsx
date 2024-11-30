@@ -152,10 +152,10 @@ const EditStoryScreen = ({ route, navigation }: EditStoryScreenProps) => {
                 variables: { input: storyInput }
             });
 
-      
+            
             const friendTokens = await getFriendPushTokens(currentUserId);
             
-      
+            
             if (friendTokens && friendTokens.length > 0) {
                 await sendNewStoryNotification({
                     expoPushTokens: friendTokens,
