@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, Dimensions, ActivityIndicator, Pressable, Modal, TouchableWithoutFeedback, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Dimensions, ActivityIndicator, Pressable, Modal, TouchableWithoutFeedback, ScrollView, Alert, Linking } from 'react-native';
 import { themeColors } from '../config/themeColor';
 import { generateClient } from 'aws-amplify/api';
 import { GraphQLQuery } from '@aws-amplify/api';
@@ -228,6 +228,26 @@ const MessageItem: React.FC<MessageItemProps> = ({
         }
     };
 
+    const renderMessageText = (text: string) => {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const parts = text.split(urlRegex);
+
+        return parts.map((part, index) => {
+            if (urlRegex.test(part)) {
+                return (
+                    <Text
+                        key={index}
+                        style={styles.linkText}
+                        onPress={() => Linking.openURL(part)}
+                    >
+                        {part}
+                    </Text>
+                );
+            }
+            return <Text key={index}>{part}</Text>;
+        });
+    };
+
     return (
         <View>
             {showSender && !message.isMe && (
@@ -280,7 +300,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
                         styles.messageText,
                         message.isMe ? styles.myMessageText : styles.theirMessageText
                     ]}>
-                        {message.text}
+                        {renderMessageText(message.text || '')}
                     </Text>
                 ) : (
                     <View style={styles.imageWrapper}>
@@ -695,6 +715,10 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#4CAF50',
         marginTop: 2,
+    },
+    linkText: {
+        color: '#1E90FF', // Link color
+        textDecorationLine: 'underline',
     },
 });
 
