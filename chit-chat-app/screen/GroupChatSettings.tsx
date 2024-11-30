@@ -313,7 +313,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                     <Text style={styles.avatarText}>{item.name[0].toUpperCase()}</Text>
                 </View>
             )}
-            <Text style={styles.memberName}>{item.name}</Text>
+            <Text style={[styles.memberName, { color: theme.textColor }]}>{item.name}</Text>
             {isCreator && item.id !== currentUserId && (
                 <TouchableOpacity 
                     style={styles.removeButton}
@@ -334,17 +334,17 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
             
             <View style={[styles.content, { backgroundColor: theme.cardBackground }]}>
                 {/* Group Name Section */}
-                <View style={[styles.section, { backgroundColor: theme.group }]}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Group Name</Text>
+                <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
+                    <View style={[styles.sectionHeader, { backgroundColor: theme.cardBackground }]}>
+                        <Text style={[styles.sectionTitle, { color: theme.textColor }]}>Group Name</Text>
                         <TouchableOpacity onPress={() => setIsEditingName(true)}>
-                            <Ionicons name="pencil" size={20} color="#007AFF" />
+                            <Ionicons name="pencil" size={20} color= '#a29bfe' />
                         </TouchableOpacity>
                     </View>
                     {isEditingName ? (
                         <View style={styles.editNameContainer}>
                             <TextInput
-                                style={styles.nameInput}
+                                style={[styles.nameInput, { color: theme.textColor }]}
                                 value={groupName}
                                 onChangeText={setGroupName}
                                 autoFocus
@@ -357,19 +357,19 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                             </TouchableOpacity>
                         </View>
                     ) : (
-                        <Text style={styles.groupName}>{groupName}</Text>
+                        <Text style={[styles.groupName, { color: theme.textColor }]}>{groupName}</Text>
                     )}
                 </View>
 
                 {/* Members Section */}
-                <View style={[styles.section, { backgroundColor: theme.group }]}>
+                <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>
+                        <Text style={[styles.sectionTitle, { color: theme.textColor }]}>
                             Members ({members.length})
                         </Text>
                         {isCreator && (
                             <TouchableOpacity onPress={handleAddMemberPress}>
-                                <Ionicons name="person-add" size={20} color="#007AFF" />
+                                <Ionicons name="person-add" size={20} color="#a29bfe" />
                             </TouchableOpacity>
                         )}
                     </View>
@@ -377,6 +377,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                         data={members}
                         renderItem={renderMemberItem}
                         keyExtractor={item => item.id}
+
                     />
                 </View>
 
@@ -386,7 +387,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                         style={[styles.button, styles.leaveButton]}
                         onPress={handleLeaveGroup}
                     >
-                        <Text style={styles.buttonText}>Leave Group</Text>
+                        <Text style={[styles.buttonText, { color: theme.textColor }]}>Leave Group</Text>
                     </TouchableOpacity>
 
                     {isCreator && (
@@ -394,7 +395,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                             style={[styles.button, styles.deleteButton]}
                             onPress={handleDeleteGroup}
                         >
-                            <Text style={styles.buttonText}>Delete Group</Text>
+                            <Text style={[styles.buttonText, { color: theme.textColor }]}>Delete Group</Text>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -409,7 +410,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
             >
                 <View style={styles.modalContainer}>
                     <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
-                        <Text style={styles.modalTitle}>Add Members</Text>
+                        <Text style={[styles.modalTitle, { color: theme.textColor }]}>Add Members</Text>
                         <FlatList
                             data={contacts}
                             renderItem={({ item }) => (
@@ -429,7 +430,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                                             </Text>
                                         </View>
                                     )}
-                                    <Text style={styles.contactName}>{item.name}</Text>
+                                    <Text style={[styles.contactName, { color: theme.textColor }]}>{item.name}</Text>
                                 </TouchableOpacity>
                             )}
                             keyExtractor={item => item.id}
@@ -438,7 +439,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                             style={styles.closeButton}
                             onPress={() => setShowAddMember(false)}
                         >
-                            <Text style={styles.closeButtonText}>Close</Text>
+                            <Text style={[styles.closeButtonText, { color: theme.textColor }]}>Close</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -477,14 +478,17 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 12,
+     
     },
     sectionTitle: {
         fontSize: 18,
         fontWeight: 'bold',
+       
     },
     editNameContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        
     },
     nameInput: {
         flex: 1,
@@ -494,14 +498,15 @@ const styles = StyleSheet.create({
         borderColor: '#ddd',
         borderRadius: 8,
         marginRight: 8,
+       
     },
     saveButton: {
-        backgroundColor: '#007AFF',
+        backgroundColor: '#a29bfe',
         padding: 8,
         borderRadius: 8,
     },
     saveButtonText: {
-        color: '#fff',
+        color: 'white',
         fontWeight: '500',
     },
     groupName: {
@@ -512,8 +517,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         padding: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+       
     },
     memberAvatar: {
         width: 40,
