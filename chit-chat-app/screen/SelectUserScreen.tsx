@@ -541,11 +541,13 @@ export default function SelectUserScreen({ navigation }) {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: `${themeColors.primary}10`,
-      marginHorizontal: 16,
-      marginVertical: 12,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 12,
+      marginHorizontal: 12,
+      marginVertical: 8,
+     paddingHorizontal: 6,
+      paddingVertical: 4,
+      borderRadius: 8,
+      height: 40,
+
     },
     searchInput: {
       flex: 1,
