@@ -6,5 +6,5 @@ export const themeColors = {
     text: '#2d3436',
     textSecondary: '#636e72',
     border: '#dfe6e9',
-    error: '#e74c3c',
+    error: '#cc060e',
 };

@@ -249,7 +249,7 @@ export default function FriendRequestsScreen({ navigation }) {
                   style={[styles.button, styles.declineButton]}
                   onPress={() => handleDecline(item)}
                 >
-                  <Ionicons name="close" size={20} color={themeColors.error} />
+                  <Ionicons name="close" size={20} color="#fff" />
                   <Text style={styles.declineText}>Decline</Text>
                 </TouchableOpacity>
               </View>
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     backgroundColor: themeColors.primary,
   },
   declineButton: {
-    backgroundColor: `${themeColors.error}30`,
+    backgroundColor: `${themeColors.error}80`,
   },
   buttonText: {
     color: '#fff',
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   declineText: {
-    color: themeColors.error,
+    color: "#fff",
     fontSize: 16,
     fontWeight: '600',
   },
