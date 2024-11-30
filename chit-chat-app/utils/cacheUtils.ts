@@ -4,6 +4,8 @@ const CACHE_EXPIRY_TIME = 1000 * 60 * 60; // 1 giờ
 
 export const getChatCacheKey = (chatId: string, userId: string) => `private_chat_messages_${chatId}_${userId}`;
 export const getGroupChatCacheKey = (chatId: string, userId: string) => `group_chat_messages_${chatId}_${userId}`;
+export const getMessageReactionsCacheKey = (messageId: string) => 
+    `message_reactions_${messageId}`;
 
 export const clearUserChatCache = async (userId: string) => {
     try {
@@ -24,3 +26,33 @@ export const clearUserChatCache = async (userId: string) => {
         console.error('Error clearing user chat cache:', error);
     }
 }; 
+
+export const cacheMessageReactions = async (messageId: string, reactions: any[]) => {
+    try {
+        const key = getMessageReactionsCacheKey(messageId);
+        await AsyncStorage.setItem(key, JSON.stringify({
+            reactions,
+            timestamp: Date.now()
+        }));
+    } catch (error) {
+        console.error('Error caching message reactions:', error);
+    }
+};
+
+export const getCachedMessageReactions = async (messageId: string) => {
+    try {
+        const key = getMessageReactionsCacheKey(messageId);
+        const data = await AsyncStorage.getItem(key);
+        if (!data) return null;
+
+        const cached = JSON.parse(data);
+        if (Date.now() - cached.timestamp > CACHE_EXPIRY_TIME) {
+            await AsyncStorage.removeItem(key);
+            return null;
+        }
+        return cached.reactions;
+    } catch (error) {
+        console.error('Error getting cached reactions:', error);
+        return null;
+    }
+};
