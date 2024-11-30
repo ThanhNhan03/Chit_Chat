@@ -191,6 +191,12 @@ const MessageItem: React.FC<MessageItemProps> = ({
                     });
                 }
 
+                
+                const userResult = await client.graphql({
+                    query: getUser,
+                    variables: { id: currentUserId }
+                });
+
                 const input = {
                     id: `reaction-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                     message_id: message.id,
@@ -201,7 +207,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
                 const newReaction = {
                     ...input,
-                    user: { id: currentUserId } // Thêm thông tin user cơ bản
+                    user: userResult.data.getUser 
                 };
                 
                 updatedReactions.push(newReaction);

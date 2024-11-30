@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     headerContainer: {
         backgroundColor: themeColors.surface,
         paddingHorizontal: width * 0.04,
-        paddingVertical: height * 0.02,
+        // paddingVertical: height * 0.02,
         marginTop: height * 0.02,
         flexDirection: 'row',
         justifyContent: 'space-between',

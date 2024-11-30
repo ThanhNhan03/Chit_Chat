@@ -1,8 +1,8 @@
-import React, { createContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useState, useEffect, useRef,  } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ActivityIndicator} from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ActivityIndicator, Platform, StatusBar, View } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Amplify } from 'aws-amplify';
 import { getCurrentUser } from 'aws-amplify/auth';
 import * as Notifications from 'expo-notifications';
@@ -11,8 +11,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { themeColors } from "./config/themeColor";
 import * as Device from 'expo-device';
-import { Platform } from 'react-native';
 import { useTheme } from './contexts/ThemeContext';
+import Constants from 'expo-constants';
 
 // Screens
 import Login from './screen/Login';
@@ -240,142 +240,165 @@ const App: React.FC = () => {
   }
 
   return (
-    <SafeAreaProvider style={{ flex: 1 }}>
-      <ThemeProvider>
-        <ActionSheetProvider>
-        <AuthenticatedUserContext.Provider value={{ user, setUser }}>
-          <NavigationContainer ref={navigationRef}>
-            <Stack.Navigator screenOptions={{ gestureEnabled: false }}>
-              {user ? (
-                <>
-                  <Stack.Screen
-                    name="MainTabs"
-                    component={TabNavigator}
-                    options={{
-                      headerShown: false,
-                      gestureEnabled: false
-                    }}
-                  />
+    <SafeAreaProvider>
+      <View style={{ 
+        flex: 1,
+        backgroundColor: '#000000',
+      }}>
+        <View style={{
+          height: Constants.statusBarHeight,
+          backgroundColor: '#000000',
+        }}>
+          <StatusBar
+            barStyle="light-content"
+            backgroundColor="transparent"
+            translucent={true}
+          />
+        </View>
+        <ThemeProvider>
+          <ActionSheetProvider>
+            <AuthenticatedUserContext.Provider value={{ user, setUser }}>
+              <NavigationContainer ref={navigationRef}>
+                <Stack.Navigator 
+                  screenOptions={{ 
+                    gestureEnabled: false,
+                    headerShown: false,
+                    contentStyle: {
+                      backgroundColor: 'transparent',
+                    },
+                  }}
+                >
+                  {user ? (
+                    <>
+                      <Stack.Screen
+                        name="MainTabs"
+                        component={TabNavigator}
+                        options={{
+                          headerShown: false,
+                          gestureEnabled: false
+                        }}
+                      />
 
-                  <Stack.Screen
-                    name="Settings"
-                    component={Settings}
-                    options={{
-                      headerShown: false,
-                    }}
-                  />
+                      <Stack.Screen
+                        name="Settings"
+                        component={Settings}
+                        options={{
+                          headerShown: false,
+                        }}
+                      />
 
-                  <Stack.Screen
-                    name="Chats"
-                    component={Chats}
-                    options={{
-                      headerShown: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="Chat"
-                    component={Chat}
-                    options={{
-                      headerShown: false,
-                      gestureEnabled: true
-                    }}
-                  />
-                  <Stack.Screen
-                    name="SelectUser"
-                    component={SelectUserScreen}
-                    options={{
-                      title: 'Friend List',
-                      headerShown: false
-                    }}
-                  />
-                  <Stack.Screen
-                    name="NewGroup"
-                    component={NewGroupScreen}
-                    options={{ title: 'New Group', headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="NewUser"
-                    component={NewUserScreen}
-                    options={{ title: 'Add Friend', headerShown: false }}
-                  />
-                  <Stack.Screen 
-                    name="FriendRequests"
-                    component={FriendRequestsScreen}
-                    options={{ title: 'Friend Request', headerShown: false }} 
-                  />
-                  <Stack.Screen
-                    name="GroupChat"
-                    component={GroupChat}
-                    options={{ title: 'Group Chat', headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="GroupChatSettings"
-                    component={GroupChatSettings}
-                    options={{ title: 'Group Settings', headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="Profile"
-                    component={Profile}
-                    options={{ title: 'Profile', headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="AddStory"
-                    component={AddStoryScreen}
-                    options={{ title: 'Add Story', headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="EditStory"
-                    component={EditStoryScreen}
-                    options={{ title: 'Edit Story', headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="ViewStory"
-                    component={ViewStoryScreen}
-                    options={{ title: 'View Story', headerShown: false, gestureEnabled: false }}
-                  />
-                  <Stack.Screen
-                    name="ResetPassword"
-                    component={ResetPassword}
-                    options={{ 
-                      headerShown: false,
-                      gestureEnabled: true 
-                    }}
-                  />
-                </>
-              ) : (
-                <>
-                  <Stack.Screen
-                    name="Login"
-                    component={Login}
-                    options={{ title: 'Log In', headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="SignUp"
-                    component={SignUp}
-                    options={{ title: 'Sign Up', headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="ConfirmEmail"
-                    component={ConfirmEmail}
-                    options={{ title: 'Confirm Email' }}
-                  />
-                  <Stack.Screen
-                    name="ForgotPassword"
-                    component={ForgotPassword}
-                    options={{ title: 'Forgot Password', headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="ResetPassword"
-                    component={ResetPassword}
-                    options={{ title: 'Reset Password', headerShown: false }}
-                  />
-                </>
-              )}
-            </Stack.Navigator>
-          </NavigationContainer>
-        </AuthenticatedUserContext.Provider>
-      </ActionSheetProvider>
-      </ThemeProvider>
+                      <Stack.Screen
+                        name="Chats"
+                        component={Chats}
+                        options={{
+                          headerShown: false,
+                        }}
+                      />
+                      <Stack.Screen
+                        name="Chat"
+                        component={Chat}
+                        options={{
+                          headerShown: false,
+                          gestureEnabled: true
+                        }}
+                      />
+                      <Stack.Screen
+                        name="SelectUser"
+                        component={SelectUserScreen}
+                        options={{
+                          title: 'Friend List',
+                          headerShown: false
+                        }}
+                      />
+                      <Stack.Screen
+                        name="NewGroup"
+                        component={NewGroupScreen}
+                        options={{ title: 'New Group', headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="NewUser"
+                        component={NewUserScreen}
+                        options={{ title: 'Add Friend', headerShown: false }}
+                      />
+                      <Stack.Screen 
+                        name="FriendRequests"
+                        component={FriendRequestsScreen}
+                        options={{ title: 'Friend Request', headerShown: false }} 
+                      />
+                      <Stack.Screen
+                        name="GroupChat"
+                        component={GroupChat}
+                        options={{ title: 'Group Chat', headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="GroupChatSettings"
+                        component={GroupChatSettings}
+                        options={{ title: 'Group Settings', headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="Profile"
+                        component={Profile}
+                        options={{ title: 'Profile', headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="AddStory"
+                        component={AddStoryScreen}
+                        options={{ title: 'Add Story', headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="EditStory"
+                        component={EditStoryScreen}
+                        options={{ title: 'Edit Story', headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="ViewStory"
+                        component={ViewStoryScreen}
+                        options={{ title: 'View Story', headerShown: false, gestureEnabled: false }}
+                      />
+                      <Stack.Screen
+                        name="ResetPassword"
+                        component={ResetPassword}
+                        options={{ 
+                          headerShown: false,
+                          gestureEnabled: true 
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <Stack.Screen
+                        name="Login"
+                        component={Login}
+                        options={{ title: 'Log In', headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="SignUp"
+                        component={SignUp}
+                        options={{ title: 'Sign Up', headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="ConfirmEmail"
+                        component={ConfirmEmail}
+                        options={{ title: 'Confirm Email' }}
+                      />
+                      <Stack.Screen
+                        name="ForgotPassword"
+                        component={ForgotPassword}
+                        options={{ title: 'Forgot Password', headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="ResetPassword"
+                        component={ResetPassword}
+                        options={{ title: 'Reset Password', headerShown: false }}
+                      />
+                    </>
+                  )}
+                </Stack.Navigator>
+              </NavigationContainer>
+            </AuthenticatedUserContext.Provider>
+          </ActionSheetProvider>
+        </ThemeProvider>
+      </View>
     </SafeAreaProvider>
   );
 };
