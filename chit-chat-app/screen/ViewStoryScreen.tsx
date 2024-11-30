@@ -379,29 +379,49 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
         }
     };
 
-    const handleNext = async () => {
-        if (currentIndex < stories.length - 1) {
-            // Lưu progress của story hiện tại
-            storyProgresses[currentStory.id] = 1; // Đánh dấu đã xem xong
-            await cleanupSound();
-            setCurrentIndex(currentIndex + 1);
-            setShowReactions(false);
-            setCurrentReaction(null);
-        } else {
-            handleBack();
-        }
-    };
-
     const handlePrevious = async () => {
         if (currentIndex > 0) {
-            // Lưu progress của story hiện tại
-            progress.stopAnimation(value => {
-                storyProgresses[currentStory.id] = value;
-            });
+            // Reset animation state
+            setIsAnimating(false);
+            
+            // Stop current progress animation
+            progress.stopAnimation();
+            progress.setValue(0);
+            
+            // Cleanup current sound
             await cleanupSound();
+            
+            // Update index
             setCurrentIndex(currentIndex - 1);
             setShowReactions(false);
             setCurrentReaction(null);
+            
+            // Reset progress for new story
+            storyProgresses[currentStory.id] = 0;
+        }
+    };
+
+    const handleNext = async () => {
+        if (currentIndex < stories.length - 1) {
+            // Reset animation state
+            setIsAnimating(false);
+            
+            // Stop current progress animation
+            progress.stopAnimation();
+            progress.setValue(0);
+            
+            // Cleanup current sound
+            await cleanupSound();
+            
+            // Update index
+            setCurrentIndex(currentIndex + 1);
+            setShowReactions(false);
+            setCurrentReaction(null);
+            
+            // Reset progress for new story
+            storyProgresses[currentStory.id] = 0;
+        } else {
+            handleBack();
         }
     };
 
@@ -432,19 +452,15 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
         }
     };
 
-    // Sửa lại hàm startProgress
+    // Sửa lại hàm startProgress để đảm bảo animation luôn bắt đầu từ đầu
     const startProgress = () => {
         if (isAnimating) return;
         
-        // Lấy progress đã lưu của story hiện tại hoặc bắt đầu từ 0
-        const savedProgress = storyProgresses[currentStory.id] || 0;
-        const duration = (currentStory.duration || 5) * 1000 * (1 - savedProgress);
-        
-        progress.setValue(savedProgress);
+        progress.setValue(0);
         
         Animated.timing(progress, {
             toValue: 1,
-            duration: duration,
+            duration: (currentStory.duration || 5) * 1000,
             useNativeDriver: false,
         }).start(({ finished }) => {
             if (finished && !isAnimating) {

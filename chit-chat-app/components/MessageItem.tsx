@@ -184,7 +184,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
                     created_at: new Date().toISOString()
                 };
                 
-                console.log('Creating reaction with input:', input);
                 
                 await client.graphql({
                     query: createMessageReaction,
