@@ -237,12 +237,12 @@ export default function NewUserScreen() {
       </View>
 
       <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <Ionicons name="mail-outline" size={30} color={theme.textColor} />
+        <View style={[styles.searchInputContainer, { backgroundColor: theme.input}]}>
+          <Ionicons name="mail-outline" size={30} color={themeColors.primary} />
           <TextInput
-            style={[styles.input, { color: theme.textInput, backgroundColor: theme.input }]}
+            style={[styles.input, { color: theme.textInput, }]}
             placeholder="Enter email address"
-      placeholderTextColor={themeColors.text}
+            placeholderTextColor={themeColors.text}
             value={searchEmail}
             onChangeText={setSearchEmail}
             keyboardType="email-address"
@@ -338,14 +338,15 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     gap: 12,
+    
   },
   searchInputContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: `${themeColors.primary}10`,
+  
     paddingHorizontal: 16,
     borderRadius: 12,
     height: 50,
