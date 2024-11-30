@@ -510,7 +510,7 @@ export default function SelectUserScreen({ navigation }) {
       alignItems: "center",
       backgroundColor: theme.cardBackground,
       // Test
-      paddingVertical: 15,
+      paddingVertical: 10,
       marginHorizontal: 16,
       borderRadius: 12,
     },
@@ -519,8 +519,8 @@ export default function SelectUserScreen({ navigation }) {
       marginRight: 12,
     },
     avatar: {
-      width: 70,
-      height: 70,
+      width: 65,
+      height: 65,
       borderRadius: 35,
       backgroundColor: themeColors.primary,
       alignItems: "center",
