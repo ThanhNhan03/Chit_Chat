@@ -535,13 +535,13 @@ export default function SelectUserScreen({ navigation }) {
       flex: 1,
     },
     userName: {
-      fontSize: 16,
+      fontSize: 20,
       fontWeight: "600",
       color: theme.textColor,
       marginBottom: 4,
     },
     userStatus: {
-      fontSize: 13,
+      fontSize: 15,
       color: theme.textColor,
     },
     emptyContainer: {
