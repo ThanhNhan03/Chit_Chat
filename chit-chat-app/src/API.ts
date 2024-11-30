@@ -3357,7 +3357,6 @@ export type MessagesByChat_idAndTimestampQuery = {
   messagesByChat_idAndTimestamp?:  {
     __typename: "ModelMessagesConnection",
     items:  Array< {
-      story: any;
       __typename: "Messages",
       id: string,
       chat_type?: string | null,

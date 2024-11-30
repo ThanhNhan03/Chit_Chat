@@ -128,7 +128,9 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ route, navigation }) => {
               keyboardType="number-pad"
             />
           )}
-
+            <Text style={[ { color: theme.textColor,fontSize: 17, marginBottom:20 }]}>
+Your password must be at least 6 character and should include a combination of numbers,letters,and special characters(!$@#%&).
+      </Text>
           {user && (
             <TextInput
               style={[styles.input, { 
@@ -217,7 +219,7 @@ const styles = StyleSheet.create({
     padding: height * 0.02,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: height * 0.03,
+    marginTop: height * 0.32,
     width: '100%',
   },
   buttonText: {
