@@ -288,11 +288,11 @@ const styles = StyleSheet.create({
   },
   requestItem: {
     backgroundColor: '#fff',
-    borderRadius: 16,
+    
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
+  
+    
   },
   userInfo: {
     flexDirection: 'row',
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     backgroundColor: themeColors.primary,
   },
   declineButton: {
-    backgroundColor: `${themeColors.error}10`,
+    backgroundColor: `${themeColors.error}30`,
   },
   buttonText: {
     color: '#fff',
