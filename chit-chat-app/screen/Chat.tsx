@@ -467,6 +467,8 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                         onImagePress={setSelectedImage}
                         isFirstInGroup={index === 0}
                         isLastInGroup={index === group.messages.length - 1}
+                        showSender={false}
+                        currentUserId={currentUserId}
                     />
                 ))}
             </View>
