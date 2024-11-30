@@ -217,3 +217,97 @@ export const sendNewStoryNotification = async ({
         }
     });
 };
+
+export const sendChatNotification = async ({
+    expoPushToken,
+    senderName,
+    message,
+    chatId,
+    senderId,
+}: {
+    expoPushToken: string;
+    senderName: string;
+    message: string;
+    chatId: string;
+    senderId: string;
+}) => {
+    if (!expoPushToken) {
+        console.log('No push token to send notification to.');
+        return;
+    }
+
+    return sendPushNotifications({
+        expoPushTokens: [expoPushToken],
+        title: senderName,
+        body: message.length > 50 ? message.substring(0, 47) + '...' : message,
+        data: {
+            type: 'new_message',
+            chatId,
+            senderId,
+            channelId: 'messages'
+        }
+    });
+};
+
+export const sendGroupChatNotification = async ({
+    expoPushTokens,
+    senderName,
+    message,
+    chatId,
+    senderId,
+    groupName
+}: {
+    expoPushTokens: string[];
+    senderName: string;
+    message: string;
+    chatId: string;
+    senderId: string;
+    groupName: string;
+}) => {
+    if (!expoPushTokens || expoPushTokens.length === 0) {
+        console.log('No tokens to send notifications to.');
+        return;
+    }
+
+    return sendPushNotifications({
+        expoPushTokens,
+        title: `${groupName} - ${senderName}`,
+        body: message.length > 50 ? message.substring(0, 47) + '...' : message,
+        data: {
+            type: 'new_group_message',
+            chatId,
+            senderId,
+            groupName,
+            channelId: 'messages'
+        }
+    });
+};
+
+export const sendFriendRequestNotification = async ({
+    expoPushToken,
+    senderName,
+    senderId,
+    requestId
+}: {
+    expoPushToken: string;
+    senderName: string;
+    senderId: string;
+    requestId: string;
+}) => {
+    if (!expoPushToken) {
+        console.log('No push token to send notification to.');
+        return;
+    }
+
+    return sendPushNotifications({
+        expoPushTokens: [expoPushToken],
+        title: 'New Friend Request',
+        body: `${senderName} sent you a friend request`,
+        data: {
+            type: 'friend_request',
+            senderId,
+            requestId,
+            channelId: 'friend-requests'
+        }
+    });
+};

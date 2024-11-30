@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     backgroundColor: themeColors.primary,
   },
   declineButton: {
-    backgroundColor: `${themeColors.error}10`,
+    backgroundColor: `${themeColors.error}30`,
   },
   buttonText: {
     color: "#fff",

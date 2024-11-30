@@ -16,6 +16,8 @@ import { sendNotification } from '../utils/notificationHelper';
 import MessageTimestamp from '../components/MessageTimestamp';
 import { themeColors } from '../config/themeColor';
 import { useTheme } from '../contexts/ThemeContext';
+import { sendChatNotification } from '../utils/notificationHelper';
+import { getUser } from '../src/graphql/queries';
 
 const client = generateClient();
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -83,6 +85,8 @@ const CLOUDFRONT_URL = 'https://d1uil1dxdmhthh.cloudfront.net';
 const Chat: React.FC<any> = ({ route, navigation }) => {
     const { name, userId, chatId } = route.params;
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [currentUserName, setCurrentUserName] = useState('');
+    const [recipientPushToken, setRecipientPushToken] = useState<string | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputText, setInputText] = useState('');
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
@@ -101,6 +105,7 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
 
     useEffect(() => {
         fetchCurrentUser();
+        fetchRecipientInfo();
     }, []);
 
     useEffect(() => {
@@ -119,6 +124,40 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
         }
     }, [currentUserId, chatId]);
 
+    const fetchRecipientInfo = async () => {
+        try {
+            const recipientData = await client.graphql({
+                query: getUser,
+                variables: { id: userId }
+            });
+            
+            if (recipientData.data.getUser) {
+                setRecipientPushToken(recipientData.data.getUser.push_token);
+            }
+        } catch (error) {
+            console.error('Error fetching recipient info:', error);
+        }
+    };
+
+    const fetchCurrentUser = async () => {
+        try {
+            const user = await getCurrentUser();
+            setCurrentUserId(user.userId);
+
+            // Fetch thêm tên người dùng hiện tại
+            const userData = await client.graphql({
+                query: getUser,
+                variables: { id: user.userId }
+            });
+            
+            if (userData.data.getUser) {
+                setCurrentUserName(userData.data.getUser.name);
+            }
+        } catch (error) {
+            console.error('Error fetching current user:', error);
+        }
+    };
+
     const cacheMessages = async (messages: Message[]) => {
         try {
             if (!currentUserId) return;
@@ -132,15 +171,6 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
             );
         } catch (error) {
             console.error('Error caching messages:', error);
-        }
-    };
-
-    const fetchCurrentUser = async () => {
-        try {
-            const user = await getCurrentUser();
-            setCurrentUserId(user.userId);
-        } catch (error) {
-            console.error('Error fetching current user:', error);
         }
     };
 
@@ -299,6 +329,17 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                 }),
                 updateLastMessage(messageText)
             ]);
+
+            // Gửi thông báo nếu có push token của người nhận
+            if (recipientPushToken) {
+                await sendChatNotification({
+                    expoPushToken: recipientPushToken,
+                    senderName: currentUserName,
+                    message: messageText,
+                    chatId: chatId,
+                    senderId: currentUserId || ''
+                });
+            }
         } catch (error) {
             console.error('Error sending message:', error);
             setMessages(prev => prev.filter(msg => msg.id !== tempId));
@@ -376,6 +417,16 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                         )
                     );
 
+                    if (recipientPushToken) {
+                        await sendChatNotification({
+                            expoPushToken: recipientPushToken,
+                            senderName: currentUserName,
+                            message: '📷 Sent a photo',
+                            chatId: chatId,
+                            senderId: currentUserId || ''
+                        });
+                    }
+
                 } catch (error) {
                     console.error('Error uploading image:', error);
                     setMessages(prev => prev.filter(msg => msg.id !== tempId));
@@ -416,6 +467,8 @@ const Chat: React.FC<any> = ({ route, navigation }) => {
                         onImagePress={setSelectedImage}
                         isFirstInGroup={index === 0}
                         isLastInGroup={index === group.messages.length - 1}
+                        showSender={false}
+                        currentUserId={currentUserId}
                     />
                 ))}
             </View>
