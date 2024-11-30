@@ -464,14 +464,14 @@ export default function SelectUserScreen({ navigation }) {
     },
     headerContainer: {
       padding: 16,
-      paddingHorizontal: 16,
+      paddingHorizontal: 10,
       paddingTop: 8,
     },
     headerTitle: {
       fontSize: 20,
       fontWeight: "700",
       color: theme.textColor,
-      marginBottom: 16,
+      marginBottom: 24,
     },
     optionsContainer: {
       flexDirection: "row",
@@ -483,24 +483,24 @@ export default function SelectUserScreen({ navigation }) {
       alignItems: "center",
       padding: 16,
       borderRadius: 12,
-      marginHorizontal: 4,
+      marginHorizontal: 5,
     },
     iconContainer: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: 50,
+      height: 50,
+      borderRadius: 25,
       justifyContent: "center",
       alignItems: "center",
       marginBottom: 8,
     },
     optionText: {
-      fontSize: 12,
+      fontSize: 15,
       color: themeColors.text,
       fontWeight: "500",
       textAlign: "center",
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 20,
       fontWeight: "600",
       color: themeColors.text,
       marginBottom: 8,
@@ -511,7 +511,7 @@ export default function SelectUserScreen({ navigation }) {
       backgroundColor: theme.cardBackground,
       // Test
       paddingVertical: 10,
-      marginHorizontal: 16,
+      marginHorizontal: 40,
       borderRadius: 12,
     },
     avatarContainer: {
@@ -582,8 +582,8 @@ export default function SelectUserScreen({ navigation }) {
       // borderBottomColor: themeColors.border,
     },
     backButton: {
-      padding: 8,
-      marginRight: 8,
+      padding: 9,
+      marginRight: 9,
     },
     headerText: {
       flex: 1,
