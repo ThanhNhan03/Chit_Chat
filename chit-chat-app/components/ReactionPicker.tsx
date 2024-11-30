@@ -53,15 +53,28 @@ const ReactionPicker: React.FC<ReactionPickerProps> = ({
 }) => {
     const [floatingReactions, setFloatingReactions] = useState<Array<{ id: number; icon: string }>>([]);
     const nextIdRef = useRef(0);
+    const isAnimatingRef = useRef(false);
+    const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         if (floatingReactions.length === 0 && nextIdRef.current > 0) {
             onAnimationComplete();
             nextIdRef.current = 0;
+            isAnimatingRef.current = false;
         }
     }, [floatingReactions]);
 
     const handleReactionPress = async (icon: string) => {
+        if (isAnimatingRef.current || debounceTimeoutRef.current) {
+            return;
+        }
+
+        isAnimatingRef.current = true;
+        
+        debounceTimeoutRef.current = setTimeout(() => {
+            debounceTimeoutRef.current = null;
+        }, 500);
+
         const newReactions = Array(8).fill(null).map(() => ({
             id: nextIdRef.current++,
             icon,
@@ -76,6 +89,14 @@ const ReactionPicker: React.FC<ReactionPickerProps> = ({
             prev.filter(reaction => reaction.id !== id)
         );
     };
+
+    useEffect(() => {
+        return () => {
+            if (debounceTimeoutRef.current) {
+                clearTimeout(debounceTimeoutRef.current);
+            }
+        };
+    }, []);
 
     if (isCurrentUser) return null;
 

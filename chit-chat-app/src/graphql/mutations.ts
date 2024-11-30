@@ -220,6 +220,7 @@ export const createMessages = /* GraphQL */ `mutation CreateMessages(
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -247,6 +248,25 @@ export const createMessages = /* GraphQL */ `mutation CreateMessages(
       created_at
       last_message
       updated_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    story_id
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
       createdAt
       updatedAt
       __typename
@@ -301,6 +321,7 @@ export const updateMessages = /* GraphQL */ `mutation UpdateMessages(
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -328,6 +349,25 @@ export const updateMessages = /* GraphQL */ `mutation UpdateMessages(
       created_at
       last_message
       updated_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    story_id
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
       createdAt
       updatedAt
       __typename
@@ -382,6 +422,7 @@ export const deleteMessages = /* GraphQL */ `mutation DeleteMessages(
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -409,6 +450,25 @@ export const deleteMessages = /* GraphQL */ `mutation DeleteMessages(
       created_at
       last_message
       updated_at
+      createdAt
+      updatedAt
+      __typename
+    }
+    story_id
+    story {
+      id
+      user_id
+      type
+      media_url
+      text_content
+      background_color
+      thumbnail_url
+      duration
+      music_id
+      created_at
+      expires_at
+      music_start_time
+      music_end_time
       createdAt
       updatedAt
       __typename
@@ -455,6 +515,7 @@ export const createMessageReaction = /* GraphQL */ `mutation CreateMessageReacti
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -501,6 +562,7 @@ export const updateMessageReaction = /* GraphQL */ `mutation UpdateMessageReacti
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -547,6 +609,7 @@ export const deleteMessageReaction = /* GraphQL */ `mutation DeleteMessageReacti
       status
       attachments
       reply_to_message_id
+      story_id
       createdAt
       updatedAt
       __typename
@@ -1388,6 +1451,10 @@ export const createStory = /* GraphQL */ `mutation CreateStory(
     expires_at
     music_start_time
     music_end_time
+    replies {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -1448,6 +1515,10 @@ export const updateStory = /* GraphQL */ `mutation UpdateStory(
     expires_at
     music_start_time
     music_end_time
+    replies {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename
@@ -1508,6 +1579,10 @@ export const deleteStory = /* GraphQL */ `mutation DeleteStory(
     expires_at
     music_start_time
     music_end_time
+    replies {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     __typename

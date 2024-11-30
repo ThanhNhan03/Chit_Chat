@@ -6,6 +6,7 @@ import { GraphQLQuery } from '@aws-amplify/api';
 import { messageReactionsByMessage_id, getUser } from '../src/graphql/queries';
 import { createMessageReaction, deleteMessageReaction } from '../src/graphql/mutations';
 import { onCreateMessageReaction, onDeleteMessageReaction } from '../src/graphql/subscriptions';
+import { getCachedMessageReactions, cacheMessageReactions } from '../utils/cacheUtils';
 
 const client = generateClient();
 
@@ -20,6 +21,7 @@ interface MessageItemProps {
         type: 'text' | 'image';
         isMe: boolean;
         senderName?: string;
+        senderAvatar?: string;
         isUploading?: boolean;
     };
     onImagePress: (uri: string) => void;
@@ -77,6 +79,13 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
     const fetchReactions = async () => {
         try {
+            // Kiểm tra cache trước
+            const cachedReactions = await getCachedMessageReactions(message.id);
+            if (cachedReactions) {
+                setReactions(cachedReactions);
+                return;
+            }
+
             const result = await client.graphql({
                 query: messageReactionsByMessage_id,
                 variables: { message_id: message.id }
@@ -104,6 +113,8 @@ const MessageItem: React.FC<MessageItemProps> = ({
                 }) || []
             );
             
+            // Lưu vào cache
+            await cacheMessageReactions(message.id, reactionsWithUserInfo);
             setReactions(reactionsWithUserInfo);
         } catch (error) {
             console.error('Error fetching reactions:', error);
@@ -120,7 +131,11 @@ const MessageItem: React.FC<MessageItemProps> = ({
         }).subscribe({
             next: ({ data }: any) => {
                 const newReaction = data.onCreateMessageReaction;
-                setReactions(prev => [...prev, newReaction]);
+                setReactions(prev => {
+                    const exists = prev.some(r => r.id === newReaction.id);
+                    if (exists) return prev;
+                    return [...prev, newReaction];
+                });
             }
         });
         subs.push(createSub);
@@ -157,24 +172,30 @@ const MessageItem: React.FC<MessageItemProps> = ({
                 r => r.user_id === currentUserId
             );
 
-            console.log('currentUserId:', currentUserId);
-            console.log('message.id:', message.id);
-            console.log('icon:', icon);
+            let updatedReactions = [...reactions];
 
             if (existingReaction && existingReaction.icon === icon) {
-                console.log('Deleting reaction:', existingReaction.id);
+                // Xóa reaction
+                updatedReactions = reactions.filter(r => r.id !== existingReaction.id);
                 await client.graphql({
                     query: deleteMessageReaction,
                     variables: { input: { id: existingReaction.id } }
                 });
             } else {
+                // Thêm/cập nhật reaction
                 if (existingReaction) {
-                    console.log('Deleting existing reaction:', existingReaction.id);
+                    updatedReactions = reactions.filter(r => r.id !== existingReaction.id);
                     await client.graphql({
                         query: deleteMessageReaction,
                         variables: { input: { id: existingReaction.id } }
                     });
                 }
+
+                
+                const userResult = await client.graphql({
+                    query: getUser,
+                    variables: { id: currentUserId }
+                });
 
                 const input = {
                     id: `reaction-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -183,13 +204,22 @@ const MessageItem: React.FC<MessageItemProps> = ({
                     icon,
                     created_at: new Date().toISOString()
                 };
+
+                const newReaction = {
+                    ...input,
+                    user: userResult.data.getUser 
+                };
                 
-                
+                updatedReactions.push(newReaction);
                 await client.graphql({
                     query: createMessageReaction,
                     variables: { input }
                 });
             }
+
+            // Cập nhật cache với reactions mới
+            await cacheMessageReactions(message.id, updatedReactions);
+            setReactions(updatedReactions);
         } catch (error) {
             console.error('Error handling reaction:', error);
         } finally {
@@ -200,8 +230,36 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
     return (
         <View>
-            {showSender && !message.isMe && message.senderName && (
-                <Text style={styles.senderName}>{message.senderName}</Text>
+            {showSender && !message.isMe && (
+                <View style={styles.senderInfoContainer}>
+                    {/* Avatar */}
+                    <View style={styles.avatarContainer}>
+                        {message.senderAvatar ? (
+                            <Image 
+                                source={{ uri: message.senderAvatar }} 
+                                style={styles.avatar} 
+                            />
+                        ) : (
+                            <View style={styles.avatarPlaceholder}>
+                                <Text style={styles.avatarText}>
+                                    {message.senderName?.charAt(0)?.toUpperCase() || '?'}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+
+                    {/* Thông tin người gửi */}
+                    <View style={styles.senderDetails}>
+                        <View style={styles.senderNameRow}>
+                            <Text style={styles.senderName}>
+                                {message.senderName || 'Unknown User'}
+                            </Text>
+                            {/* Icon verified hoặc role nếu có */}
+                            <Text style={styles.verifiedIcon}>✓</Text>
+                        </View>
+                        <Text style={styles.userStatus}>Online</Text>
+                    </View>
+                </View>
             )}
 
             <Pressable 
@@ -376,9 +434,9 @@ const styles = StyleSheet.create({
     senderName: {
         fontSize: 12,
         color: themeColors.textSecondary,
+        fontWeight: '500',
         marginBottom: 4,
         marginLeft: 12,
-        fontWeight: '500'
     },
     messageContainer: {
         maxWidth: '80%',
@@ -566,23 +624,30 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
     },
     avatarContainer: {
-        marginRight: 12,
+        marginRight: 8,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     avatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: themeColors.border,
     },
     avatarPlaceholder: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
         backgroundColor: '#e0e0e0',
         justifyContent: 'center',
         alignItems: 'center',
     },
     avatarText: {
-        fontSize: 16,
+        fontSize: 12,
         fontWeight: 'bold',
         color: '#666',
     },
@@ -596,6 +661,40 @@ const styles = StyleSheet.create({
     selectedReactionButton: {
         backgroundColor: '#E8F5E9',
         borderRadius: 20,
+    },
+    senderContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+        marginLeft: 12,
+    },
+    senderInfoContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+        marginLeft: 12,
+        paddingVertical: 4,
+    },
+ 
+   
+    senderDetails: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    senderNameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+  
+    verifiedIcon: {
+        fontSize: 12,
+        color: '#2196F3',
+        marginTop: 1,
+    },
+    userStatus: {
+        fontSize: 12,
+        color: '#4CAF50',
+        marginTop: 2,
     },
 });
 

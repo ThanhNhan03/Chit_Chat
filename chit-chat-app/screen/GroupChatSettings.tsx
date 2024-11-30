@@ -9,7 +9,8 @@ import {
     TextInput,
     Modal,
     ActivityIndicator,
-    Image
+    Image,
+    ScrollView
 } from 'react-native';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
@@ -28,14 +29,26 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import { useTheme } from '../contexts/ThemeContext';
+import * as ImagePicker from 'expo-image-picker';
+import { uploadData } from 'aws-amplify/storage';
+import { themeColors } from '../config/themeColor';
+import AddMemberModal from '../components/AddMemberModal';
 
 const client = generateClient();
+const CLOUDFRONT_URL = "https://d1uil1dxdmhthh.cloudfront.net";
 
 interface GroupMember {
     id: string;
     name: string;
     profile_picture?: string;
 }
+
+interface GroupChatSettings {
+    chatId: string;
+    initialGroupName: string;
+    group_image?: string;
+}
+
 const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
     const { chatId, initialGroupName } = route.params;
     const [groupName, setGroupName] = useState(initialGroupName);
@@ -46,6 +59,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
     const [contacts, setContacts] = useState<GroupMember[]>([]);
     const [showAddMember, setShowAddMember] = useState(false);
     const { theme } = useTheme();
+    const [groupImage, setGroupImage] = useState<string | undefined>();
 
     useEffect(() => {
         // Tải dữ liệu song song
@@ -60,6 +74,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
             setCurrentUserId(user.userId);
             setIsCreator(groupResponse.data.getGroupChat.created_by === user.userId);
             setMembers(membersData);
+            setGroupImage(groupResponse.data.getGroupChat.group_picture);
         }).catch(error => {
             console.error('Error initializing data:', error);
             Alert.alert('Error', 'Failed to load group details');
@@ -301,6 +316,54 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
         }
     };
 
+    const handleChangeGroupImage = async () => {
+        try {
+            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (!permissionResult.granted) {
+                Alert.alert("Permission Required", "Please allow access to your photo library");
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.7,
+            });
+
+            if (!result.canceled && result.assets[0]) {
+                const response = await fetch(result.assets[0].uri);
+                const blob = await response.blob();
+                const fileName = `groups/${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+
+                await uploadData({
+                    key: fileName,
+                    data: blob,
+                    options: {
+                        contentType: "image/jpeg",
+                    },
+                }).result;
+
+                const imageUrl = `${CLOUDFRONT_URL}/public/${fileName}`;
+
+                await client.graphql({
+                    query: updateGroupChat,
+                    variables: {
+                        input: {
+                            id: chatId,
+                            group_picture: imageUrl
+                        }
+                    }
+                });
+
+                setGroupImage(imageUrl);
+            }
+        } catch (error) {
+            console.error('Error updating group image:', error);
+            Alert.alert('Error', 'Failed to update group image');
+        }
+    };
+
     const renderMemberItem = ({ item }: { item: GroupMember }) => (
         <View style={styles.memberItem}>
             {item.profile_picture ? (
@@ -313,7 +376,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                     <Text style={styles.avatarText}>{item.name[0].toUpperCase()}</Text>
                 </View>
             )}
-            <Text style={styles.memberName}>{item.name}</Text>
+            <Text style={[styles.memberName, { color: theme.textColor }]}>{item.name}</Text>
             {isCreator && item.id !== currentUserId && (
                 <TouchableOpacity 
                     style={styles.removeButton}
@@ -325,6 +388,129 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
         </View>
     );
 
+    const renderSections = () => {
+        return [
+            // Group Image Section
+            {
+                type: 'image',
+                data: { groupImage, groupName }
+            },
+            // Group Name Section
+            {
+                type: 'name',
+                data: { groupName, isEditingName }
+            },
+            // Members Section
+            {
+                type: 'members',
+                data: { members }
+            },
+            // Action Buttons Section
+            {
+                type: 'actions',
+                data: { isCreator }
+            }
+        ];
+    };
+
+    const renderItem = ({ item }) => {
+        switch (item.type) {
+            case 'image':
+                return (
+                    <TouchableOpacity 
+                        style={styles.imageSection} 
+                        onPress={handleChangeGroupImage}
+                    >
+                        {item.data.groupImage ? (
+                            <Image 
+                                source={{ uri: item.data.groupImage }} 
+                                style={styles.groupImage} 
+                            />
+                        ) : (
+                            <View style={styles.groupImagePlaceholder}>
+                                <Text style={styles.groupImagePlaceholderText}>
+                                    {item.data.groupName[0].toUpperCase()}
+                                </Text>
+                            </View>
+                        )}
+                        <View style={styles.editImageButton}>
+                            <Ionicons name="camera" size={20} color="#fff" />
+                        </View>
+                    </TouchableOpacity>
+                );
+            case 'name':
+                return (
+                    <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
+                        <View style={[styles.sectionHeader, { backgroundColor: theme.cardBackground }]}>
+                            <Text style={[styles.sectionTitle, { color: theme.textColor }]}>Group Name</Text>
+                            <TouchableOpacity onPress={() => setIsEditingName(true)}>
+                                <Ionicons name="pencil" size={20} color='#a29bfe' />
+                            </TouchableOpacity>
+                        </View>
+                        {item.data.isEditingName ? (
+                            <View style={styles.editNameContainer}>
+                                <TextInput
+                                    style={[styles.nameInput, { color: theme.textColor }]}
+                                    value={groupName}
+                                    onChangeText={setGroupName}
+                                    autoFocus
+                                />
+                                <TouchableOpacity 
+                                    style={styles.saveButton}
+                                    onPress={handleUpdateGroupName}
+                                >
+                                    <Text style={styles.saveButtonText}>Save</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <Text style={[styles.groupName, { color: theme.textColor }]}>{groupName}</Text>
+                        )}
+                    </View>
+                );
+            case 'members':
+                return (
+                    <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
+                        <View style={styles.sectionHeader}>
+                            <Text style={[styles.sectionTitle, { color: theme.textColor }]}>
+                                Members ({item.data.members.length})
+                            </Text>
+                            <TouchableOpacity onPress={handleAddMemberPress}>
+                                <Ionicons name="person-add" size={20} color="#a29bfe" />
+                            </TouchableOpacity>
+                        </View>
+                        <FlatList
+                            data={item.data.members}
+                            renderItem={renderMemberItem}
+                            keyExtractor={member => member.id}
+                            scrollEnabled={false}
+                        />
+                    </View>
+                );
+            case 'actions':
+                return (
+                    <View style={styles.actionButtons}>
+                        <TouchableOpacity 
+                            style={[styles.button, styles.leaveButton]}
+                            onPress={handleLeaveGroup}
+                        >
+                            <Text style={[styles.buttonText, { color: theme.textColor }]}>Leave Group</Text>
+                        </TouchableOpacity>
+
+                        {item.data.isCreator && (
+                            <TouchableOpacity 
+                                style={[styles.button, styles.deleteButton]}
+                                onPress={handleDeleteGroup}
+                            >
+                                <Text style={[styles.buttonText, { color: theme.textColor }]}>Delete Group</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                );
+            default:
+                return null;
+        }
+    };
+
     return (
         <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
             <Header 
@@ -332,117 +518,19 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                 onBackPress={() => navigation.goBack()} 
             />
             
-            <View style={[styles.content, { backgroundColor: theme.cardBackground }]}>
-                {/* Group Name Section */}
-                <View style={[styles.section, { backgroundColor: theme.group }]}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Group Name</Text>
-                        <TouchableOpacity onPress={() => setIsEditingName(true)}>
-                            <Ionicons name="pencil" size={20} color="#007AFF" />
-                        </TouchableOpacity>
-                    </View>
-                    {isEditingName ? (
-                        <View style={styles.editNameContainer}>
-                            <TextInput
-                                style={styles.nameInput}
-                                value={groupName}
-                                onChangeText={setGroupName}
-                                autoFocus
-                            />
-                            <TouchableOpacity 
-                                style={styles.saveButton}
-                                onPress={handleUpdateGroupName}
-                            >
-                                <Text style={styles.saveButtonText}>Save</Text>
-                            </TouchableOpacity>
-                        </View>
-                    ) : (
-                        <Text style={styles.groupName}>{groupName}</Text>
-                    )}
-                </View>
+            <FlatList
+                data={renderSections()}
+                renderItem={renderItem}
+                keyExtractor={(item, index) => item.type + index}
+                showsVerticalScrollIndicator={false}
+            />
 
-                {/* Members Section */}
-                <View style={[styles.section, { backgroundColor: theme.group }]}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>
-                            Members ({members.length})
-                        </Text>
-                        {isCreator && (
-                            <TouchableOpacity onPress={handleAddMemberPress}>
-                                <Ionicons name="person-add" size={20} color="#007AFF" />
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                    <FlatList
-                        data={members}
-                        renderItem={renderMemberItem}
-                        keyExtractor={item => item.id}
-                    />
-                </View>
-
-                {/* Action Buttons */}
-                <View style={styles.actionButtons}>
-                    <TouchableOpacity 
-                        style={[styles.button, styles.leaveButton]}
-                        onPress={handleLeaveGroup}
-                    >
-                        <Text style={styles.buttonText}>Leave Group</Text>
-                    </TouchableOpacity>
-
-                    {isCreator && (
-                        <TouchableOpacity 
-                            style={[styles.button, styles.deleteButton]}
-                            onPress={handleDeleteGroup}
-                        >
-                            <Text style={styles.buttonText}>Delete Group</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-            </View>
-
-            {/* Add Member Modal */}
-            <Modal
+            <AddMemberModal
                 visible={showAddMember}
-                transparent={true}
-                animationType="slide"
-                onRequestClose={() => setShowAddMember(false)}
-            >
-                <View style={styles.modalContainer}>
-                    <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
-                        <Text style={styles.modalTitle}>Add Members</Text>
-                        <FlatList
-                            data={contacts}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity 
-                                    style={styles.contactItem}
-                                    onPress={() => handleAddMember(item.id)}
-                                >
-                                    {item.profile_picture ? (
-                                        <Image 
-                                            source={{ uri: item.profile_picture }} 
-                                            style={styles.contactAvatar} 
-                                        />
-                                    ) : (
-                                        <View style={styles.contactAvatarPlaceholder}>
-                                            <Text style={styles.avatarText}>
-                                                {item.name[0].toUpperCase()}
-                                            </Text>
-                                        </View>
-                                    )}
-                                    <Text style={styles.contactName}>{item.name}</Text>
-                                </TouchableOpacity>
-                            )}
-                            keyExtractor={item => item.id}
-                        />
-                        <TouchableOpacity 
-                            style={styles.closeButton}
-                            onPress={() => setShowAddMember(false)}
-                        >
-                            <Text style={styles.closeButtonText}>Close</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+                contacts={contacts}
+                onClose={() => setShowAddMember(false)}
+                onAddMember={handleAddMember}
+            />
         </View>
     );
 };
@@ -450,171 +538,144 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor:'black',
     },
-    loadingContainer: {
-        flex: 1,
+    imageSection: {
+        alignItems: 'center',
+        paddingVertical: 32,
+        paddingHorizontal: 20,
+        position: 'relative',
+    },
+    groupImage: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: themeColors.primary,
+    },
+    groupImagePlaceholder: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: themeColors.primary,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    content: {
-        flex: 1,
-        padding: 16,
+    groupImagePlaceholderText: {
+        fontSize: 40,
+        color: '#fff',
+        fontWeight: 'bold',
     },
-    section: {
-        marginBottom: 24,
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
-        shadowColor: '#000',
+    editImageButton: {
+        position: 'absolute',
+        bottom: 28,
+        right: '35%',
+        backgroundColor: themeColors.primary,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        shadowRadius: 3.84,
+        elevation: 2,
+    },
+    section: {
+        marginHorizontal: 16,
+        marginBottom: 16,
+        borderRadius: 16,
+        backgroundColor: 'transparent',
+        padding: 16,
     },
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
+        paddingBottom: 12,
+        marginBottom: 8,
     },
     sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: 16,
+        fontWeight: '600',
+        letterSpacing: 0.5,
     },
     editNameContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 8,
     },
     nameInput: {
         flex: 1,
         fontSize: 16,
-        padding: 8,
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        marginRight: 8,
+        padding: 12,
+        backgroundColor: 'rgba(162, 155, 254, 0.1)',
+        borderRadius: 12,
     },
     saveButton: {
-        backgroundColor: '#007AFF',
-        padding: 8,
-        borderRadius: 8,
+        backgroundColor: '#a29bfe',
+        padding: 12,
+        borderRadius: 12,
     },
     saveButtonText: {
-        color: '#fff',
-        fontWeight: '500',
+        color: 'white',
+        fontWeight: '600',
     },
     groupName: {
         fontSize: 16,
-        color: '#333',
+        paddingVertical: 8,
     },
     memberItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        paddingVertical: 12,
+        marginBottom: 8,
     },
     memberAvatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         marginRight: 12,
     },
     memberAvatarPlaceholder: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#e0e0e0',
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: 'rgba(162, 155, 254, 0.2)',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
     },
     avatarText: {
         fontSize: 16,
-        fontWeight: 'bold',
-        color: '#666',
+        fontWeight: '600',
+        color: '#a29bfe',
     },
     memberName: {
         flex: 1,
         fontSize: 16,
+        fontWeight: '500',
     },
     removeButton: {
-        padding: 4,
+        padding: 8,
     },
     actionButtons: {
-        marginTop: 'auto',
         padding: 16,
+        gap: 12,
     },
     button: {
         padding: 16,
-        borderRadius: 12,
+        borderRadius: 16,
         alignItems: 'center',
-        marginBottom: 12,
     },
     leaveButton: {
-        backgroundColor: '#FF9500',
+        backgroundColor: 'rgba(255, 71, 87, 0.1)',
     },
     deleteButton: {
-        backgroundColor: '#FF3B30',
+        backgroundColor: '#ff4757',
     },
     buttonText: {
-        color: '#fff',
-        fontWeight: '500',
-    },
-    modalContainer: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    modalContent: {
-        backgroundColor: '#fff',
-        padding: 16,
-        borderRadius: 12,
-        width: '80%',
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 16,
-    },
-    contactItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    contactAvatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        marginRight: 12,
-    },
-    contactAvatarPlaceholder: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#e0e0e0',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-    },
-    contactName: {
-        flex: 1,
+        fontWeight: '600',
         fontSize: 16,
-    },
-    closeButton: {
-        backgroundColor: '#007AFF',
-        padding: 8,
-        borderRadius: 8,
-        alignItems: 'center',
-        marginTop: 16,
-    },
-    closeButtonText: {
-        color: '#fff',
-        fontWeight: '500',
     },
 });
 
