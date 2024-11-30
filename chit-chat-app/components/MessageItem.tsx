@@ -347,7 +347,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
                 >
                     <View style={[
                         styles.modalOverlay,
-                        { opacity: showReactions ? 1 : 0 }
+                        { backgroundColor: 'transparent' }
                     ]}>
                         <TouchableWithoutFeedback>
                             <View style={[
@@ -381,7 +381,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
             <Modal
                 visible={showReactionDetails}
                 transparent
-                animationType="slide"
+            animationType="fade"
                 onRequestClose={() => setShowReactionDetails(false)}
             >
                 <View style={styles.detailsModal}>
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'transparent',
         justifyContent: 'center',
         alignItems: 'center',
     },
