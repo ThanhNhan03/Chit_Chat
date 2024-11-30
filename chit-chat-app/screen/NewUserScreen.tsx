@@ -242,7 +242,7 @@ export default function NewUserScreen() {
           <TextInput
             style={[styles.input, { color: theme.textInput, backgroundColor: theme.input }]}
             placeholder="Enter email address"
-            placeholderTextColor={theme.textColor}
+      placeholderTextColor={themeColors.text}
             value={searchEmail}
             onChangeText={setSearchEmail}
             keyboardType="email-address"
