@@ -102,10 +102,10 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ route, navigation }) => {
           >
             <Ionicons name="arrow-back" size={24} color={theme.textColor} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.textColor }]}>
+          <Text style={[styles.headerTitle, { color: theme.textColor, marginRight:5 }]}>
             {user ? 'Change Password' : 'Reset Password'}
           </Text>
-          <View style={{ width: 40 }} />
+          <View style={{ width: 50 }} />
         </View>
 
         <View style={styles.content}>
@@ -119,7 +119,8 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ route, navigation }) => {
             <TextInput
               style={[styles.input, { 
                 backgroundColor: theme.input,
-                color: theme.textInput
+                color: theme.textInput,
+              
               }]}
               placeholder="Verification Code"
               placeholderTextColor={theme.textInput}
@@ -128,12 +129,17 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ route, navigation }) => {
               keyboardType="number-pad"
             />
           )}
-
+    <Text style={[ { color: theme.textColor,fontSize: 17, marginBottom:20 }]}>
+Your password must be at least 6 character and should include a combination of numbers,letters,and special characters(!$@#%&).
+      </Text>
           {user && (
+            
+            
             <TextInput
               style={[styles.input, { 
                 backgroundColor: theme.input,
-                color: theme.textInput
+                color: theme.textInput,
+                
               }]}
               placeholder="Current Password"
               placeholderTextColor={theme.textInput}
@@ -194,7 +200,8 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: width * 0.05,
+    padding: width * 0.04,
+
   },
   form: {
     flex: 1,
@@ -217,7 +224,7 @@ const styles = StyleSheet.create({
     padding: height * 0.02,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: height * 0.03,
+marginTop: height * 0.43,
     width: '100%',
   },
   buttonText: {
