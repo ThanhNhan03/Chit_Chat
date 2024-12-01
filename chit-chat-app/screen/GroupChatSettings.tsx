@@ -112,7 +112,15 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
     };
 
     const handleUpdateGroupName = async () => {
-        if (groupName.trim() === initialGroupName) {
+        const trimmedName = groupName.trim();
+        if (trimmedName === '') {
+            Alert.alert('Error', 'Group name cannot be empty');
+            setGroupName(initialGroupName);
+            setIsEditingName(false);
+            return;
+        }
+
+        if (trimmedName === initialGroupName) {
             setIsEditingName(false);
             return;
         }
@@ -123,7 +131,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                 variables: {
                     input: {
                         id: chatId,
-                        group_name: groupName.trim()
+                        group_name: trimmedName
                     }
                 }
             });
@@ -131,7 +139,7 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
             setIsEditingName(false);
             navigation.navigate('GroupChat', {
                 chatId: chatId,
-                name: groupName.trim()
+                name: trimmedName
             });
         } catch (error) {
             console.error('Error updating group name:', error);
@@ -429,7 +437,9 @@ const GroupChatSettings: React.FC<any> = ({ route, navigation }) => {
                         ) : (
                             <View style={styles.groupImagePlaceholder}>
                                 <Text style={styles.groupImagePlaceholderText}>
-                                    {item.data.groupName[0].toUpperCase()}
+                                    {item.data.groupName && item.data.groupName.length > 0 
+                                        ? item.data.groupName[0].toUpperCase() 
+                                        : '#'}
                                 </Text>
                             </View>
                         )}

@@ -14,6 +14,9 @@ import { themeColors } from '../config/themeColor';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { debounce } from 'lodash';
 import { useTheme } from '../contexts/ThemeContext';
+import { Dimensions } from 'react-native';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 
 const client = generateClient();
@@ -410,8 +413,7 @@ export default function SelectUserScreen({ navigation }) {
     },
     headerContainer: {
       padding: 16,
-      paddingHorizontal: 16,
-      paddingTop: 8, 
+      paddingTop: 8,
     },
     headerTitle: {
       fontSize: 20, 
@@ -423,6 +425,8 @@ export default function SelectUserScreen({ navigation }) {
       flexDirection: 'row',
       justifyContent: 'space-between',
       marginBottom: 24,
+      marginHorizontal: -12,
+
     },
     option: {
       flex: 1,
@@ -432,9 +436,9 @@ export default function SelectUserScreen({ navigation }) {
       marginHorizontal: 4,
     },
     iconContainer: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: screenWidth * 0.14,
+      height: screenWidth * 0.14,
+      borderRadius: screenWidth * 0.07,
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: 8,
@@ -449,7 +453,6 @@ export default function SelectUserScreen({ navigation }) {
       fontSize: 18,
       fontWeight: '600',
       color: themeColors.text,
-      marginBottom: 8,
     },
     userItem: {
       flexDirection: 'row',
@@ -457,7 +460,6 @@ export default function SelectUserScreen({ navigation }) {
       alignItems: 'center',
       backgroundColor: theme.cardBackground,
       marginHorizontal: 16,
-      marginBottom: 8,
       borderRadius: 12,
     },
     avatarContainer: {
@@ -465,9 +467,9 @@ export default function SelectUserScreen({ navigation }) {
       marginRight: 12,
     },
     avatar: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
+      width: screenWidth * 0.14,
+      height: screenWidth * 0.14,
+      borderRadius: screenWidth * 0.07,
       backgroundColor: themeColors.primary,
       alignItems: 'center',
       justifyContent: 'center',

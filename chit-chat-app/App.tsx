@@ -70,11 +70,11 @@ const TabNavigator = () => {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: any;
           if (route.name === 'Chats') {
-    iconName = 'chat';
+            iconName = 'chatbubble';
           } else if (route.name === 'Stories') {
-        iconName = 'web-stories';
+            iconName = 'aperture';
           }
-          return <MaterialIcons name={iconName} size={size} color={color} />;
+          return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: themeColors.secondary,
         tabBarInactiveTintColor:  theme.tabBar,
