@@ -54,6 +54,53 @@ const getGroupedReactions = (reactions: any[]) => {
         .sort((a, b) => b.count - a.count);
 };
 
+const URL_REGEX = /(https?:\/\/[^\s]+)|(?<=\s|^)([a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]\.([a-zA-Z]{2,})(\/[^\s]*)?)/g;
+
+// Helper function để kiểm tra và format URL
+const formatUrl = (url: string) => {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+    }
+    return `https://${url}`;
+};
+
+
+const parseTextWithLinks = (text: string) => {
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    const regex = new RegExp(URL_REGEX);
+    
+    while ((match = regex.exec(text)) !== null) {
+        // Thêm text trước URL (nếu có)
+        if (match.index > lastIndex) {
+            parts.push({
+                type: 'text',
+                content: text.slice(lastIndex, match.index)
+            });
+        }
+
+        const url = match[0];
+        parts.push({
+            type: 'link',
+            content: url,
+            fullUrl: formatUrl(url)
+        });
+
+        lastIndex = match.index + url.length;
+    }
+
+    if (lastIndex < text.length) {
+        parts.push({
+            type: 'text',
+            content: text.slice(lastIndex)
+        });
+    }
+
+    return parts;
+};
+
 const MessageItem: React.FC<MessageItemProps> = ({
     message,
     onImagePress,
@@ -228,24 +275,20 @@ const MessageItem: React.FC<MessageItemProps> = ({
         }
     };
 
-    const renderMessageText = (text: string) => {
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
-        const parts = text.split(urlRegex);
-
-        return parts.map((part, index) => {
-            if (urlRegex.test(part)) {
-                return (
-                    <Text
-                        key={index}
-                        style={styles.linkText}
-                        onPress={() => Linking.openURL(part)}
-                    >
-                        {part}
-                    </Text>
-                );
+    const handleLinkPress = async (url: string) => {
+        try {
+            const formattedUrl = formatUrl(url);
+            const supported = await Linking.canOpenURL(formattedUrl);
+            
+            if (supported) {
+                await Linking.openURL(formattedUrl);
+            } else {
+                Alert.alert('Error', 'Cannot open this URL');
             }
-            return <Text key={index}>{part}</Text>;
-        });
+        } catch (error) {
+            console.error('Error opening URL:', error);
+            Alert.alert('Error', 'Cannot open this URL');
+        }
     };
 
     return (
@@ -296,12 +339,31 @@ const MessageItem: React.FC<MessageItemProps> = ({
                 ]}
             >
                 {message.type === 'text' ? (
-                    <Text style={[
-                        styles.messageText,
-                        message.isMe ? styles.myMessageText : styles.theirMessageText
-                    ]}>
-                        {renderMessageText(message.text || '')}
-                    </Text>
+                    <View style={styles.messageTextContainer}>
+                        {parseTextWithLinks(message.text || '').map((part, index) => (
+                            <React.Fragment key={index}>
+                                {part.type === 'text' ? (
+                                    <Text style={[
+                                        styles.messageText,
+                                        message.isMe ? styles.myMessageText : styles.theirMessageText
+                                    ]}>
+                                        {part.content}
+                                    </Text>
+                                ) : (
+                                    <Text
+                                        style={[
+                                            styles.messageText,
+                                            styles.linkText,
+                                            message.isMe ? styles.myLinkText : styles.theirLinkText
+                                        ]}
+                                        onPress={() => handleLinkPress(part.content)}
+                                    >
+                                        {part.content}
+                                    </Text>
+                                )}
+                            </React.Fragment>
+                        ))}
+                    </View>
                 ) : (
                     <View style={styles.imageWrapper}>
                         <TouchableOpacity 
@@ -719,6 +781,16 @@ const styles = StyleSheet.create({
     linkText: {
         color: '#1E90FF', // Link color
         textDecorationLine: 'underline',
+    },
+    messageTextContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+    },
+    myLinkText: {
+        color: '#E3F2FD', // Màu link cho tin nhắn của mình
+    },
+    theirLinkText: {
+        color: '#2196F3', // Màu link cho tin nhắn của người khác
     },
 });
 
