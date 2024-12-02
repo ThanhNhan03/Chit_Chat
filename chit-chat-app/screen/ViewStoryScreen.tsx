@@ -726,20 +726,24 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
         }
     };
 
-    // Thêm state để theo dõi trạng thái animation
+    // Thêm state đ��� theo dõi trạng thái animation
     const [isAnimating, setIsAnimating] = useState(false);
+
+    // Thêm state để theo dõi trạng thái animation của reaction
+    const [isReactionAnimating, setIsReactionAnimating] = useState(false);
 
     // Sửa lại hàm handleReaction
     const handleReaction = async (icon: string) => {
         if (!user?.userId || user.userId === currentStory.user_id) return;
         
         try {
-            setIsAnimating(true);
+            // Tạm dừng progress và âm thanh khi bắt đầu animation
+            setIsReactionAnimating(true);
             progress.stopAnimation(value => {
                 progressRef.current = value;
             });
             if (sound) {
-                sound.pauseAsync();
+                await sound.pauseAsync();
             }
 
             // Kiểm tra xem reaction đã tồn tại chưa
@@ -748,19 +752,15 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
             );
 
             if (existingReaction) {
-                // Nếu reaction đã tồn tại, đẩy nó lên đầu danh sách
                 setStoryReactions(prev => [
-                    // Đặt reaction hiện tại lên đầu với thời gian mới
                     {
                         ...existingReaction,
                         created_at: new Date().toISOString()
                     },
-                    // Lọc bỏ reaction cũ và giữ lại các reaction khác
                     ...prev.filter(r => r.id !== existingReaction.id)
                 ]);
                 setCurrentReaction(icon);
             } else {
-                // Nếu chưa tồn tại, tạo reaction mới
                 const input = {
                     story_id: currentStory.id,
                     user_id: user.userId,
@@ -790,15 +790,34 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
             }
         } catch (error) {
             console.error('Error handling reaction:', error);
+            // Nếu có lỗi, vẫn tiếp tục phát story
+            setIsReactionAnimating(false);
+            if (sound) {
+                await sound.playAsync();
+            }
+            startProgress();
         }
     };
 
-    // Sửa lại useEffect để theo dõi story và animation
+    // Sửa lại useEffect để theo dõi isReactionAnimating
     useEffect(() => {
-        if (currentStory?.id && !isAnimating) {
-            startProgress();
+        if (!isReactionAnimating && currentStory?.id) {
+            // Tiếp tục phát story khi animation kết thúc
+            if (sound) {
+                sound.playAsync();
+            }
+            progress.setValue(progressRef.current);
+            Animated.timing(progress, {
+                toValue: 1,
+                duration: (currentStory.duration || 5) * 1000 * (1 - progressRef.current),
+                useNativeDriver: false,
+            }).start(({ finished }) => {
+                if (finished) {
+                    handleNext();
+                }
+            });
         }
-    }, [currentStory, isAnimating]);
+    }, [isReactionAnimating, currentStory]);
 
     // Sửa lại useEffect subscription
     useEffect(() => {
@@ -850,26 +869,7 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
         }
     }, [currentStory, storyReactions]);
 
-    // Sửa lại hàm xử lý khi mở/đóng ReactionPicker
-    const handleShowReactions = () => {
-        setShowReactions(true);
-        setIsPaused(true);
-        if (sound) {
-            sound.pauseAsync();
-        }
-        // Lưu giá trị progress hiện tại
-        progress.stopAnimation();
-    };
-
-    const handleCloseReactions = () => {
-        setShowReactions(false);
-        setIsPaused(false);
-        if (sound) {
-            sound.playAsync();
-        }
-        startProgress();
-    };
-
+    
     // Sửa lại useEffect để theo dõi isPaused
     useEffect(() => {
         if (!isPaused && currentStory?.id) {
@@ -1057,11 +1057,7 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
                     currentReaction={currentReaction}
                     isCurrentUser={currentStory?.user_id === user?.userId}
                     onAnimationComplete={() => {
-                        setIsAnimating(false);
-                        if (sound) {
-                            sound.playAsync();
-                        }
-                        startProgress();
+                        setIsReactionAnimating(false);
                     }}
                 />
             )}
