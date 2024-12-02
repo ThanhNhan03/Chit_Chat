@@ -311,3 +311,32 @@ export const sendFriendRequestNotification = async ({
         }
     });
 };
+
+export const sendReactionNotification = async ({
+    expoPushToken,
+    reactorName,
+    storyId,
+    storyOwnerId,
+}: {
+    expoPushToken: string;
+    reactorName: string;
+    storyId: string;
+    storyOwnerId: string;
+}) => {
+    if (!expoPushToken) {
+        console.log('No push token to send notification to.');
+        return;
+    }
+
+    return sendPushNotifications({
+        expoPushTokens: [expoPushToken],
+        title: 'New Reaction',
+        body: `${reactorName} reacted to your story`,
+        data: {
+            type: 'story_reaction',
+            storyId,
+            storyOwnerId,
+            channelId: 'stories'
+        }
+    });
+};
