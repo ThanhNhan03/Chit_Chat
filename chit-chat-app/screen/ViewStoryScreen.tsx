@@ -176,6 +176,14 @@ interface ReactionsDisplayProps {
     currentUserId: string;
 }
 
+interface GetUserResponse {
+    getUser: {
+        id: string;
+        push_token?: string;
+    };
+}
+
+
 const ReactionsDisplay = React.memo(({ reactions, isStoryOwner, currentUserId }: ReactionsDisplayProps) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -313,7 +321,7 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
         query GetStoryViews($story_id: ID!) {
             listStoryViews(
                 filter: {story_id: {eq: $story_id}}
-                limit: 1000  # Tăng limit nếu c���n
+                limit: 1000  # Tăng limit nếu cn
             ) {
                 items {
                     id
@@ -738,6 +746,11 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
         if (!user?.userId || user.userId === currentStory.user_id) return;
         
         try {
+            if (notifiedStories.has(currentStory.id)) {
+                // console.log('Notification already sent for this story.');
+                return;
+            }
+
             // Tạm dừng progress và âm thanh khi bắt đầu animation
             setIsReactionAnimating(true);
             progress.stopAnimation(value => {
@@ -788,15 +801,42 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
                         ...prev
                     ]);
 
-                    // Send notification to the story owner
+                    // Thêm logs để debug
+                    console.log('Getting story owner push token...');
                     const storyOwnerPushToken = await getStoryOwnerPushToken(currentStory.user_id);
+                    console.log('Story owner push token:', storyOwnerPushToken);
+
                     if (storyOwnerPushToken) {
+                        console.log('Sending reaction notification...');
+                        const GET_USER_NAME = `
+                            query GetUser($id: ID!) {
+                                getUser(id: $id) {
+                                    id
+                                    name
+                                }
+                            }
+                        `;
+
+                        const userResponse = await client.graphql({
+                            query: GET_USER_NAME,
+                            variables: { id: user.userId },
+                            authMode: 'apiKey'
+                        }) as GraphQLResult<{ getUser: { name: string } }>;
+
+                        const userName = userResponse.data?.getUser?.name || 'Someone';
+
                         await sendReactionNotification({
                             expoPushToken: storyOwnerPushToken,
-                            reactorName: user.name,
+                            reactorName: userName,
                             storyId: currentStory.id,
                             storyOwnerId: currentStory.user_id
                         });
+                        // console.log('Reaction notification sent successfully');
+
+                        // Add story ID to the set to prevent future notifications
+                        setNotifiedStories(prev => new Set(prev).add(currentStory.id));
+                    } else {
+                        console.log('No push token found for story owner');
                     }
                 }
             }
@@ -813,9 +853,28 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
 
     // Function to get the story owner's push token
     const getStoryOwnerPushToken = async (userId: string) => {
-        // Implement logic to fetch the push token for the story owner
-        // This might involve a GraphQL query to your backend to get the user's push token
-        return 'owner-push-token'; // Replace with actual logic
+        try {
+            // Thêm query để lấy push token của user
+            const GET_USER_PUSH_TOKEN = `
+                query GetUser($id: ID!) {
+                    getUser(id: $id) {
+                        id
+                        push_token
+                    }
+                }
+            `;
+
+            const response = await client.graphql({
+                query: GET_USER_PUSH_TOKEN,
+                variables: { id: userId },
+                authMode: 'apiKey'
+            }) as GraphQLResult<GetUserResponse>;
+
+            return response.data?.getUser?.push_token || null;
+        } catch (error) {
+            console.error('Error getting user push token:', error);
+            return null;
+        }
     };
 
     // Sửa lại useEffect để theo dõi isReactionAnimating
@@ -920,6 +979,8 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
             });
         }
     }, [isPaused, currentStory]);
+
+    const [notifiedStories, setNotifiedStories] = useState<Set<string>>(new Set());
 
     return (
         <SafeAreaView style={[
