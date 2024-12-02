@@ -26,6 +26,7 @@ import ViewsCounter from '../components/ViewsCounter';
 import ReactionPicker from '../components/ReactionPicker';
 import { StoryReaction as APIStoryReaction } from '../src/API';
 import { onCreateStoryReaction } from '../src/graphql/subscriptions';
+import { sendReactionNotification } from '../utils/notificationHelper';
 
 const client = generateClient();
 
@@ -312,7 +313,7 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
         query GetStoryViews($story_id: ID!) {
             listStoryViews(
                 filter: {story_id: {eq: $story_id}}
-                limit: 1000  # Tăng limit nếu cần
+                limit: 1000  # Tăng limit nếu c���n
             ) {
                 items {
                     id
@@ -726,7 +727,7 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
         }
     };
 
-    // Thêm state đ��� theo dõi trạng thái animation
+    // Thêm state đ theo dõi trạng thái animation
     const [isAnimating, setIsAnimating] = useState(false);
 
     // Thêm state để theo dõi trạng thái animation của reaction
@@ -786,6 +787,17 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
                         },
                         ...prev
                     ]);
+
+                    // Send notification to the story owner
+                    const storyOwnerPushToken = await getStoryOwnerPushToken(currentStory.user_id);
+                    if (storyOwnerPushToken) {
+                        await sendReactionNotification({
+                            expoPushToken: storyOwnerPushToken,
+                            reactorName: user.name,
+                            storyId: currentStory.id,
+                            storyOwnerId: currentStory.user_id
+                        });
+                    }
                 }
             }
         } catch (error) {
@@ -797,6 +809,13 @@ const ViewStoryScreen = ({ route, navigation }: ViewStoryScreenProps) => {
             }
             startProgress();
         }
+    };
+
+    // Function to get the story owner's push token
+    const getStoryOwnerPushToken = async (userId: string) => {
+        // Implement logic to fetch the push token for the story owner
+        // This might involve a GraphQL query to your backend to get the user's push token
+        return 'owner-push-token'; // Replace with actual logic
     };
 
     // Sửa lại useEffect để theo dõi isReactionAnimating
