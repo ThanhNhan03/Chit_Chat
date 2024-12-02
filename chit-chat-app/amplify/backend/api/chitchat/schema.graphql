@@ -1,0 +1,164 @@
+type GroupChat @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  group_name: String
+  created_by: ID! @index(name: "groupByCreator")
+  members: [UserGroupChat] @hasMany(indexName: "byGroupChat", fields: ["id"])
+  created_at: AWSDateTime
+  last_message: String
+  updated_at: AWSDateTime
+  group_picture: String
+  description: String
+  messages: [Messages] @hasMany(indexName: "byChat", fields: ["id"])
+}
+
+type FriendChat @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  chat_id: String
+  users: [UserFriendChat] @hasMany(indexName: "byFriendChat", fields: ["id"])
+  created_at: AWSDateTime
+  last_message: String
+  updated_at: AWSDateTime
+  messages: [Messages] @hasMany(indexName: "byChat", fields: ["id"])
+}
+
+type Messages @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  chat_type: String # "private" hoặc "group" hoặc "story_reply"
+  chat_id: ID! @index(name: "byChat", sortKeyFields: ["timestamp"])
+  sender_id: ID! @index(name: "bySender")
+  content: String
+  timestamp: AWSDateTime
+  status: String @default(value: "sent")
+  attachments: String
+  message_reactions: [MessageReaction] @hasMany(indexName: "reactionsByMessage", fields: ["id"])
+  sender: User @belongsTo(fields: ["sender_id"])
+  reply_to_message_id: ID @index(name: "byReplyToMessage")
+  reply_to_message: Messages @belongsTo(fields: ["reply_to_message_id"])
+  replied_messages: [Messages] @hasMany(indexName: "byReplyToMessage", fields: ["id"])
+  group_chat: GroupChat @belongsTo(fields: ["chat_id"])
+  friend_chat: FriendChat @belongsTo(fields: ["chat_id"])
+  story_id: ID @index(name: "byStory")
+  story: Story @belongsTo(fields: ["story_id"])
+}
+
+type MessageReaction @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  message_id: ID! @index(name: "reactionsByMessage")
+  user_id: ID! @index(name: "messageReactionsByUser")
+  icon: String
+  created_at: AWSDateTime
+  user: User @belongsTo(fields: ["user_id"])
+  message: Messages @belongsTo(fields: ["message_id"])
+}
+
+type Contact @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  user_id: ID! @index(name: "contactsByUser")
+  contact_user_id: ID! @index(name: "contactsByContactUser")
+  created_at: AWSDateTime
+  user: User @belongsTo(fields: ["user_id"])
+  contact_user: User @belongsTo(fields: ["contact_user_id"])
+}
+
+type FriendRequests @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  from_user_id: ID! @index(name: "friendRequestBySender")
+  to_user_id: ID! @index(name: "friendRequestByReceiver")
+  status: String # PENDING, ACCEPTED, DECLINED
+  created_at: AWSDateTime
+  from_user: User @belongsTo(fields: ["from_user_id"])
+  to_user: User @belongsTo(fields: ["to_user_id"])
+}
+
+type User @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  name: String
+  email: String! @index(name: "usersByEmail")
+  password: String!
+  profile_picture: String
+  status: String @default(value: "offline")
+  last_seen: AWSDateTime
+  push_token: String
+  FriendChats: [UserFriendChat] @hasMany(indexName: "byUser", fields: ["id"])
+  GroupChats: [UserGroupChat] @hasMany(indexName: "byUser", fields: ["id"])
+  Contacts: [Contact] @hasMany(indexName: "contactsByUser", fields: ["id"])
+  SentFriendRequests: [FriendRequests] @hasMany(indexName: "friendRequestBySender", fields: ["id"])
+  ReceivedFriendRequests: [FriendRequests] @hasMany(indexName: "friendRequestByReceiver", fields: ["id"])
+  message_reactions: [MessageReaction] @hasMany(indexName: "messageReactionsByUser", fields: ["id"])
+  story_reactions: [StoryReaction] @hasMany(indexName: "storyReactionsByUser", fields: ["id"])
+  Stories: [Story] @hasMany(indexName: "byUser", fields: ["id"])
+  StoryViews: [StoryView] @hasMany(indexName: "byUser", fields: ["id"])
+  sent_messages: [Messages] @hasMany(indexName: "bySender", fields: ["id"])
+}
+
+# Bảng trung gian cho quan hệ nhiều-nhiều giữa User và GroupChat
+type UserGroupChat @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  user_id: ID! @index(name: "byUser")
+  group_chat_id: ID! @index(name: "byGroupChat")
+  user: User @belongsTo(fields: ["user_id"]) # Sửa thành @belongsTo
+  groupChat: GroupChat @belongsTo(fields: ["group_chat_id"]) # Sửa thành @belongsTo
+}
+
+# Bảng trung gian cho quan hệ nhiều-nhiều giữa User và FriendChat
+type UserFriendChat @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  user_id: ID! @index(name: "byUser")
+  friend_chat_id: ID! @index(name: "byFriendChat")
+  user: User @belongsTo(fields: ["user_id"]) # Sửa thành @belongsTo
+  friendChat: FriendChat @belongsTo(fields: ["friend_chat_id"]) # Sửa thành @belongsTo
+}
+
+# Type Music để lưu thông tin bài hát
+type Music @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  title: String!
+  artist: String
+  url: String!
+  duration: Int
+  cover_image: String
+  created_at: AWSDateTime
+  Stories: [Story] @hasMany(indexName: "byMusic", fields: ["id"])
+}
+
+# Type Story để lưu thông tin story
+type Story @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  user_id: ID! @index(name: "byUser")
+  user: User @belongsTo(fields: ["user_id"])
+  type: String!
+  media_url: String
+  text_content: String
+  background_color: String
+  thumbnail_url: String
+  duration: Int
+  music_id: ID @index(name: "byMusic")
+  music: Music @belongsTo(fields: ["music_id"])
+  views: [StoryView] @hasMany(indexName: "byStory", fields: ["id"])
+  story_reactions: [StoryReaction] @hasMany(indexName: "reactionsByStory", fields: ["id"])
+  created_at: AWSDateTime
+  expires_at: AWSDateTime
+  music_start_time: Float
+  music_end_time: Float
+  replies: [Messages] @hasMany(indexName: "byStory", fields: ["id"])
+}
+
+# Type để theo dõi người xem story
+type StoryView @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  story_id: ID! @index(name: "byStory")
+  user_id: ID! @index(name: "byUser")
+  user: User @belongsTo(fields: ["user_id"])
+  story: Story @belongsTo(fields: ["story_id"])
+  viewed_at: AWSDateTime
+}
+
+type StoryReaction @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  story_id: ID! @index(name: "reactionsByStory")
+  user_id: ID! @index(name: "storyReactionsByUser")
+  icon: String
+  created_at: AWSDateTime
+  user: User @belongsTo(fields: ["user_id"])
+  story: Story @belongsTo(fields: ["story_id"])
+} 

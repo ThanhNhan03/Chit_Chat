@@ -1,0 +1,21 @@
+{
+    "appName": "chitchat",
+    "roleName": "pinpointLambdaRoled661c5c2",
+    "cloudformationPolicyName": "cloudformationPolicyd661c5c2",
+    "cloudWatchPolicyName": "cloudWatchPolicyd661c5c2",
+    "pinpointPolicyName": "pinpointPolicyd661c5c2",
+    "authPolicyName": "pinpoint_amplify_d661c5c2",
+    "unauthPolicyName": "pinpoint_amplify_d661c5c2",
+    "authRoleName": {
+        "Ref": "AuthRoleName"
+    },
+    "unauthRoleName": {
+        "Ref": "UnauthRoleName"
+    },
+    "authRoleArn": {
+        "Fn::GetAtt": [
+            "AuthRole",
+            "Arn"
+        ]
+    }
+}
