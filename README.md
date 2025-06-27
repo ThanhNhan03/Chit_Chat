@@ -10,7 +10,7 @@
 - 🧠 Real-time chat powered by AWS AppSync (GraphQL)
 - ☁️ Cloud data storage with DynamoDB via Amplify DataStore
 - 📸 Media sharing (images, files via S3)
-- 🔔 Push Notifications (via AWS Pinpoint or Firebase)
+- 🔔 Push Notifications (Firebase)
 - 📱 Mobile-first UI/UX using React Native
 
 ---
